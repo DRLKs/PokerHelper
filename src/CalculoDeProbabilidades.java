@@ -185,7 +185,7 @@ public class CalculoDeProbabilidades {
 
 	public double completarFullHouse( List<Carta> cartas ) {
 		
-		double prob = 0;;
+		double prob;
 		int ronda = 0;
 		int numCartas = cartas.size();
 		if( numCartas == 5 ) {
@@ -196,38 +196,23 @@ public class CalculoDeProbabilidades {
 			ronda = 3;
 		}
 		
-		int numCartasTrio = 1;
-		int numcartasPareja = 1;
-		
-		if( cartas.get(0).mismoNumeroQue( cartas.get(1) ) ) {	// Comprobamos que nuestras cartas tengan el mismo número
-			
-			
-			for( int i = 2; i < numCartas ; ++i ) {
-				if( cartas.get(i).mismoNumeroQue( cartas.get(0)) ){	// BUscamos si ya tenemos el trio
-					++numCartasTrio;
-				}
-			}
-			
-			if( numCartasTrio >= 3 ) {
+		if( cartas.get(0).mismoNumeroQue( cartas.get(1) ) ) {	// Comprobamos que nuestras cartas tengan el mismo número	
+			if( ronda == 0 ) {
+				prob = probCompletarFullHouse(2, 0, ronda) * probCompletarFullHouse(0, 2, ronda);
+			}else{
+				int numCartaTrio = Carta.hay_N_CartasRepetidasMismoNumero(cartas, 3);
 				
-				if( !Carta.hayParejas(cartas) ) {		// En caso de POKER, también aparecería como FULL, pero realmente no importa
-					int numCartasSimples = numCartas - 3;
-					while( numCartasSimples > 0 ) {
-						prob += probCompletarFullHouse(3, 1, ronda);
-						--numCartasSimples;
-					}
-				}else {
-					prob = 1.0;
-				}
-
+			}
+		}else {	// Nuestas cartas no son parejas entre ellas
+			if( ronda == 0 ) {
+				prob = probCompletarFullHouse(1, 0, ronda) * probCompletarFullHouse(0, 1, ronda);
 			}else {
 				
 			}
-			
 		}
 		
 		
-		return 0;
+		return prob;
 	}
 	
 	private double probCompletarFullHouse( int numCartasTrio, int numCartasPareja, int ronda ){

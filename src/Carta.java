@@ -1,4 +1,6 @@
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Carta {
 	
@@ -38,13 +40,40 @@ public class Carta {
 		int diferencia = this.getNumero() - carta.getNumero();
 		return diferencia <= 4 && diferencia >= -4;
 	}
-	
-	static boolean hayParejas( List<Carta> cartas ) {
+	/*
+	 * Esta función nos ayudará a saber si hay cartas que aparecen n veces
+	 * 
+	 * Devolverá: 
+	 * 	-1 --> No hay ninguna carta que se repita tantas veces
+	 *   c --> Siendo c un entero igual al numero de la carta que se repite n veces
+	 */
+	static int hay_N_CartasRepetidasMismoNumero( List<Carta> cartas , int n) {
 		
-		boolean hayParejas = false;
-		for( int i = 2 ; (i < cartas.size() - 1 ) && !hayParejas ; ++i) {
-			hayParejas = cartas.get(i).mismoNumeroQue( cartas.get(i+1) );
-		}
-		return hayParejas;
+		Map< Integer , Integer> contarCartas = new HashMap<>();
+
+        for (Carta c : cartas) {
+        	int numeroC = c.getNumero();
+            int count = contarCartas.getOrDefault( numeroC, 0) + 1;
+            if (count >= n) {
+                return numeroC; // Detenernos en cuanto encontramos un elemento con n apariciones
+            }
+            contarCartas.put(numeroC, count);
+        }
+        
+        // Si no encontramos ningún elemento con exactamente 'n' apariciones
+        return -1;
+	}
+	
+	static int vecesNumeroCartaRepetido( List<Carta> cartas , int numCarta ) {
+		
+		Map< Integer , Integer> contarCartas = new HashMap<>();
+
+        for (Carta c : cartas) {
+        	int numeroC = c.getNumero();
+            int count = contarCartas.getOrDefault( numeroC, 0) + 1;
+            contarCartas.put(numeroC, count);
+        }
+        
+        return contarCartas.get( numCarta );
 	}
 }
