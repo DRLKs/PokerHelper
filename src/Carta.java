@@ -1,3 +1,4 @@
+import java.util.List;
 
 public class Carta {
 	
@@ -36,5 +37,14 @@ public class Carta {
 	public boolean puedenHacerEscalera( Carta carta ) {
 		int diferencia = this.getNumero() - carta.getNumero();
 		return diferencia <= 4 && diferencia >= -4;
+	}
+	
+	static boolean hayParejas( List<Carta> cartas ) {
+		
+		boolean hayParejas = false;
+		for( int i = 2 ; (i < cartas.size() - 1 ) && !hayParejas ; ++i) {
+			hayParejas = cartas.get(i).mismoNumeroQue( cartas.get(i+1) );
+		}
+		return hayParejas;
 	}
 }

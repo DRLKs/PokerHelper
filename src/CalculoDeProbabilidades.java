@@ -83,24 +83,23 @@ public class CalculoDeProbabilidades {
 			prob = 1;
 		}else if( ronda < 3 ){
 	
-			int cartasQueFaltanPorConocer = 0;
+			int cartasQueNoHanSalido;
 			if( ronda == 0) {
-				cartasQueFaltanPorConocer = 50;
-				prob = 1.0;
+				cartasQueNoHanSalido = 50;
 				
 			}else if( ronda == 1 && cartasNecesarias <= 2) {
-				cartasQueFaltanPorConocer = 47;
-				prob = 1.0;
+				cartasQueNoHanSalido = 47;
 			
 			}else if( ronda == 2 && cartasNecesarias == 1 ) {
-				cartasQueFaltanPorConocer = 46;
-				prob = 1.0;
+				cartasQueNoHanSalido = 46;
+			}else {
+				return 0;	
 			}
-			
+			prob = 1.0;
 			while( cartasNecesarias > 0 ) {
-				prob *= (double ) cartasEseTipoRestantes / cartasQueFaltanPorConocer;
+				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
 				--cartasEseTipoRestantes;
-				--cartasQueFaltanPorConocer;
+				--cartasQueNoHanSalido;
 				--cartasNecesarias;
 			}
 			
@@ -153,32 +152,30 @@ public class CalculoDeProbabilidades {
 		double prob = 0.0;
 
 		int cartasNecesarias = 5 - numCartasEscalera;
-		int cartasEseTipoRestantes = 12 - numCartasEscalera;
+		int cartasEseTipoRestantes = 4 * cartasNecesarias;
 		
 		if( cartasNecesarias <=0 ) {
 			prob = 1.0;
 		}else if( ronda < 3 ){
 	
-			int cartasQueFaltanPorConocer = 0;
-			
-			
+			int cartasQueNoHanSalido;
 			if( ronda == 0) {
-				cartasQueFaltanPorConocer = 50;
-				prob = 1.0;
+				cartasQueNoHanSalido = 50;
 				
-			}else if( ronda == 1 ) {
-				cartasQueFaltanPorConocer = 47;
-				prob = 1.0;
+			}else if( ronda == 1 && cartasNecesarias <= 2) {
+				cartasQueNoHanSalido = 47;
 			
-			}else if( ronda == 2 ) {
-				cartasQueFaltanPorConocer = 46;
-				prob = 1.0;
+			}else if( ronda == 2 && cartasNecesarias == 1 ) {
+				cartasQueNoHanSalido = 46;
+			}else {
+				return 0;	
 			}
 			
+			prob = 1.0;
 			while( cartasNecesarias > 0 ) {
-				prob *= (double ) cartasEseTipoRestantes / cartasQueFaltanPorConocer;
+				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
 				cartasEseTipoRestantes -= 4;
-				--cartasQueFaltanPorConocer;
+				--cartasQueNoHanSalido;
 				--cartasNecesarias;
 			}
 			
@@ -186,37 +183,90 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 
+	public double completarFullHouse( List<Carta> cartas ) {
+		
+		double prob = 0;;
+		int ronda = 0;
+		int numCartas = cartas.size();
+		if( numCartas == 5 ) {
+			ronda = 1;
+		}else if( numCartas == 6 ) {
+			ronda = 2;
+		}else if( numCartas == 7 ){
+			ronda = 3;
+		}
+		
+		int numCartasTrio = 1;
+		int numcartasPareja = 1;
+		
+		if( cartas.get(0).mismoNumeroQue( cartas.get(1) ) ) {	// Comprobamos que nuestras cartas tengan el mismo número
+			
+			
+			for( int i = 2; i < numCartas ; ++i ) {
+				if( cartas.get(i).mismoNumeroQue( cartas.get(0)) ){	// BUscamos si ya tenemos el trio
+					++numCartasTrio;
+				}
+			}
+			
+			if( numCartasTrio >= 3 ) {
+				
+				if( !Carta.hayParejas(cartas) ) {		// En caso de POKER, también aparecería como FULL, pero realmente no importa
+					int numCartasSimples = numCartas - 3;
+					while( numCartasSimples > 0 ) {
+						prob += probCompletarFullHouse(3, 1, ronda);
+						--numCartasSimples;
+					}
+				}else {
+					prob = 1.0;
+				}
+
+			}else {
+				
+			}
+			
+		}
+		
+		
+		return 0;
+	}
 	
-	public double completarFullHouse( int numCartasEscalera, int ronda ){
+	private double probCompletarFullHouse( int numCartasTrio, int numCartasPareja, int ronda ){
 		
 		double prob = 0.0;
-		int cartasNecesarias = 5 - numCartasEscalera;
-		int cartasEseTipoRestantes = 12 - numCartasEscalera;
+		int cartasNecesariasTrio = 3 - numCartasTrio;
+		int cartasNecesariasPareja = 2 - numCartasPareja;
+
 		
-		if( cartasNecesarias <=0 ) {
+		if( cartasNecesariasTrio <= 0 && cartasNecesariasPareja <= 0) {
 			prob = 1.0;
 		}else if( ronda < 3 ){
 	
-			int cartasQueFaltanPorConocer = 0;
-			
+			int cartasQueNoHanSalido;
 			if( ronda == 0) {
-				cartasQueFaltanPorConocer = 50;
-				prob = 1.0;
+				cartasQueNoHanSalido = 50;
 				
-			}else if( ronda == 1 ) {
-				cartasQueFaltanPorConocer = 47;
-				prob = 1.0;
+			}else if( ronda == 1 && (cartasNecesariasTrio + cartasNecesariasPareja) <= 2) {
+				cartasQueNoHanSalido = 47;
 			
-			}else if( ronda == 2 ) {
-				cartasQueFaltanPorConocer = 46;
-				prob = 1.0;
+			}else if( ronda == 2 && (cartasNecesariasTrio + cartasNecesariasPareja) == 1 ) {
+				cartasQueNoHanSalido = 46;
+			}else {
+				return 0;	
 			}
 			
-			while( cartasNecesarias > 0 ) {
-				prob *= (double ) cartasEseTipoRestantes / cartasQueFaltanPorConocer;
-				cartasEseTipoRestantes -= 4;
-				--cartasQueFaltanPorConocer;
-				--cartasNecesarias;
+			prob = 1.0;
+			while( cartasNecesariasTrio > 0 ) {
+				prob *= (double ) cartasQueNoHanSalido / cartasQueNoHanSalido;
+				cartasQueNoHanSalido -= 4;
+				--cartasNecesariasTrio;
+				--cartasQueNoHanSalido;
+			}
+			
+			while( cartasNecesariasPareja > 0 ) {
+				prob *= (double ) cartasQueNoHanSalido / cartasQueNoHanSalido;
+				cartasQueNoHanSalido -= 4;
+				--cartasNecesariasPareja;
+				--cartasQueNoHanSalido;
 			}
 			
 		}
