@@ -57,17 +57,18 @@ public class CalculoDeProbabilidades {
 			
 			prob = probCompletarColor(numCartasColor, ronda );
 		}else {
-			
-			for( int idx = 0; idx < 2 ; ++idx ) {
-				for( int i = 2; i < numCartas ; ++i ) {
-					if( cartas.get(i).mismoPaloQue(cartas.get(idx)) ) {
-						++numCartasColor;
+
+			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	// Comrpobar que nuestras cartas participen en estos datos
+				for( int idx = 0; idx < 2 ; ++idx ) {
+					for( int i = 2; i < numCartas ; ++i ) {
+						if( cartas.get(i).mismoPaloQue(cartas.get(idx)) ) {
+							++numCartasColor;
+						}
 					}
+					prob += probCompletarColor(numCartasColor, ronda);
+					numCartasColor = 1;
 				}
-			prob += probCompletarColor(numCartasColor, ronda);
-			numCartasColor = 1;
 			}
-		
 		}
 
 		return prob;
@@ -121,11 +122,11 @@ public class CalculoDeProbabilidades {
 		}
 		int numCartasEscalera = 1;
 		
-		if( cartas.get(0).mismoPaloQue( cartas.get(1) ) ) {
+		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) ) ) {
 			++numCartasEscalera;
 			
 			for( int i = 2; i < numCartas ; ++i ) {
-				if( cartas.get(i).mismoPaloQue(cartas.get(0)) ) {
+				if( cartas.get(i).puedenHacerEscalera(cartas.get(0)) ) {
 					++numCartasEscalera;
 				}
 			}
@@ -133,14 +134,16 @@ public class CalculoDeProbabilidades {
 			prob = probCompletarEscalera(numCartasEscalera, ronda );
 		}else {
 			prob = 0.0;
-			for( int idx = 0; idx < 2 ; ++idx ) {
-				for( int i = 2; i < numCartas ; ++i ) {
-					if( cartas.get(i).puedenHacerEscalera(cartas.get(idx)) ) {
-						++numCartasEscalera;
+			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {
+				for( int idx = 0; idx < 2 ; ++idx ) {
+					for( int i = 2; i < numCartas ; ++i ) {
+						if( cartas.get(i).puedenHacerEscalera(cartas.get(idx)) && cartas.get(idxCMano).puedenHacerEscalera(cartas.get(i))) {
+							++numCartasEscalera;
+						}
 					}
+				prob += probCompletarEscalera(numCartasEscalera, ronda);
+				numCartasEscalera = 1;
 				}
-			prob += probCompletarEscalera(numCartasEscalera, ronda);
-			numCartasEscalera = 1;
 			}
 			
 		}
@@ -198,28 +201,65 @@ public class CalculoDeProbabilidades {
 		
 		if( cartas.get(0).mismoNumeroQue( cartas.get(1) ) ) {	// Comprobamos que nuestras cartas tengan el mismo número	
 			if( ronda == 0 ) {
-				prob = probCompletarFullHouse(2, 0, ronda) * probCompletarFullHouse(0, 2, ronda);
+				prob = probCompletarFullHouse(2, 0, ronda) + probCompletarFullHouse(0, 2, ronda);
 			}else{
 				int numCartaTrio = Carta.hay_N_CartasRepetidasMismoNumero(cartas, 3);
 				
+				if( numCartaTrio == -1 ) {	// No hay trios
+				
+					if( -1 != Carta.hay_N_CartasRepetidasMismoNumeroMesa(cartas, 2)) {
+						prob = probCompletarFullHouse(1, 1, ronda) + probCompletarFullHouse(0, 1, ronda)
+							+ probCompletarFullHouse(1, 0, ronda);	// SIN TRIO NI PAREJA
+					}else {
+						prob = probCompletarFullHouse(2, 1, ronda) + probCompletarFullHouse(1, 2, ronda);	// SIN TRIO PERO CON PAREJA
+					}
+					
+				}else {						
+					if( numCartaTrio == cartas.get(0).getNumero() || numCartaTrio == cartas.get(1).getNumero() ) {	// Nuestras cartas pertenecen al trio
+						if( -1 != Carta.hay_N_CartasRepetidasMismoNumeroMesa(cartas, 2) ) {	
+							prob = 1.0;		// CON TRIO Y CON UNA PAREJA DISTINTA, --> HAY FULL HOUSE o quizás POKER (NOS DA IGUAL)
+						}else {
+							prob = probCompletarFullHouse(3, 1, ronda) + probCompletarFullHouse(3, 0, ronda);	// TENEMOS SOLO UN TRIO
+						}
+					}else {
+						prob = probCompletarFullHouse(3, 1, ronda) + probCompletarFullHouse(3, 1, ronda)  ;
+					}
+				}
 			}
 		}else {	// Nuestas cartas no son parejas entre ellas
 			if( ronda == 0 ) {
-				prob = probCompletarFullHouse(1, 0, ronda) * probCompletarFullHouse(0, 1, ronda);
+				prob = probCompletarFullHouse(1, 0, ronda) + probCompletarFullHouse(0, 1, ronda) + probCompletarFullHouse(1, 1, ronda);
 			}else {
+				int numCartaTrio = Carta.hay_N_CartasRepetidasMismoNumero(cartas, 3);
 				
+				if( numCartaTrio == -1 ) {		// No hay trios
+					
+					if( -1 != Carta.hay_N_CartasRepetidasMismoNumeroMesa(cartas, 2)) {
+						prob = 1.0;
+					}else {
+						prob = probCompletarFullHouse(2, 1, ronda);
+					}
+				}else {							// Hay trios
+					
+				}
 			}
+		
 		}
-		
-		
 		return prob;
 	}
-	
-	private double probCompletarFullHouse( int numCartasTrio, int numCartasPareja, int ronda ){
+	/*
+	 * Esta función calcula la probabilidad de que salga FULL HOUSE en estos casos:
+	 * 
+	 * 	numCartasTrio:
+	 */
+	private double probCompletarFullHouse( int numCartasTrio, int numCartasPareja, int ronda ){	
 		
 		double prob = 0.0;
 		int cartasNecesariasTrio = 3 - numCartasTrio;
 		int cartasNecesariasPareja = 2 - numCartasPareja;
+		
+		int cartasQueQueremosTrio = 4 - numCartasTrio;
+		int cartasQueQueremosPareja = 4 - numCartasPareja;
 
 		
 		if( cartasNecesariasTrio <= 0 && cartasNecesariasPareja <= 0) {
@@ -239,19 +279,21 @@ public class CalculoDeProbabilidades {
 				return 0;	
 			}
 			
-			prob = 1.0;
-			while( cartasNecesariasTrio > 0 ) {
-				prob *= (double ) cartasQueNoHanSalido / cartasQueNoHanSalido;
+			prob = 1.0;	
+			while( cartasNecesariasTrio > 0 ) {	
+				prob *= (double ) cartasQueQueremosTrio / cartasQueNoHanSalido;
 				cartasQueNoHanSalido -= 4;
 				--cartasNecesariasTrio;
 				--cartasQueNoHanSalido;
+				--cartasQueQueremosTrio;
 			}
 			
 			while( cartasNecesariasPareja > 0 ) {
-				prob *= (double ) cartasQueNoHanSalido / cartasQueNoHanSalido;
+				prob *= (double ) cartasQueQueremosPareja / cartasQueNoHanSalido;
 				cartasQueNoHanSalido -= 4;
 				--cartasNecesariasPareja;
 				--cartasQueNoHanSalido;
+				--cartasQueQueremosPareja;
 			}
 			
 		}

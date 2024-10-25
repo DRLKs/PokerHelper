@@ -11,7 +11,7 @@ public class Carta {
 	public Carta( char palo, int numero) {
 		this.palo = palo;
 		if ( numero == 1) {
-			numero = 14;	// Para facilitar los cálculos del AS
+			numero = 14;	// Para facilitar cálculos con el AS, ESCALERAS Y CARTAS ALTAS
 		}
 		this.numero = numero;
 	}
@@ -40,6 +40,7 @@ public class Carta {
 		int diferencia = this.getNumero() - carta.getNumero();
 		return diferencia <= 4 && diferencia >= -4;
 	}
+	
 	/*
 	 * Esta función nos ayudará a saber si hay cartas que aparecen n veces
 	 * 
@@ -53,6 +54,23 @@ public class Carta {
 
         for (Carta c : cartas) {
         	int numeroC = c.getNumero();
+            int count = contarCartas.getOrDefault( numeroC, 0) + 1;
+            if (count >= n) {
+                return numeroC; // Detenernos en cuanto encontramos un elemento con n apariciones
+            }
+            contarCartas.put(numeroC, count);
+        }
+        
+        // Si no encontramos ningún elemento con exactamente 'n' apariciones
+        return -1;
+	}
+	
+	static int hay_N_CartasRepetidasMismoNumeroMesa( List<Carta> cartas , int n) {
+		
+		Map< Integer , Integer> contarCartas = new HashMap<>();
+
+        for ( int i = 2 ; i < cartas.size() ; ++i ) {
+        	int numeroC = cartas.get(i).getNumero();
             int count = contarCartas.getOrDefault( numeroC, 0) + 1;
             if (count >= n) {
                 return numeroC; // Detenernos en cuanto encontramos un elemento con n apariciones
