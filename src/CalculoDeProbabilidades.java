@@ -107,7 +107,16 @@ public class CalculoDeProbabilidades {
 		}
 		return prob;
 	}
-	
+	/*
+	 * Al encontrarnos con varias cartas, hay diferentes posibles escaleras:
+	 * 	
+	 * 	Esto hará variar nuestra probabilidad de obtener mano, existen varias opciones:
+	 * 		- Solo haya una opción posible. Ej: 2, 3, 6, J, Q, ?, ?
+	 * 		- Haya 2 opciones posibles.		Ej: 2, 3, 4, 5, Q, ?, ?
+	 * 		- Haya 4 opciones posibles.		Ej: 2, 3, 4 , A, J, ?, ?
+	 * 		- Haya 
+	 * 	
+	 */
 	public double completarEscalera( List<Carta> cartas ){
 		
 		double prob;
@@ -131,7 +140,7 @@ public class CalculoDeProbabilidades {
 				}
 			}
 			
-			prob = probCompletarEscalera(numCartasEscalera, ronda );
+			prob = probCompletarEscalera(numCartasEscalera, ronda, 1 );
 		}else {
 			prob = 0.0;
 			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {
@@ -141,7 +150,7 @@ public class CalculoDeProbabilidades {
 							++numCartasEscalera;
 						}
 					}
-				prob += probCompletarEscalera(numCartasEscalera, ronda);
+				prob += probCompletarEscalera(numCartasEscalera, ronda, 1);
 				numCartasEscalera = 1;
 				}
 			}
@@ -150,12 +159,12 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	private double probCompletarEscalera( int numCartasEscalera, int ronda ){
+	private double probCompletarEscalera( int numCartasEscalera, int ronda, int numPosiblesEscaleras ){
 		
 		double prob = 0.0;
 
 		int cartasNecesarias = 5 - numCartasEscalera;
-		int cartasEseTipoRestantes = 4 * cartasNecesarias;
+		int cartasEseTipoRestantes = 4 * (cartasNecesarias + numPosiblesEscaleras - 1) ;
 		
 		if( cartasNecesarias <=0 ) {
 			prob = 1.0;
@@ -340,7 +349,7 @@ public class CalculoDeProbabilidades {
 				}
 			}
 			
-			prob = probCompletarEscalera(numCartasEscalera, ronda );
+			prob = probCompletarEscaleraColor(numCartasEscalera, ronda, 1 );
 		}else {
 			prob = 0.0;
 			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	// CREO QUE ESTÁ MAL
@@ -351,7 +360,7 @@ public class CalculoDeProbabilidades {
 							cartas.get(i).puedenHacerEscalera(cartas.get(idx)) 	&&
 							cartas.get(idxCMano).puedenHacerEscalera(cartas.get(i)) ) {	++numCartasEscalera;	}
 					}
-				prob += probCompletarEscalera(numCartasEscalera, ronda);
+				prob += probCompletarEscaleraColor(numCartasEscalera, ronda, 1);
 				numCartasEscalera = 1;
 				}
 			}
@@ -360,7 +369,90 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	private double probCompletarEscaleraColor( int numCartasEscalera, int ronda ){	// FALTAN VER CARTAS EXTREMOS Y ESAS COSAS
+	private double probCompletarEscaleraColor( int numCartasEscalera, int ronda, int numPosiblesEscaleras ){	// FALTAN VER CARTAS EXTREMOS Y ESAS COSAS
+		
+		double prob = 0.0;
+
+		int cartasNecesarias = 5 - numCartasEscalera;
+		int cartasEseTipoRestantes = cartasNecesarias + numPosiblesEscaleras - 1;
+		
+		if( cartasNecesarias <=0 ) {
+			prob = 1.0;
+		}else if( ronda < 3 ){
+	
+			int cartasQueNoHanSalido;
+			if( ronda == 0) {
+				cartasQueNoHanSalido = 50;
+				
+			}else if( ronda == 1 && cartasNecesarias <= 2) {
+				cartasQueNoHanSalido = 47;
+			
+			}else if( ronda == 2 && cartasNecesarias == 1 ) {
+				cartasQueNoHanSalido = 46;
+			}else {
+				return 0;	
+			}
+			
+			prob = 1.0;
+			while( cartasNecesarias > 0 ) {
+				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
+				--cartasEseTipoRestantes;
+				--cartasQueNoHanSalido;
+				--cartasNecesarias;
+			}
+			
+		}
+		return prob;
+	}
+	
+	public double completarEscaleraReal( List<Carta> cartas ){
+		
+		double prob = 0.0;
+		int ronda = 0;
+		int numCartas = cartas.size();
+		if( numCartas == 5 ) {
+			ronda = 1;
+		}else if( numCartas == 6 ) {
+			ronda = 2;
+		}else if( numCartas == 7 ){
+			ronda = 3;
+		}
+		int numCartasEscalera = 1;
+		int idxCartaMano = -1;		// Identificador de la carta de nuestra mano que sirve para escalera real
+		boolean cartaMano1Posible = false;
+		boolean cartaMano2Posible = false;
+
+		/* Comprobamos las cartas de nuestra mano sean aptas para la escalera real*/
+		if( cartas.get(0).getNumero() >= 10 ) {
+			cartaMano1Posible = true;
+			idxCartaMano = 0;
+		}
+		if( cartas.get(1).getNumero() >= 10 ) {
+			cartaMano2Posible = true;
+			idxCartaMano = 1;
+		}
+		
+		if( cartas.get(0).mismoPaloQue( cartas.get(1)) && cartaMano1Posible && cartaMano2Posible) {
+			numCartasEscalera = 2;
+		}
+		
+		if( idxCartaMano != -1 ) {	// Se cumple cuando existe una carta de nuestra mano que cumple requisitos para Escalera Real
+			for( int idxCartaMesa = 2; idxCartaMesa < numCartas ; ++idxCartaMesa ) {
+				if( 
+					cartas.get(idxCartaMesa).getNumero() >= 10	&&
+					cartas.get(idxCartaMano).mismoPaloQue(cartas.get(idxCartaMesa))			
+					) {
+					++numCartasEscalera;	
+				}
+			}
+			
+			prob = probCompletarEscaleraReal(numCartasEscalera, ronda);
+		}
+		return prob;
+	}
+	
+	
+	private double probCompletarEscaleraReal( int numCartasEscalera, int ronda){	
 		
 		double prob = 0.0;
 
@@ -387,7 +479,7 @@ public class CalculoDeProbabilidades {
 			prob = 1.0;
 			while( cartasNecesarias > 0 ) {
 				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
-				cartasEseTipoRestantes -= 4;
+				--cartasEseTipoRestantes;
 				--cartasQueNoHanSalido;
 				--cartasNecesarias;
 			}

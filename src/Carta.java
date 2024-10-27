@@ -1,6 +1,9 @@
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 public class Carta {
 	
@@ -10,8 +13,8 @@ public class Carta {
 	
 	public Carta( char palo, int numero) {
 		this.palo = palo;
-		if ( numero == 1) {
-			numero = 14;	// Para facilitar cálculos con el AS, ESCALERAS Y CARTAS ALTAS
+		if( numero == 1 ) {	// Hace código más fácil, menos excepciones
+			numero = 14;
 		}
 		this.numero = numero;
 	}
@@ -24,23 +27,46 @@ public class Carta {
 		return this.numero;
 	}
 	
-	public boolean masAltaQue( Carta carta ) {
-		return this.getNumero() > carta.getNumero();
+	public boolean masAltaQue( Carta otraCarta ) {
+		return this.getNumero() > otraCarta.getNumero();
 	}
 	
-	public boolean mismoPaloQue( Carta carta ) {
-		return this.getPalo() == carta.getPalo();
+	public boolean mismoPaloQue( Carta otraCarta ) {
+		return this.getPalo() == otraCarta.getPalo();
 	}
 	
-	public boolean mismoNumeroQue( Carta carta ) {
-		return this.getNumero() == carta.getNumero();
+	public boolean mismoNumeroQue( Carta otraCarta ) {
+		return this.getNumero() == otraCarta.getNumero();
 	}
 	
-	public boolean puedenHacerEscalera( Carta carta ) {
-		int diferencia = this.getNumero() - carta.getNumero();
-		return diferencia <= 4 && diferencia >= -4;
+	public boolean puedenHacerEscalera( Carta otraCarta ) {
+		boolean hacenEscalera = false;
+		if( this.getNumero() == 14 && otraCarta.getNumero() <=5 || otraCarta.getNumero() == 14 && this.getNumero() <= 5) {	// Caso escaleras pequeñas con A
+			hacenEscalera =  true;
+		}else if( !this.mismoNumeroQue(otraCarta) ) {
+			int diferencia = this.getNumero() - otraCarta.getNumero();
+			hacenEscalera = diferencia <= 4 && diferencia >= -4;
+		}
+		return hacenEscalera;
 	}
 	
+	@Override
+	public int hashCode() {
+		return Objects.hash(numero, palo);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Carta other = (Carta) obj;
+		return numero == other.numero && palo == other.palo;
+	}
+
 	/*
 	 * Esta función nos ayudará a saber si hay cartas que aparecen n veces
 	 * 
