@@ -82,7 +82,10 @@ public class Carta {
         return -1;
 	}
 	
-	static int vecesNumeroCartaRepetido( List<Carta> cartas , int numCarta ) {
+	/*
+	 * 	Devuelve el número de veces que se repite ese número enntre la mesa y nuestra mano
+	 */
+	static int vecesQueSeSaleEsteNumero( List<Carta> cartas , int numCarta ) {
 		
 		Map< Integer , Integer> contarCartas = new HashMap<>();
 
@@ -94,4 +97,5 @@ public class Carta {
         
         return contarCartas.get( numCarta );
 	}
+	
 }

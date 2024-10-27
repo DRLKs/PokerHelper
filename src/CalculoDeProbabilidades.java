@@ -186,9 +186,9 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 
-	public double completarFullHouse( List<Carta> cartas ) {
+	public double completarFullHouse( List<Carta> cartas ) {	// Falta por completar
 		
-		double prob;
+		double prob = 0.0;
 		int ronda = 0;
 		int numCartas = cartas.size();
 		if( numCartas == 5 ) {
@@ -199,58 +199,16 @@ public class CalculoDeProbabilidades {
 			ronda = 3;
 		}
 		
-		if( cartas.get(0).mismoNumeroQue( cartas.get(1) ) ) {	// Comprobamos que nuestras cartas tengan el mismo número	
-			if( ronda == 0 ) {
-				prob = probCompletarFullHouse(2, 0, ronda) + probCompletarFullHouse(0, 2, ronda);
-			}else{
-				int numCartaTrio = Carta.hay_N_CartasRepetidasMismoNumero(cartas, 3);
-				
-				if( numCartaTrio == -1 ) {	// No hay trios
-				
-					if( -1 != Carta.hay_N_CartasRepetidasMismoNumeroMesa(cartas, 2)) {
-						prob = probCompletarFullHouse(1, 1, ronda) + probCompletarFullHouse(0, 1, ronda)
-							+ probCompletarFullHouse(1, 0, ronda);	// SIN TRIO NI PAREJA
-					}else {
-						prob = probCompletarFullHouse(2, 1, ronda) + probCompletarFullHouse(1, 2, ronda);	// SIN TRIO PERO CON PAREJA
-					}
-					
-				}else {						
-					if( numCartaTrio == cartas.get(0).getNumero() || numCartaTrio == cartas.get(1).getNumero() ) {	// Nuestras cartas pertenecen al trio
-						if( -1 != Carta.hay_N_CartasRepetidasMismoNumeroMesa(cartas, 2) ) {	
-							prob = 1.0;		// CON TRIO Y CON UNA PAREJA DISTINTA, --> HAY FULL HOUSE o quizás POKER (NOS DA IGUAL)
-						}else {
-							prob = probCompletarFullHouse(3, 1, ronda) + probCompletarFullHouse(3, 0, ronda);	// TENEMOS SOLO UN TRIO
-						}
-					}else {
-						prob = probCompletarFullHouse(3, 1, ronda) + probCompletarFullHouse(3, 1, ronda)  ;
-					}
-				}
-			}
-		}else {	// Nuestas cartas no son parejas entre ellas
-			if( ronda == 0 ) {
-				prob = probCompletarFullHouse(1, 0, ronda) + probCompletarFullHouse(0, 1, ronda) + probCompletarFullHouse(1, 1, ronda);
-			}else {
-				int numCartaTrio = Carta.hay_N_CartasRepetidasMismoNumero(cartas, 3);
-				
-				if( numCartaTrio == -1 ) {		// No hay trios
-					
-					if( -1 != Carta.hay_N_CartasRepetidasMismoNumeroMesa(cartas, 2)) {
-						prob = 1.0;
-					}else {
-						prob = probCompletarFullHouse(2, 1, ronda);
-					}
-				}else {							// Hay trios
-					
-				}
-			}
 		
-		}
 		return prob;
 	}
 	/*
 	 * Esta función calcula la probabilidad de que salga FULL HOUSE en estos casos:
 	 * 
-	 * 	numCartasTrio:
+	 * 	numCartasTrio: Cartas que supuestamente harían trio
+	 *  numCartasPareja: Cartas que supuestamente harían pareja
+	 *  
+	 *  Alguna de estas cartas deben pertenecer a las cartas de nuestra mano
 	 */
 	private double probCompletarFullHouse( int numCartasTrio, int numCartasPareja, int ronda ){	
 		
@@ -300,5 +258,142 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
+	public double completarPoker( List<Carta> cartas ) {	
 		
+		double prob;
+		
+		int ronda = 0;
+		int numCartas = cartas.size();
+		if( numCartas == 5 ) {
+			ronda = 1;
+		}else if( numCartas == 6 ) {
+			ronda = 2;
+		}else if( numCartas == 7 ){
+			ronda = 3;
+		}
+		
+		if( cartas.get(0).mismoNumeroQue( cartas.get(1) ) ) {
+			prob = probCompletarPoker( 2 , ronda);
+		}else {
+			prob = probCompletarPoker( 1 , ronda) * 2;
+		}
+		
+		return prob;
+	}
+	
+	private double probCompletarPoker( int numCartasPoker, int ronda ) {
+		
+		double prob = 0.0;
+
+		int cartasNecesarias = 4 - numCartasPoker;
+		int cartasEseTipoRestantes = 4 - numCartasPoker;
+		
+		if( cartasNecesarias <=0 ) {
+			prob = 1.0;
+		}else if( ronda < 3 ){
+	
+			int cartasQueNoHanSalido;
+			if( ronda == 0) {
+				cartasQueNoHanSalido = 50;
+				
+			}else if( ronda == 1 && cartasNecesarias <= 2) {
+				cartasQueNoHanSalido = 47;
+			
+			}else if( ronda == 2 && cartasNecesarias == 1 ) {
+				cartasQueNoHanSalido = 46;
+			}else {
+				return 0;	
+			}
+			
+			prob = 1.0;
+			while( cartasNecesarias > 0 ) {
+				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
+				--cartasEseTipoRestantes;
+				--cartasQueNoHanSalido;
+				--cartasNecesarias;
+			}
+			
+		}
+		return prob;
+	}
+	
+	public double completarEscaleraColor( List<Carta> cartas ){
+		
+		double prob;
+		int ronda = 0;
+		int numCartas = cartas.size();
+		if( numCartas == 5 ) {
+			ronda = 1;
+		}else if( numCartas == 6 ) {
+			ronda = 2;
+		}else if( numCartas == 7 ){
+			ronda = 3;
+		}
+		int numCartasEscalera = 1;
+		
+		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) ) &&  cartas.get(0).mismoPaloQue( cartas.get(1))) {
+			++numCartasEscalera;
+			
+			for( int i = 2; i < numCartas ; ++i ) {
+				if( cartas.get(i).puedenHacerEscalera(cartas.get(0)) ) {
+					++numCartasEscalera;
+				}
+			}
+			
+			prob = probCompletarEscalera(numCartasEscalera, ronda );
+		}else {
+			prob = 0.0;
+			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	// CREO QUE ESTÁ MAL
+				for( int idx = 0; idx < 2 ; ++idx ) {
+					for( int i = 2; i < numCartas ; ++i ) {
+						if( 
+							cartas.get(idxCMano).mismoPaloQue(cartas.get(i))	&&
+							cartas.get(i).puedenHacerEscalera(cartas.get(idx)) 	&&
+							cartas.get(idxCMano).puedenHacerEscalera(cartas.get(i)) ) {	++numCartasEscalera;	}
+					}
+				prob += probCompletarEscalera(numCartasEscalera, ronda);
+				numCartasEscalera = 1;
+				}
+			}
+			
+		}
+		return prob;
+	}
+	
+	private double probCompletarEscaleraColor( int numCartasEscalera, int ronda ){	// FALTAN VER CARTAS EXTREMOS Y ESAS COSAS
+		
+		double prob = 0.0;
+
+		int cartasNecesarias = 5 - numCartasEscalera;
+		int cartasEseTipoRestantes = cartasNecesarias;
+		
+		if( cartasNecesarias <=0 ) {
+			prob = 1.0;
+		}else if( ronda < 3 ){
+	
+			int cartasQueNoHanSalido;
+			if( ronda == 0) {
+				cartasQueNoHanSalido = 50;
+				
+			}else if( ronda == 1 && cartasNecesarias <= 2) {
+				cartasQueNoHanSalido = 47;
+			
+			}else if( ronda == 2 && cartasNecesarias == 1 ) {
+				cartasQueNoHanSalido = 46;
+			}else {
+				return 0;	
+			}
+			
+			prob = 1.0;
+			while( cartasNecesarias > 0 ) {
+				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
+				cartasEseTipoRestantes -= 4;
+				--cartasQueNoHanSalido;
+				--cartasNecesarias;
+			}
+			
+		}
+		return prob;
+	}
+	
 }
