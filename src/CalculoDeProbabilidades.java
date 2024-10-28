@@ -1,3 +1,4 @@
+import java.util.HashSet;
 import java.util.List;
 
 public class CalculoDeProbabilidades {
@@ -111,15 +112,17 @@ public class CalculoDeProbabilidades {
 	 * Al encontrarnos con varias cartas, hay diferentes posibles escaleras:
 	 * 	
 	 * 	Esto hará variar nuestra probabilidad de obtener mano, existen varias opciones:
-	 * 		- Solo haya una opción posible. Ej: 2, 3, 6, J, Q, ?, ?
-	 * 		- Haya 2 opciones posibles.		Ej: 2, 3, 4, 5, Q, ?, ?
+	 * 		- Solo haya una opción posible. Ej: 2, 3, 6, J, Q, ?, ? -> 4 y 5
+	 * 		- Haya 2 opciones posibles.		Ej: 2, 3, 4, 5, Q, ?, ? -> A, 6, 6 
+	 * 		- Haya 3 opciones posibles.		Ej:  
 	 * 		- Haya 4 opciones posibles.		Ej: 2, 3, 4 , A, J, ?, ?
 	 * 		- Haya 
 	 * 	
 	 */
 	public double completarEscalera( List<Carta> cartas ){
 		
-		double prob;
+		double prob = 0.0;
+		/* Reconocemos la ronda en la que nos encontramos*/
 		int ronda = 0;
 		int numCartas = cartas.size();
 		if( numCartas == 5 ) {
@@ -129,8 +132,27 @@ public class CalculoDeProbabilidades {
 		}else if( numCartas == 7 ){
 			ronda = 3;
 		}
+		
 		int numCartasEscalera = 1;
 		
+		/* Vamos a descubrir las posibles escaleras */
+		HashSet<Integer> numerosDeLasCartasMano = new HashSet<>();
+		numerosDeLasCartasMano.add( cartas.get(0).getNumero() );
+		numerosDeLasCartasMano.add( cartas.get(1).getNumero() );
+
+		HashSet<Integer> numerosDeLasCartas = new HashSet<>();
+		for( Carta carta : cartas ) {
+			int numCarta = carta.getNumero();
+			if( numCarta == 14 ) {	// Para poder encontrar las escaleras bajas
+				numerosDeLasCartas.add( 1 );
+			}
+			numerosDeLasCartas.add( numCarta );
+		}
+			
+			
+			
+		
+		/*
 		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) ) ) {
 			++numCartasEscalera;
 			
@@ -156,6 +178,7 @@ public class CalculoDeProbabilidades {
 			}
 			
 		}
+		*/
 		return prob;
 	}
 	
@@ -338,13 +361,14 @@ public class CalculoDeProbabilidades {
 		}else if( numCartas == 7 ){
 			ronda = 3;
 		}
+		
 		int numCartasEscalera = 1;
 		
 		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) ) &&  cartas.get(0).mismoPaloQue( cartas.get(1))) {
 			++numCartasEscalera;
 			
 			for( int i = 2; i < numCartas ; ++i ) {
-				if( cartas.get(i).puedenHacerEscalera(cartas.get(0)) ) {
+				if( cartas.get(0).puedenHacerEscalera(cartas.get(i)) ) {
 					++numCartasEscalera;
 				}
 			}
@@ -358,13 +382,15 @@ public class CalculoDeProbabilidades {
 						if( 
 							cartas.get(idxCMano).mismoPaloQue(cartas.get(i))	&&
 							cartas.get(i).puedenHacerEscalera(cartas.get(idx)) 	&&
-							cartas.get(idxCMano).puedenHacerEscalera(cartas.get(i)) ) {	++numCartasEscalera;	}
+							cartas.get(idxCMano).puedenHacerEscalera(cartas.get(i)) 
+							) {	
+						++numCartasEscalera;	
+						}
 					}
 				prob += probCompletarEscaleraColor(numCartasEscalera, ronda, 1);
 				numCartasEscalera = 1;
 				}
 			}
-			
 		}
 		return prob;
 	}
