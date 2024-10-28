@@ -3,6 +3,46 @@ import java.util.List;
 
 public class CalculoDeProbabilidades {
 	
+	private double probEscalera;
+	private double probColor;
+	private double probFullHouse;
+	private double probPoker;
+	private double probEscaleraColor;
+	private double probEscaleraReal;
+
+	public void reiniciarDatos( List<Carta> cartas ) {
+		probEscalera = completarEscalera(cartas);
+		probColor = completarColor(cartas);
+		probFullHouse = completarFullHouse(cartas);
+		probPoker = completarPoker(cartas);
+		probEscaleraColor = completarEscaleraColor(cartas);
+		probEscaleraReal = completarEscaleraReal(cartas);
+	}
+	
+	public double getProbEscalera() {
+		return probEscalera;
+	}
+
+	public double getProbColor() {
+		return probColor;
+	}
+
+	public double getProbFullHouse() {
+		return probFullHouse;
+	}
+
+	public double getProbPoker() {
+		return probPoker;
+	}
+
+	public double getProbEscaleraColor() {
+		return probEscaleraColor;
+	}
+
+	public double getProbEscaleraReal() {
+		return probEscaleraReal;
+	}
+
 	public int C( int n1 ,int n2) { // COMBINACIONES
 		
 		if( n1 < n2 ) { // ERROR
@@ -33,7 +73,7 @@ public class CalculoDeProbabilidades {
 	 * 	CABE DESTACAR: El número de jugadores no interviene en las probabilidades que haya de obtener tu mano deseada
 	 * 
 	 * */
-	public double completarColor( List<Carta> cartas ){
+	private double completarColor( List<Carta> cartas ){
 		
 		double prob = 0.0;
 		int numCartasColor = 1;
@@ -119,7 +159,7 @@ public class CalculoDeProbabilidades {
 	 * 		- Haya 
 	 * 	
 	 */
-	public double completarEscalera( List<Carta> cartas ){
+	private double completarEscalera( List<Carta> cartas ){
 		
 		double prob = 0.0;
 		/* Reconocemos la ronda en la que nos encontramos*/
@@ -218,7 +258,7 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 
-	public double completarFullHouse( List<Carta> cartas ) {	// Falta por completar
+	private double completarFullHouse( List<Carta> cartas ) {	// Falta por completar
 		
 		double prob = 0.0;
 		int ronda = 0;
@@ -290,7 +330,7 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	public double completarPoker( List<Carta> cartas ) {	
+	private double completarPoker( List<Carta> cartas ) {	
 		
 		double prob;
 		
@@ -349,7 +389,7 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	public double completarEscaleraColor( List<Carta> cartas ){
+	private double completarEscaleraColor( List<Carta> cartas ){
 		
 		double prob;
 		int ronda = 0;
@@ -431,7 +471,7 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	public double completarEscaleraReal( List<Carta> cartas ){
+	private double completarEscaleraReal( List<Carta> cartas ){
 		
 		double prob = 0.0;
 		int ronda = 0;
