@@ -2,14 +2,21 @@ import java.util.HashSet;
 import java.util.List;
 
 public class CalculoDeProbabilidades {
-	
+	/*
+	 * Todas las probabilidades son sobre 1
+	 */
 	private double probEscalera;
 	private double probColor;
 	private double probFullHouse;
 	private double probPoker;
 	private double probEscaleraColor;
 	private double probEscaleraReal;
-
+	
+	/*
+	 * Recalcula toda la información
+	 * 
+	 * Se llamará cuando se actualicen los datos
+	 */
 	public void reiniciarDatos( List<Carta> cartas ) {
 		probEscalera = completarEscalera(cartas);
 		probColor = completarColor(cartas);
@@ -119,34 +126,36 @@ public class CalculoDeProbabilidades {
 		
 		double prob = 0.0;
 		int cartasNecesarias = 5 - numCartasColor;
-		int cartasEseTipoRestantes = 12 - numCartasColor;
-		
+		int cartasEseTipoRestantes = 13 - numCartasColor;
+		int cartasPorEnsenyar;
 		if( cartasNecesarias <=0 ) {
-			prob = 1;
+			prob = 1.0;
 		}else if( ronda < 3 ){
 	
 			int cartasQueNoHanSalido;
 			if( ronda == 0) {
 				cartasQueNoHanSalido = 50;
-				
+				cartasPorEnsenyar = 5;
 			}else if( ronda == 1 && cartasNecesarias <= 2) {
 				cartasQueNoHanSalido = 47;
-			
+				cartasPorEnsenyar = 2;
 			}else if( ronda == 2 && cartasNecesarias == 1 ) {
 				cartasQueNoHanSalido = 46;
+				cartasPorEnsenyar = 1;
 			}else {
 				return 0;	
 			}
 			prob = 1.0;
+			int combinacionesPosibles = C(cartasPorEnsenyar,cartasNecesarias);
 			while( cartasNecesarias > 0 ) {
 				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
 				--cartasEseTipoRestantes;
 				--cartasQueNoHanSalido;
 				--cartasNecesarias;
 			}
-			
+			prob *= combinacionesPosibles;	// Esto no es del todo correcto, perdemos precisión
 		}
-		return prob;
+		return prob ;
 	}
 	/*
 	 * Al encontrarnos con varias cartas, hay diferentes posibles escaleras:
@@ -228,24 +237,25 @@ public class CalculoDeProbabilidades {
 
 		int cartasNecesarias = 5 - numCartasEscalera;
 		int cartasEseTipoRestantes = 4 * (cartasNecesarias + numPosiblesEscaleras - 1) ;
-		
+		int cartasPorEnsenyar;
 		if( cartasNecesarias <=0 ) {
 			prob = 1.0;
 		}else if( ronda < 3 ){
-	
+			
 			int cartasQueNoHanSalido;
 			if( ronda == 0) {
 				cartasQueNoHanSalido = 50;
-				
+				cartasPorEnsenyar = 5;
 			}else if( ronda == 1 && cartasNecesarias <= 2) {
 				cartasQueNoHanSalido = 47;
-			
+				cartasPorEnsenyar = 2;
 			}else if( ronda == 2 && cartasNecesarias == 1 ) {
 				cartasQueNoHanSalido = 46;
+				cartasPorEnsenyar = 1;
 			}else {
 				return 0;	
 			}
-			
+			int combinacionesPosibles = C(cartasPorEnsenyar,cartasNecesarias);
 			prob = 1.0;
 			while( cartasNecesarias > 0 ) {
 				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
@@ -359,6 +369,7 @@ public class CalculoDeProbabilidades {
 
 		int cartasNecesarias = 4 - numCartasPoker;
 		int cartasEseTipoRestantes = 4 - numCartasPoker;
+		int cartasPorEnsenyar;
 		
 		if( cartasNecesarias <=0 ) {
 			prob = 1.0;
@@ -367,16 +378,17 @@ public class CalculoDeProbabilidades {
 			int cartasQueNoHanSalido;
 			if( ronda == 0) {
 				cartasQueNoHanSalido = 50;
-				
+				cartasPorEnsenyar = 5;
 			}else if( ronda == 1 && cartasNecesarias <= 2) {
 				cartasQueNoHanSalido = 47;
-			
+				cartasPorEnsenyar = 3;
 			}else if( ronda == 2 && cartasNecesarias == 1 ) {
 				cartasQueNoHanSalido = 46;
+				cartasPorEnsenyar = 1;
 			}else {
 				return 0;	
 			}
-			
+			int combinacionesPosibles = C(cartasPorEnsenyar,cartasNecesarias);
 			prob = 1.0;
 			while( cartasNecesarias > 0 ) {
 				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
@@ -384,7 +396,7 @@ public class CalculoDeProbabilidades {
 				--cartasQueNoHanSalido;
 				--cartasNecesarias;
 			}
-			
+			prob *= combinacionesPosibles;	// No del todo correcto
 		}
 		return prob;
 	}

@@ -23,9 +23,13 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		this.calc = new CalculoDeProbabilidades();
 	}
 	
+	/*
+	 * Función que llama al SwingWorker
+	 * Hilo que calcula la probabilidad en BackGround
+	 */
 	@Override
 	protected Integer doInBackground() throws Exception {
-		
+		/*
 		if( cartas.size() == 2 ) {
 			return calcularProbabilidadSalida();
 		}else if( cartas.size() == 5 ) {
@@ -35,9 +39,14 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		}else {
 			return calcularProbabilidad();
 		}
+		*/
+		return calcularProbabilidad();
 		
 	}
-	
+	/*
+	 * Cuando termina doInBackground()
+	 * get() = valor que retorna doInBackground()
+	 */
 	@Override
 	public void done() {
 		
@@ -54,19 +63,23 @@ public class Worker extends SwingWorker<Integer , Integer>{
 	
 	private int calcularProbabilidad() {
 		
-		int probabilidad = 0;
+		calc.reiniciarDatos(cartas);
 		
-		return probabilidad;
+		sacarDatosObtenidos();
+		int prob =(int)(100*calc.getProbColor()) ;
+		System.out.println(".............."+ prob);
+		return prob;
 	}
 	
-	private int calcularProbabilidadSalida() {
-		int probabilidad = 0;
-		int numCartasOponentes = numContrincantes * 2;
-		
-		
-		
-		
-		return (int)calcularProbabilidadMejoresCartasIndividualesContrincantes();
+	private void sacarDatosObtenidos() {
+		System.out.println("-------------------------------------");
+		System.out.println("Probabilidad escalera: " + calc.getProbEscalera());
+		System.out.println("Probabilidad color: " + calc.getProbColor());
+		System.out.println("Probabilidad FullHouse: " + calc.getProbFullHouse());
+		System.out.println("Probabilidad Poker: " + calc.getProbPoker());
+		System.out.println("Probabilidad escalera de color : " + calc.getProbEscaleraColor());
+		System.out.println("Probabilidad escalera real: " + calc.getProbEscaleraReal());
+		System.out.println("-------------------------------------");
 	}
 	
 	private double calcularProbabilidadMejoresCartasIndividualesContrincantes() {	// Asumimos que nadie va a sacar Escalera de color ni real, que los calculos ya son suficientemente complejos
