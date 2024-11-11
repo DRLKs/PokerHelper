@@ -371,47 +371,52 @@ public class CalculoDeProbabilidades {
 	
 	private double completarEscaleraColor( List<Carta> cartas ){
 		
-		double prob;
+		double prob = 0.0;
 		int numCartas = cartas.size();
 		int cartasPorMostrar = 5 - (numCartas - 2);
+		int arrayInicio;
+		int arratFinal;
 		
-		int numCartasEscalera = 1;
+		// 0 = No tenemos ese número || 1 = Tenemos ese número
+		int[] numerosEscaleraColor;	
 		
-		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) ) &&  cartas.get(0).mismoPaloQue( cartas.get(1))) {
-			++numCartasEscalera;
+		// Nuestras 2 pueden hacer escalera color
+		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) ) &&  cartas.get(0).mismoPaloQue( cartas.get(1))) {	
+			numerosEscaleraColor = new int[14];
+			numerosEscaleraColor[ cartas.get(0).getNumero() - 1 ] = 1;
+			numerosEscaleraColor[ cartas.get(1).getNumero() - 1 ] = 1;
 			
+			arrayInicio = cartas.get(0).getNumero() - 4;
 			for( int i = 2; i < numCartas ; ++i ) {
-				if( cartas.get(0).puedenHacerEscalera(cartas.get(i)) ) {
-					++numCartasEscalera;
+				if( cartas.get(0).puedenHacerEscalera(cartas.get(i)) && cartas.get(0).mismoPaloQue(cartas.get(i)) ) {
+					numerosEscaleraColor[ cartas.get(i).getNumero() - 1 ] = 1;
 				}
 			}
-			
-			prob = probCompletarEscaleraColor(numCartasEscalera, cartasPorMostrar, 1 );
-		}else {
-			prob = 0.0;
+			if( numerosEscaleraColor[13] == 1 ) {	// Está el AS, 14-1=13
+				numerosEscaleraColor[0] = 1;
+			}
+			prob = probCompletarEscaleraColor(numerosEscaleraColor, cartasPorMostrar, arrayInicio);
+		}else {	// Nuestras 2 cartas no pueden hacer escalera de color
 			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	// CREO QUE ESTÁ MAL
-				for( int idx = 0; idx < 2 ; ++idx ) {
-					for( int i = 2; i < numCartas ; ++i ) {
+					numerosEscaleraColor = new int[14];
+					for( int idx = 2; idx < numCartas ; ++idx ) {
 						if( 
-							cartas.get(idxCMano).mismoPaloQue(cartas.get(i))	&&
-							cartas.get(i).puedenHacerEscalera(cartas.get(idx)) 	&&
-							cartas.get(idxCMano).puedenHacerEscalera(cartas.get(i)) 
+							cartas.get(idxCMano).mismoPaloQue(cartas.get(idx))	&&
+							cartas.get(idx).puedenHacerEscalera(cartas.get(idx))
 							) {	
-						++numCartasEscalera;	
-						}
 					}
-				prob += probCompletarEscaleraColor(numCartasEscalera, cartasPorMostrar, 1);
-				numCartasEscalera = 1;
+					prob += probCompletarEscaleraColor(numerosEscaleraColor, cartasPorMostrar, arrayInicio);
 				}
 			}
 		}
+		
 		return prob;
 	}
 	
-	private double probCompletarEscaleraColor( int numCartasEscalera, int cartasPorMostrar, int numPosiblesEscaleras ){	// FALTAN VER CARTAS EXTREMOS Y ESAS COSAS
+	private double probCompletarEscaleraColor( int[] numerosEscaleraColor, int cartasPorMostrar, int arrayInicio ){	// FALTAN VER CARTAS EXTREMOS Y ESAS COSAS
 		
 		double prob = 0.0;
-
+		
 		int cartasNecesarias = 5 - numCartasEscalera;
 		int cartasEseTipoRestantes = cartasNecesarias + numPosiblesEscaleras - 1;
 		
