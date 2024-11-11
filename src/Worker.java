@@ -66,7 +66,7 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		calc.reiniciarDatos(cartas);
 		
 		sacarDatosObtenidos();
-		int prob =(int)(100*calc.getProbColor()) ;
+		int prob =(int)(100*calc.getProbEscaleraColor()) ;
 		System.out.println(".............."+ prob);
 		return prob;
 	}
