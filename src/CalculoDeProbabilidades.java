@@ -15,6 +15,9 @@ public class CalculoDeProbabilidades {
 	private final int MAX_CARTAS_VISIBLES = 7;
 	private final int IDX_CARTA_MANO_1 = 0;
 	private final int IDX_CARTA_MANO_2 = 1;
+	private final int NUM_CARTAS_NUNCA_VES = 45;
+	private final int NUM_CARTAS_NECESARIAS__ESCALERA = 5;
+
 	/*
 	 * Recalcula toda la información
 	 * 
@@ -412,7 +415,7 @@ public class CalculoDeProbabilidades {
 				}
 			}
 			if( numerosEscaleraColor[14] == 1 ) {	// Está el AS, 14-1=13
-				numerosEscaleraColor[0] = 1;
+				numerosEscaleraColor[1] = 1;
 			}
 			prob = probCompletarEscaleraColor(numerosEscaleraColor, cartasPorMostrar, arrayInicio, arrayFinal);
 			
@@ -430,7 +433,7 @@ public class CalculoDeProbabilidades {
 						numerosEscaleraColor[ cartas.get(idx).getNumero() ] = 1;
 					}
 					if( numerosEscaleraColor[14] == 1 ) {	// Está el AS, 14-1=13
-						numerosEscaleraColor[0] = 1;
+						numerosEscaleraColor[1] = 1;
 					}
 					prob += probCompletarEscaleraColor(numerosEscaleraColor, cartasPorMostrar, arrayInicio, arrayFinal);
 				}
@@ -448,21 +451,29 @@ public class CalculoDeProbabilidades {
 	private int[] encontrarFronterasEscaleras( int numCarta1, int numCarta2 ) {
 		int[] arrayFronterasEscalera = new int[2];
 		int arrayFinal;
-		int arrayInicio = numCarta1 - 4;
-		if( numCarta2 != -1 && arrayInicio < numCarta2 - 4 ) {
-			arrayInicio = numCarta2 - 4 ;
-			arrayFinal = numCarta2 - 4;
-		}else {
-			arrayFinal = numCarta1 + 4;
-		}
-		if( arrayFinal > 14 ) {
-			arrayFinal = 14;
-		}
-		if( arrayInicio < 1 ) {
+		int arrayInicio;
+		if( numCarta1 == 14 || numCarta2 == 14 ) {	// se puede optimizar
 			arrayInicio = 1;
+			arrayFinal = 14;
+		}else {
+		
+			arrayInicio = numCarta1 - 4;
+			if( numCarta2 != -1 && arrayInicio < numCarta2 - 4 ) {
+				arrayInicio = numCarta2 - 4;
+				arrayFinal = numCarta2 + 4;
+			}else {
+				arrayFinal = numCarta1 + 4;
+			}
+			if( arrayFinal > 14 ) {
+				arrayFinal = 14;
+			}
+			if( arrayInicio < 1 ) {
+				arrayInicio = 1;
+			}
 		}
 		arrayFronterasEscalera[0] = arrayInicio;
 		arrayFronterasEscalera[1] = arrayFinal;
+		
 		return arrayFronterasEscalera;
 	}
 	
@@ -489,21 +500,24 @@ public class CalculoDeProbabilidades {
 		
 		double prob = 0.0;
 		
-		int cartasNecesarias = 5 - numCartasEscalera;
+		int cartasNecesarias = NUM_CARTAS_NECESARIAS__ESCALERA - numCartasEscalera;
 		
 		if( cartasNecesarias <=0 ) {
 			prob = 1.0;
-		}else if( cartasPorMostrar > 0 ){
-	
-			int cartasQueNoHanSalido = 50 - (5-cartasPorMostrar);  
-			
-			prob = 1.0;		// No se tienen en cuenta las combinaciones
+		}else if( cartasPorMostrar >= cartasNecesarias ){
+			if( cartasPorMostrar > 2 ) {
+				prob = (double)C(cartasNecesarias,cartasPorMostrar);
+			}else {
+				prob = 1.0;
+			}
+			int cartasQueNoHanSalido = NUM_CARTAS_NUNCA_VES + cartasPorMostrar; 
 			while( cartasNecesarias > 0 ) {
 				prob *= (double ) cartasNecesarias / cartasQueNoHanSalido;
 				--cartasNecesarias;
 				--cartasQueNoHanSalido;
 				--cartasNecesarias;
 			}
+			
 			
 		}
 		return prob;
