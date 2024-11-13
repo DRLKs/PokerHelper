@@ -55,23 +55,23 @@ public class CalculoDeProbabilidades {
 	public double getProbEscaleraReal() {
 		return probEscaleraReal;
 	}
+	
+	public long C( int n ,int k) { // COMBINACIONES
+		
+		if (k > n) {
+            return 0; // No existe combinatoria si k > n
+        }
+        // La combinación es simétrica, C(n, k) = C(n, n-k)
+        if (k > n - k) {
+            k = n - k;
+        }
 
-	public int C( int n1 ,int n2) { // COMBINACIONES
-		
-		if( n1 < n2 ) { // ERROR
-			return 0;
-		}
-		
-		int n3 = n1 - n2;
-		int totalNumerador = 1;
-		for( int i = n3 + 1 ; i <= n1 ; ++i ) {
-			totalNumerador *= i;
-		}
-		int totalDenominador = 1;
-		for( int i = 2 ; i <= n2 ; ++i ) {
-			totalDenominador *= i;
-		}
-		return totalNumerador / totalDenominador;
+        long resultado = 1;
+        for (int i = 1; i <= k; i++) {
+            resultado *= (n - k + i) / i;
+        }
+
+        return resultado;
 	}
 	
 	/* 
@@ -132,7 +132,7 @@ public class CalculoDeProbabilidades {
 			int cartasQueNoHanSalido = 50 - (5 - cartasPorMostrar);
 			
 			prob = 1.0;
-			int combinacionesPosibles = C(cartasPorMostrar,cartasNecesarias);
+			long combinacionesPosibles = C(cartasPorMostrar,cartasNecesarias);
 			while( cartasNecesarias > 0 ) {
 				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
 				--cartasEseTipoRestantes;
@@ -156,101 +156,115 @@ public class CalculoDeProbabilidades {
 	 * 	
 	 */
 	private double completarEscalera( List<Carta> cartas ){
-		
+			
 		double prob = 0.0;
-		/* Reconocemos la ronda en la que nos encontramos*/
-		int ronda = 0;
 		int numCartas = cartas.size();
-		if( numCartas == 5 ) {
-			ronda = 1;
-		}else if( numCartas == 6 ) {
-			ronda = 2;
-		}else if( numCartas == 7 ){
-			ronda = 3;
-		}
-		
-		int numCartasEscalera = 1;
-		
-		/* Vamos a descubrir las posibles escaleras */
-		HashSet<Integer> numerosDeLasCartasMano = new HashSet<>();
-		numerosDeLasCartasMano.add( cartas.get(0).getNumero() );
-		numerosDeLasCartasMano.add( cartas.get(1).getNumero() );
-
-		HashSet<Integer> numerosDeLasCartas = new HashSet<>();
-		for( Carta carta : cartas ) {
-			int numCarta = carta.getNumero();
-			if( numCarta == 14 ) {	// Para poder encontrar las escaleras bajas
-				numerosDeLasCartas.add( 1 );
-			}
-			numerosDeLasCartas.add( numCarta );
-		}
-			
-			
-			
+		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
+		int numCartaMano1 = cartas.get(IDX_CARTA_MANO_1).getNumero();
+		int numCartaMano2 = cartas.get(IDX_CARTA_MANO_2).getNumero();
+		int arrayInicio;
+		int arrayFinal;
 		
 		/*
-		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) ) ) {
-			++numCartasEscalera;
+		 * El array "numerosEscalera" tendrá un tamaño igual a 14
+		 *  En este array podremos comprobar si tenemos un número, por ejemplo:
+		 *  
+		 *  Comprobamos que tenemos el AS -> numerosEscalera[14] == 1
+		 *  		TRUE -> Tenemos el AS
+		 *  		FALSE -> No tenemos el AS
+		 *  El AS al tener asociado el número 14, lo podremos comprobar en el lugar 14 y a la 1
+		 *  No usaremos la posición 0
+		 */
+		int[] numerosEscalera;	
+		int[] arrayFronterasEscalera;
+		
+		// Nuestras 2 cartas pueden hacer escalera
+		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) )) {	
+			numerosEscalera = new int[15];
 			
-			for( int i = 2; i < numCartas ; ++i ) {
-				if( cartas.get(i).puedenHacerEscalera(cartas.get(0)) ) {
-					++numCartasEscalera;
-				}
+			numerosEscalera[ numCartaMano1 ] = 1;
+			numerosEscalera[ numCartaMano2 ] = 1;
+			
+			arrayFronterasEscalera = encontrarFronterasEscaleras(numCartaMano1, numCartaMano2);
+			arrayInicio = arrayFronterasEscalera[0];
+			arrayFinal  = arrayFronterasEscalera[1];
+			
+			for( int idx = 2; idx < numCartas ; ++idx ) {
+				numerosEscalera[ cartas.get(idx).getNumero() ] = 1;
 			}
+			if( numerosEscalera[14] == 1 ) {	// Está el AS, 14-1=13
+				numerosEscalera[1] = 1;
+			}
+			prob = probCompletarEscalera(numerosEscalera, cartasPorMostrar, arrayInicio, arrayFinal);
 			
-			prob = probCompletarEscalera(numCartasEscalera, ronda, 1 );
-		}else {
-			prob = 0.0;
-			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {
-				for( int idx = 0; idx < 2 ; ++idx ) {
-					for( int i = 2; i < numCartas ; ++i ) {
-						if( cartas.get(i).puedenHacerEscalera(cartas.get(idx)) && cartas.get(idxCMano).puedenHacerEscalera(cartas.get(i))) {
-							++numCartasEscalera;
-						}
+		}else {	// Nuestras 2 cartas no pueden hacer escalera de
+			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	
+				numerosEscalera = new int[15];
+				numerosEscalera[ cartas.get(idxCMano).getNumero() ] = 1;	// Añadimos la carta de la mano
+				arrayFronterasEscalera = encontrarFronterasEscaleras(cartas.get(idxCMano).getNumero(), -1);
+				arrayInicio = arrayFronterasEscalera[0];
+				arrayFinal  = arrayFronterasEscalera[1];
+				for( int idx = 2; idx < numCartas ; ++idx ) {
+					if( 
+						cartas.get(idxCMano).mismoPaloQue(cartas.get(idx))
+						) {
+						numerosEscalera[ cartas.get(idx).getNumero() ] = 1;
 					}
-				prob += probCompletarEscalera(numCartasEscalera, ronda, 1);
-				numCartasEscalera = 1;
+					if( numerosEscalera[14] == 1 ) {	// Está el AS, 14-1=13
+						numerosEscalera[1] = 1;
+					}
+					prob += probCompletarEscalera(numerosEscalera, cartasPorMostrar, arrayInicio, arrayFinal);
 				}
 			}
-			
 		}
-		*/
+		
+		return prob;
+			
+		
+	}
+	
+	private double probCompletarEscalera( int[] numerosEscalera, int cartasPorMostrar, int arrayInicio, int arrayFinal ){
+		double prob = 0.0;
+		int numCartasEscalera;
+		for( int idx1 = arrayInicio ; idx1 <= arrayFinal - 4 ; ++idx1 ) {
+			numCartasEscalera = 0;
+			for( int idx = idx1 ; idx <= idx1+4 ; ++idx) {
+				if( numerosEscalera[idx] == 1 ) {
+					++numCartasEscalera;
+					if( numCartasEscalera >= 5 ) {
+						return 1.0;
+					}
+				}
+			}
+			prob += probCompletarEstaEscalera(numCartasEscalera, cartasPorMostrar);
+		}
 		return prob;
 	}
 	
-	private double probCompletarEscalera( int numCartasEscalera, int ronda, int numPosiblesEscaleras ){
+	private double probCompletarEstaEscalera( int numCartasEscalera, int cartasPorMostrar ){
 		
 		double prob = 0.0;
-
-		int cartasNecesarias = 5 - numCartasEscalera;
-		int cartasEseTipoRestantes = 4 * (cartasNecesarias + numPosiblesEscaleras - 1) ;
-		int cartasPorEnsenyar;
-		if( cartasNecesarias <=0 ) {
-			prob = 1.0;
-		}else if( ronda < 3 ){
-			
-			int cartasQueNoHanSalido;
-			if( ronda == 0) {
-				cartasQueNoHanSalido = 50;
-				cartasPorEnsenyar = 5;
-			}else if( ronda == 1 && cartasNecesarias <= 2) {
-				cartasQueNoHanSalido = 47;
-				cartasPorEnsenyar = 2;
-			}else if( ronda == 2 && cartasNecesarias == 1 ) {
-				cartasQueNoHanSalido = 46;
-				cartasPorEnsenyar = 1;
+		
+		int cartasNecesarias = NUM_CARTAS_NECESARIAS__ESCALERA - numCartasEscalera;
+		int cartasEseTipoRestantes = cartasNecesarias * 4;
+		
+		if( cartasNecesarias > cartasPorMostrar ) {
+			prob = 0.0;
+		}else if( cartasNecesarias > 0 &&  cartasPorMostrar > 0 ){
+			if( cartasNecesarias > 2 ) {
+				prob = C(cartasEseTipoRestantes,cartasPorMostrar);	// Revisar
 			}else {
-				return 0;	
+				prob = 1.0;
 			}
-			int combinacionesPosibles = C(cartasPorEnsenyar,cartasNecesarias);
-			prob = 1.0;
+			int cartasQueNoHanSalido = 45 + cartasPorMostrar;
+			
+			
 			while( cartasNecesarias > 0 ) {
 				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
-				cartasEseTipoRestantes -= 4;
+				--cartasEseTipoRestantes;
 				--cartasQueNoHanSalido;
 				--cartasNecesarias;
 			}
-			
 		}
 		return prob;
 	}
@@ -362,7 +376,7 @@ public class CalculoDeProbabilidades {
 	
 			int cartasQueNoHanSalido = 50 - (5 - cartasPorMostrar);
 			
-			int combinacionesPosibles = C(cartasPorMostrar,cartasNecesarias);
+			long combinacionesPosibles = C(cartasPorMostrar,cartasNecesarias);
 			prob = 1.0;
 			while( cartasNecesarias > 0 ) {
 				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
@@ -490,35 +504,32 @@ public class CalculoDeProbabilidades {
 					}
 				}
 			}
-			prob += probCompletarEstaEscalera(numCartasEscalera, cartasPorMostrar);
+			prob += probCompletarEstaEscaleraColor(numCartasEscalera, cartasPorMostrar);
 		}
 		return prob;
 	}
 		
 	
-	private double probCompletarEstaEscalera( int numCartasEscalera, int cartasPorMostrar ){	// FALTAN VER CARTAS EXTREMOS Y ESAS COSAS
+	private double probCompletarEstaEscaleraColor( int numCartasEscalera, int cartasPorMostrar ){	// FALTAN VER CARTAS EXTREMOS Y ESAS COSAS
 		
 		double prob = 0.0;
 		
 		int cartasNecesarias = NUM_CARTAS_NECESARIAS__ESCALERA - numCartasEscalera;
+		int cartasEseTipoRestantes = cartasNecesarias;
 		
-		if( cartasNecesarias <=0 ) {
+		if( cartasNecesarias > cartasPorMostrar ) {
+			prob = 0.0;
+		}else if( cartasNecesarias > 0 &&  cartasPorMostrar > 0 ){
 			prob = 1.0;
-		}else if( cartasPorMostrar >= cartasNecesarias ){
-			if( cartasPorMostrar > 2 ) {
-				prob = (double)C(cartasNecesarias,cartasPorMostrar);
-			}else {
-				prob = 1.0;
-			}
-			int cartasQueNoHanSalido = NUM_CARTAS_NUNCA_VES + cartasPorMostrar; 
+			int cartasQueNoHanSalido = 45 + cartasPorMostrar;
+			
+			
 			while( cartasNecesarias > 0 ) {
-				prob *= (double ) cartasNecesarias / cartasQueNoHanSalido;
-				--cartasNecesarias;
+				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
+				--cartasEseTipoRestantes;
 				--cartasQueNoHanSalido;
 				--cartasNecesarias;
 			}
-			
-			
 		}
 		return prob;
 	}
@@ -550,7 +561,7 @@ public class CalculoDeProbabilidades {
 		}
 		
 		if( cartas.get(0).mismoPaloQue( cartas.get(1)) && cartaMano1Posible && cartaMano2Posible) {
-			++numCartasEscalera;
+			numCartasEscalera = 2;
 			topeBucle = 0;
 		}
 		
@@ -563,36 +574,32 @@ public class CalculoDeProbabilidades {
 					++numCartasEscalera;	
 				}
 			}
-			prob += probCompletarEscaleraReal(numCartasEscalera, cartasPorMostrar);
+			int cartasNecesarias = 5 - numCartasEscalera;
 			numCartasEscalera = 1;
+			prob += probGeneral(cartasNecesarias, cartasPorMostrar , 1 );
 		}
 			
 		return prob;
 	}
 	
-	
-	private double probCompletarEscaleraReal( int numCartasEscalera, int cartasPorMostrar){	
+	/*
+	 * Mediante la fórmula de la distribución binomial
+	 */
+	private double probGeneral( int cartasNecesarias, int cartasPorMostrar, int idxMano ){	
 		
 		double prob = 1.0;
 
-		int cartasNecesarias = 5 - numCartasEscalera;
-		int cartasEseTipoRestantes = cartasNecesarias;
+		int cartasQueNoHanSalido = 45 + cartasPorMostrar;			//N -> cartasNecesarias = n
+		int cartasEseTipoRestantes = cartasNecesarias * idxMano;	//K -> cartasPorMostrar = k
 		
 		if( cartasNecesarias > cartasPorMostrar ) {
 			prob = 0.0;
 		}else if( cartasNecesarias > 0 &&  cartasPorMostrar > 0 ){
-	
-			int cartasQueNoHanSalido = 45 + cartasPorMostrar;
+			long combinacionesNK = C(cartasQueNoHanSalido,cartasEseTipoRestantes);
+			long combinacionesNK_nk = C(cartasQueNoHanSalido - cartasEseTipoRestantes , cartasPorMostrar - cartasNecesarias); 
+			long combinacionesNn = C(cartasQueNoHanSalido,cartasPorMostrar);
 			
-			int combinaciones = C(cartasPorMostrar,cartasEseTipoRestantes);	// Revisar
-			
-			while( cartasNecesarias > 0 ) {
-				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
-				--cartasEseTipoRestantes;
-				--cartasQueNoHanSalido;
-				--cartasNecesarias;
-			}
-			prob *= combinaciones;
+			prob = (double)(combinacionesNK * combinacionesNK_nk)/combinacionesNn;
 		}
 		return prob;
 	}
