@@ -11,4 +11,4 @@ Esta aplicación devolverá la probabilidad de ganar una mano según:
 - Introducirlo a una máquina de auto-aprendizaje para que reconozca cuando posse buenas cartas y mejore su calidad de juego.
 
 ## Motivación
-Soy un apasionado del Poker y de la programación, aunque las matemáticas no son mmi punto fuerte, lo cual es un problema debido a que este problema matemático.
+Soy un apasionado del Poker, de la programación y de las matemáticas, por tanto mezclarlo todo en un aplicación de escritorio es algo que me ilusiona.
