@@ -58,17 +58,19 @@ public class CalculoDeProbabilidades {
 	
 	public long C( int n ,int k) { // COMBINACIONES
 		
-		if (k > n) {
-            return 0; // No existe combinatoria si k > n
-        }
+		if (k > n || k < 0) return 0; // No existe combinatoria si k > n
+        if (k == 0 || k == n ) return 1;
         // La combinación es simétrica, C(n, k) = C(n, n-k)
         if (k > n - k) {
             k = n - k;
         }
-
+        int ini = 1 + n - k; 
         long resultado = 1;
-        for (int i = 1; i <= k; i++) {
-            resultado *= (n - k + i) / i;
+        for (int i = ini; i <= n; ++i) {
+            resultado *= i;
+        }
+        for(int i = 2 ; i <= k ; ++i) {
+        	resultado /= i;
         }
 
         return resultado;
@@ -102,7 +104,7 @@ public class CalculoDeProbabilidades {
 				}
 			}
 			
-			prob = probCompletarColor(numCartasColor, cartasPorMostrar );
+			prob += probGeneral(numCartasColor, cartasPorMostrar, 13-numCartasColor);
 		}else {
 
 			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	// Comrpobar que nuestras cartas participen en estos datos
@@ -112,7 +114,7 @@ public class CalculoDeProbabilidades {
 							++numCartasColor;
 						}
 					}
-					prob += probCompletarColor(numCartasColor, cartasPorMostrar);
+					prob += probGeneral(numCartasColor, cartasPorMostrar, 13-numCartasColor);
 					numCartasColor = 1;
 				}
 			}
@@ -341,9 +343,9 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	private double completarPoker( List<Carta> cartas ) {	
+	private double completarPoker( List<Carta> cartas ) {	// ARREGLAR
 		
-		double prob;
+		double prob = 0.0;
 		
 		int numCartas = cartas.size();
 		int cartasPorMostrar = 5 - (numCartas-2);	
@@ -355,9 +357,9 @@ public class CalculoDeProbabilidades {
 					++cttCartasPoker;
 				}
 			}
-			prob = probCompletarPoker( cttCartasPoker , cartasPorMostrar);
+			prob = distribucionBinomial( 4 - cttCartasPoker , cartasPorMostrar);
 		}else {
-			prob = probCompletarPoker( 1 , cartasPorMostrar) * 2;
+			prob = distribucionBinomial( 1 , cartasPorMostrar) * 2;	// FATAL
 		}
 		
 		return prob;
@@ -493,6 +495,7 @@ public class CalculoDeProbabilidades {
 	
 	private double probCompletarEscaleraColor( int[] numerosEscaleraColor, int cartasPorMostrar, int arrayInicio, int arrayFinal ){
 		double prob = 0.0;
+		int numCartasNecesarias;
 		int numCartasEscalera;
 		for( int idx1 = arrayInicio ; idx1 <= arrayFinal - 4 ; ++idx1 ) {
 			numCartasEscalera = 0;
@@ -504,35 +507,12 @@ public class CalculoDeProbabilidades {
 					}
 				}
 			}
-			prob += probCompletarEstaEscaleraColor(numCartasEscalera, cartasPorMostrar);
+			numCartasNecesarias = 5 - numCartasEscalera;
+			prob += probGeneral( numCartasNecesarias, cartasPorMostrar,numCartasNecesarias*4 );
 		}
 		return prob;
 	}
-		
-	
-	private double probCompletarEstaEscaleraColor( int numCartasEscalera, int cartasPorMostrar ){	// FALTAN VER CARTAS EXTREMOS Y ESAS COSAS
-		
-		double prob = 0.0;
-		
-		int cartasNecesarias = NUM_CARTAS_NECESARIAS__ESCALERA - numCartasEscalera;
-		int cartasEseTipoRestantes = cartasNecesarias;
-		
-		if( cartasNecesarias > cartasPorMostrar ) {
-			prob = 0.0;
-		}else if( cartasNecesarias > 0 &&  cartasPorMostrar > 0 ){
-			prob = 1.0;
-			int cartasQueNoHanSalido = 45 + cartasPorMostrar;
-			
-			
-			while( cartasNecesarias > 0 ) {
-				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
-				--cartasEseTipoRestantes;
-				--cartasQueNoHanSalido;
-				--cartasNecesarias;
-			}
-		}
-		return prob;
-	}
+
 	/*
 	 * FUNCIONA -> QUIZÁS ARREGLAR COMBINACIONES
 	 */
@@ -576,7 +556,7 @@ public class CalculoDeProbabilidades {
 			}
 			int cartasNecesarias = 5 - numCartasEscalera;
 			numCartasEscalera = 1;
-			prob += probGeneral(cartasNecesarias, cartasPorMostrar , 1 );
+			prob += distribucionBinomial(cartasNecesarias, cartasPorMostrar);
 		}
 			
 		return prob;
@@ -585,12 +565,12 @@ public class CalculoDeProbabilidades {
 	/*
 	 * Mediante la fórmula de la distribución binomial
 	 */
-	private double probGeneral( int cartasNecesarias, int cartasPorMostrar, int idxMano ){	
+	private double probGeneral( int cartasNecesarias, int cartasPorMostrar, int cartasEseTipoRestantes ){	
 		
 		double prob = 1.0;
 
 		int cartasQueNoHanSalido = 45 + cartasPorMostrar;			//N -> cartasNecesarias = n
-		int cartasEseTipoRestantes = cartasNecesarias * idxMano;	//K -> cartasPorMostrar = k
+					//K -> cartasPorMostrar = k
 		
 		if( cartasNecesarias > cartasPorMostrar ) {
 			prob = 0.0;
@@ -602,6 +582,16 @@ public class CalculoDeProbabilidades {
 			prob = (double)(combinacionesNK * combinacionesNK_nk)/combinacionesNn;
 		}
 		return prob;
+	}
+	
+	private double distribucionBinomial(int cartasNecesarias, int cartasPorMostrar) {
+		
+		int cartasQueNoHanSalido = 45 + cartasPorMostrar;			//N = cartasQueNoHanSalido ; K = Cartas Necesarias
+		
+		long combinacionesNK = C(cartasQueNoHanSalido, cartasNecesarias);
+		double p = cartasNecesarias / cartasQueNoHanSalido;
+		
+		return (double) combinacionesNK * Math.pow(p, cartasNecesarias) * Math.pow(1.0-p, cartasQueNoHanSalido-cartasNecesarias);
 	}
 	
 }
