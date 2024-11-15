@@ -1,4 +1,3 @@
-import java.util.HashSet;
 import java.util.List;
 
 public class CalculoDeProbabilidades {
@@ -56,7 +55,7 @@ public class CalculoDeProbabilidades {
 		return probEscaleraReal;
 	}
 	
-	public long C( int n ,int k) { // COMBINACIONES
+	public int C( int n ,int k) { // COMBINACIONES
 		
 		if (k > n || k < 0) return 0; // No existe combinatoria si k > n
         if (k == 0 || k == n ) return 1;
@@ -65,7 +64,7 @@ public class CalculoDeProbabilidades {
             k = n - k;
         }
         int ini = 1 + n - k; 
-        long resultado = 1;
+        int resultado = 1;
         for (int i = ini; i <= n; ++i) {
             resultado *= i;
         }
@@ -79,18 +78,13 @@ public class CalculoDeProbabilidades {
 	/* 
 	 * Estas Funciones calcularán las posibilidades de obtener color
 	 * numCartasColor: 	son las cartas de **** que tienes en tu mano
-	 * ronda:			es la ronda, parte de la mano en la que nos encontramos
-	 * 		0 = Solo tenemos nuestras cartas
-	 * 		1 = Tenemos nuestras cartas y 3 más en la mesa (FLOP)
-	 * 		2 = Tenemos nuestras cartas y 4 más	(TURN)
-	 * 		3 = Tenemos todas las cartas  (RIVER)
 	 * 
 	 * 	CABE DESTACAR: El número de jugadores no interviene en las probabilidades que haya de obtener tu mano deseada
 	 * 
 	 * */
 	private double completarColor( List<Carta> cartas ){
 		
-		double prob = 0.0;
+		double prob;
 		int numCartasColor = 1;
 		int numCartas = cartas.size();
 		int cartasPorMostrar = 5 - (numCartas - 2);
@@ -104,9 +98,10 @@ public class CalculoDeProbabilidades {
 				}
 			}
 			
-			prob += probGeneral(numCartasColor, cartasPorMostrar, 13-numCartasColor);
+			prob = distribucionHiperGeometrica(5-numCartasColor, 13-numCartasColor, cartasPorMostrar);
 		}else {
-
+			
+			prob = 0.0;
 			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	// Comrpobar que nuestras cartas participen en estos datos
 				for( int idx = 0; idx < 2 ; ++idx ) {
 					for( int i = 2; i < numCartas ; ++i ) {
@@ -114,7 +109,7 @@ public class CalculoDeProbabilidades {
 							++numCartasColor;
 						}
 					}
-					prob += probGeneral(numCartasColor, cartasPorMostrar, 13-numCartasColor);
+					prob += distribucionHiperGeometrica(5-numCartasColor, 13-numCartasColor, cartasPorMostrar);
 					numCartasColor = 1;
 				}
 			}
@@ -123,38 +118,10 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	private double probCompletarColor( int numCartasColor, int cartasPorMostrar ) {
-		
-		double prob = 0.0;
-		int cartasNecesarias = 5 - numCartasColor;
-		int cartasEseTipoRestantes = 13 - numCartasColor;
-		if( cartasNecesarias <=0 ) {
-			prob = 1.0;
-		}else if( cartasPorMostrar > 0 ){
-			int cartasQueNoHanSalido = 50 - (5 - cartasPorMostrar);
-			
-			prob = 1.0;
-			long combinacionesPosibles = C(cartasPorMostrar,cartasNecesarias);
-			while( cartasNecesarias > 0 ) {
-				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
-				--cartasEseTipoRestantes;
-				--cartasQueNoHanSalido;
-				--cartasNecesarias;
-			}
-			prob *= combinacionesPosibles;	// Esto no es del todo correcto, perdemos precisión
-			
-		}
-		return prob ;
-	}
 	/*
 	 * Al encontrarnos con varias cartas, hay diferentes posibles escaleras:
 	 * 	
-	 * 	Esto hará variar nuestra probabilidad de obtener mano, existen varias opciones:
-	 * 		- Solo haya una opción posible. Ej: 2, 3, 6, J, Q, ?, ? -> 4 y 5
-	 * 		- Haya 2 opciones posibles.		Ej: 2, 3, 4, 5, Q, ?, ? -> A, 6, 6 
-	 * 		- Haya 3 opciones posibles.		Ej:  
-	 * 		- Haya 4 opciones posibles.		Ej: 2, 3, 4 , A, J, ?, ?
-	 * 		- Haya 
+	 * 	
 	 * 	
 	 */
 	private double completarEscalera( List<Carta> cartas ){
@@ -508,7 +475,7 @@ public class CalculoDeProbabilidades {
 				}
 			}
 			numCartasNecesarias = 5 - numCartasEscalera;
-			prob += probGeneral( numCartasNecesarias, cartasPorMostrar,numCartasNecesarias*4 );
+			prob += distribucionHiperGeometrica( numCartasNecesarias, numCartasNecesarias*4,  cartasPorMostrar );
 		}
 		return prob;
 	}
@@ -555,34 +522,34 @@ public class CalculoDeProbabilidades {
 				}
 			}
 			int cartasNecesarias = 5 - numCartasEscalera;
+			prob += distribucionHiperGeometrica(cartasNecesarias,cartasNecesarias, cartasPorMostrar);	// Las cartas necesarias son las mismas, a las válidas
 			numCartasEscalera = 1;
-			prob += distribucionBinomial(cartasNecesarias, cartasPorMostrar);
 		}
 			
 		return prob;
 	}
 	
 	/*
-	 * Mediante la fórmula de la distribución binomial
+	 * Mediante la distribución HiperGeométrica
+	 * Devolverá la probabilidad de que la mano X  se complete
 	 */
-	private double probGeneral( int cartasNecesarias, int cartasPorMostrar, int cartasEseTipoRestantes ){	
-		
-		double prob = 1.0;
-
-		int cartasQueNoHanSalido = 45 + cartasPorMostrar;			//N -> cartasNecesarias = n
-					//K -> cartasPorMostrar = k
-		
-		if( cartasNecesarias > cartasPorMostrar ) {
+	private double distribucionHiperGeometrica( int cartasNecesarias, int cartasValidasRestantes, int cartasPorMostrar) {
+		double prob;
+		if( cartasNecesarias <= 0 )
+			prob = 1.0;
+		else if( cartasNecesarias > cartasPorMostrar ) {
 			prob = 0.0;
-		}else if( cartasNecesarias > 0 &&  cartasPorMostrar > 0 ){
-			long combinacionesNK = C(cartasQueNoHanSalido,cartasEseTipoRestantes);
-			long combinacionesNK_nk = C(cartasQueNoHanSalido - cartasEseTipoRestantes , cartasPorMostrar - cartasNecesarias); 
-			long combinacionesNn = C(cartasQueNoHanSalido,cartasPorMostrar);
+		}else{
+			int combinacionesPosibles = C( NUM_CARTAS_NUNCA_VES + cartasPorMostrar , cartasPorMostrar );
+			int combinacionesFormasSalirCartasNecesarias = C( cartasValidasRestantes , cartasNecesarias );
+			int combinacionesDemasCartas = C( NUM_CARTAS_NUNCA_VES + (cartasPorMostrar-cartasNecesarias), (cartasPorMostrar-cartasNecesarias));
 			
-			prob = (double)(combinacionesNK * combinacionesNK_nk)/combinacionesNn;
+			prob = (double) (combinacionesFormasSalirCartasNecesarias * combinacionesDemasCartas) / combinacionesPosibles;
 		}
+		
 		return prob;
 	}
+	
 	
 	private double distribucionBinomial(int cartasNecesarias, int cartasPorMostrar) {
 		
@@ -593,5 +560,9 @@ public class CalculoDeProbabilidades {
 		
 		return (double) combinacionesNK * Math.pow(p, cartasNecesarias) * Math.pow(1.0-p, cartasQueNoHanSalido-cartasNecesarias);
 	}
-	
+	/*
+	 * ##############################################################################################################
+	 * 								CALCULAR PROBABILIDAD DE LOS CONTRINCANTES
+	 * ##############################################################################################################
+	 */
 }
