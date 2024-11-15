@@ -88,7 +88,7 @@ public class CalculoDeProbabilidades {
 		int numCartasColor = 1;
 		int numCartas = cartas.size();
 		int cartasPorMostrar = 5 - (numCartas - 2);
-		
+		int numCartasNecesarias;
 		if( cartas.get(0).mismoPaloQue( cartas.get(1) ) ) {
 			++numCartasColor;
 			
@@ -97,21 +97,20 @@ public class CalculoDeProbabilidades {
 					++numCartasColor;
 				}
 			}
-			
-			prob = distribucionHiperGeometrica(5-numCartasColor, 13-numCartasColor, cartasPorMostrar);
+			numCartasNecesarias = 5-numCartasColor;
+			prob = distribucionHiperGeometrica(numCartasNecesarias, 13-numCartasColor, cartasPorMostrar);
 		}else {
 			
 			prob = 0.0;
-			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	// Comrpobar que nuestras cartas participen en estos datos
-				for( int idx = 0; idx < 2 ; ++idx ) {
+			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	
 					for( int i = 2; i < numCartas ; ++i ) {
-						if( cartas.get(i).mismoPaloQue(cartas.get(idx)) ) {
+						if( cartas.get(i).mismoPaloQue(cartas.get(idxCMano)) ) {
 							++numCartasColor;
-						}
 					}
-					prob += distribucionHiperGeometrica(5-numCartasColor, 13-numCartasColor, cartasPorMostrar);
-					numCartasColor = 1;
 				}
+				numCartasNecesarias = 5 - numCartasColor;
+				prob += distribucionHiperGeometrica(numCartasNecesarias, 13-numCartasColor, cartasPorMostrar);
+				numCartasColor = 1;
 			}
 		}
 
@@ -119,10 +118,7 @@ public class CalculoDeProbabilidades {
 	}
 	
 	/*
-	 * Al encontrarnos con varias cartas, hay diferentes posibles escaleras:
-	 * 	
-	 * 	
-	 * 	
+	 * El conjunto de las siguiente funciones calcula la probabilidad de que nuestras cartas hagan escalera
 	 */
 	private double completarEscalera( List<Carta> cartas ){
 			
@@ -205,35 +201,8 @@ public class CalculoDeProbabilidades {
 					}
 				}
 			}
-			prob += probCompletarEstaEscalera(numCartasEscalera, cartasPorMostrar);
-		}
-		return prob;
-	}
-	
-	private double probCompletarEstaEscalera( int numCartasEscalera, int cartasPorMostrar ){
-		
-		double prob = 0.0;
-		
-		int cartasNecesarias = NUM_CARTAS_NECESARIAS__ESCALERA - numCartasEscalera;
-		int cartasEseTipoRestantes = cartasNecesarias * 4;
-		
-		if( cartasNecesarias > cartasPorMostrar ) {
-			prob = 0.0;
-		}else if( cartasNecesarias > 0 &&  cartasPorMostrar > 0 ){
-			if( cartasNecesarias > 2 ) {
-				prob = C(cartasEseTipoRestantes,cartasPorMostrar);	// Revisar
-			}else {
-				prob = 1.0;
-			}
-			int cartasQueNoHanSalido = 45 + cartasPorMostrar;
-			
-			
-			while( cartasNecesarias > 0 ) {
-				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
-				--cartasEseTipoRestantes;
-				--cartasQueNoHanSalido;
-				--cartasNecesarias;
-			}
+			int cartasNecesarias = 5-numCartasEscalera;
+			prob += distribucionHiperGeometrica(cartasNecesarias, cartasNecesarias*4, cartasPorMostrar);
 		}
 		return prob;
 	}
@@ -310,51 +279,39 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	private double completarPoker( List<Carta> cartas ) {	// ARREGLAR
+	private double completarPoker( List<Carta> cartas ) {
 		
-		double prob = 0.0;
+		double prob;
 		
 		int numCartas = cartas.size();
-		int cartasPorMostrar = 5 - (numCartas-2);	
-		int cttCartasPoker = 1;
+		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;	
+		int cttCartasPoker;
+		int numCartasNecesarias;
 		if( cartas.get(0).mismoNumeroQue( cartas.get(1) ) ) {
-			++cttCartasPoker;
-			for(  int i = 2 ; i < numCartas ; ++i ) {
-				if(cartas.get(0).mismoNumeroQue(cartas.get(i))) {
+			cttCartasPoker = 2;
+			
+			for(  int idx = 2 ; idx < numCartas ; ++idx ) {
+				if(cartas.get(0).mismoNumeroQue(cartas.get(idx))) {
 					++cttCartasPoker;
 				}
 			}
-			prob = distribucionBinomial( 4 - cttCartasPoker , cartasPorMostrar);
+			numCartasNecesarias = 4 - cttCartasPoker;
+			prob = distribucionHiperGeometrica(numCartasNecesarias, numCartasNecesarias, cartasPorMostrar);
 		}else {
-			prob = distribucionBinomial( 1 , cartasPorMostrar) * 2;	// FATAL
-		}
-		
-		return prob;
-	}
-	
-	private double probCompletarPoker( int numCartasPoker, int cartasPorMostrar ) {
-		
-		double prob = 0.0;
-
-		int cartasNecesarias = 4 - numCartasPoker;
-		int cartasEseTipoRestantes = 4 - numCartasPoker;
-		
-		if( cartasNecesarias <=0 ) {
-			prob = 1.0;
-		}else if( cartasPorMostrar > 0 ){
-	
-			int cartasQueNoHanSalido = 50 - (5 - cartasPorMostrar);
-			
-			long combinacionesPosibles = C(cartasPorMostrar,cartasNecesarias);
-			prob = 1.0;
-			while( cartasNecesarias > 0 ) {
-				prob *= (double ) cartasEseTipoRestantes / cartasQueNoHanSalido;
-				--cartasEseTipoRestantes;
-				--cartasQueNoHanSalido;
-				--cartasNecesarias;
+			prob = 0.0;
+			for(  int idxCarta = 0 ; idxCarta < 2 ; ++idxCarta ) {
+				cttCartasPoker = 1;
+				for( int idx = 2 ; idx < numCartas ; ++idx ) {
+					if(cartas.get(idxCarta).mismoNumeroQue(cartas.get(idx))) {
+						++cttCartasPoker;
+					}
+				}
+				numCartasNecesarias = 4 - cttCartasPoker;
+				prob += distribucionHiperGeometrica(numCartasNecesarias, numCartasNecesarias, cartasPorMostrar);
 			}
-			prob *= combinacionesPosibles;	// No del todo correcto
+			
 		}
+		
 		return prob;
 	}
 	
@@ -475,7 +432,7 @@ public class CalculoDeProbabilidades {
 				}
 			}
 			numCartasNecesarias = 5 - numCartasEscalera;
-			prob += distribucionHiperGeometrica( numCartasNecesarias, numCartasNecesarias*4,  cartasPorMostrar );
+			prob += distribucionHiperGeometrica( numCartasNecesarias, numCartasNecesarias,  cartasPorMostrar );
 		}
 		return prob;
 	}
@@ -551,7 +508,7 @@ public class CalculoDeProbabilidades {
 	}
 	
 	
-	private double distribucionBinomial(int cartasNecesarias, int cartasPorMostrar) {
+	private double distribucionBinomial(int cartasNecesarias, int cartasPorMostrar) {	// No la uso
 		
 		int cartasQueNoHanSalido = 45 + cartasPorMostrar;			//N = cartasQueNoHanSalido ; K = Cartas Necesarias
 		
