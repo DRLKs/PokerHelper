@@ -206,22 +206,52 @@ public class CalculoDeProbabilidades {
 		}
 		return prob;
 	}
-
+	/*
+	 * El conjunto de las siguiente funciones calcula la probabilidad de que nuestras cartas hagan FULL
+	 *  Esta función tomará los posibles casos y la siguiente la probabilidad de que estos ocurran
+	 */
 	private double completarFullHouse( List<Carta> cartas ) {	// Falta por completar
 		
-		double prob = 0.0;
-		int ronda = 0;
 		int numCartas = cartas.size();
-		if( numCartas == 5 ) {
-			ronda = 1;
-		}else if( numCartas == 6 ) {
-			ronda = 2;
-		}else if( numCartas == 7 ){
-			ronda = 3;
+		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
+		boolean hayPareja = false;
+		boolean hayTrio   = false;
+		
+		int ctt;
+		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {
+			ctt = 0;
+			for( int idx = 2 ; idx < numCartas ; ++idx ) {
+				if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(idx)) ) {
+					++ctt;
+				}
+			}
+			if( ctt == 2 ) {
+				hayPareja = true;
+			}else if( ctt > 2 ) {
+				hayTrio = true;
+			}
+		}else {
+			for( int idxCarta = 0 ; idxCarta < 2 ; ++idxCarta ) {
+				ctt = 0;
+				for( int idx = 2 ; idx < numCartas ; ++idx ) {
+					if( cartas.get(idxCarta).mismoNumeroQue(cartas.get(idx)) ) {
+						++ctt;
+					}
+				}
+				if( ctt == 2 && hayTrio) {
+					hayPareja = true;
+				}else if( ctt > 2 ) {
+					hayTrio = true;
+				}
+			}
+			
 		}
 		
-		
-		return prob;
+		if( hayPareja && hayTrio ) {
+			return 1.0;
+		}else {
+			return probCompletarFullHouse(cartasPorMostrar,  hayPareja , hayTrio);
+		}
 	}
 	/*
 	 * Esta función calcula la probabilidad de que salga FULL HOUSE en estos casos:
@@ -231,7 +261,7 @@ public class CalculoDeProbabilidades {
 	 *  
 	 *  Alguna de estas cartas deben pertenecer a las cartas de nuestra mano
 	 */
-	private double probCompletarFullHouse( int numCartasTrio, int numCartasPareja, int ronda ){	
+	private double probCompletarFullHouse( int cartasPorMostrar, boolean hayPareja, boolean hayTrio ){	
 		
 		double prob = 0.0;
 		int cartasNecesariasTrio = 3 - numCartasTrio;
