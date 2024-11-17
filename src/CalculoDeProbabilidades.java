@@ -43,6 +43,7 @@ public class CalculoDeProbabilidades {
 		probEscaleraColor = completarEscaleraColor(cartas);
 		probEscaleraReal = completarEscaleraReal(cartas);
 		
+		/*
 		try (ServerSocket serverSocket = new ServerSocket(5000)) {
             System.out.println("Esperando conexión de Python...");
             Socket clientSocket = serverSocket.accept();
@@ -75,6 +76,7 @@ public class CalculoDeProbabilidades {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        */
     }
 	
 	public double getProbEscalera() {
@@ -259,51 +261,95 @@ public class CalculoDeProbabilidades {
 		
 		int numCartas = cartas.size();
 		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
-		boolean hayPareja = false;
-		boolean hayTrio   = false;
+		int numParejas = 0;	// Parejas que hacen las cartas de nuestra mano
+		int numTrios   = 0;	// Trios   que hacen las cartas de nuestra mano
 		
 		int ctt;
 		
-		// Esta parte de la función calcula el número de veces que se repiten las cartas de nuestra mano. 
+		// Esta parte de la función calculamos el número de parejas o trios que tenemos con nuestras cartas
 		// En el caso de que nuestras cartas sean iguales
 		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	
 			ctt = Carta.vecesQueSeSaleEsteNumero(cartas, cartas.get(IDX_CARTA_MANO_1).getNumero());
-			if( ctt == 2 ) {
-				hayPareja = true;
-			}else if( ctt > 2 ) {
-				hayTrio = true;
+			if( ctt > 2 ) {
+				++numTrios;
+			}else {
+				++numParejas;
 			}
-		}else {	// En el caso de que nuestras cartas no sean iguales
-			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {
-				ctt = Carta.vecesQueSeSaleEsteNumero(cartas, cartas.get(idxCMano).getNumero());
-				if( ctt == 2 ) {
-					hayPareja = true;
-				}else if( ctt > 2 ) {
-					if( hayTrio ) {
-						hayPareja = true;
-					}
-					hayTrio = true;
-				}
+			
+		// En el caso de que nuestas cartas no sean iguales
+		}else {
+			for( int idx = 0 ; idx < 2 ; ++idx ) {
+				ctt = Carta.vecesQueSeSaleEsteNumero(cartas, cartas.get(idx).getNumero());
+					
+				if( ctt > 2 ) {
+					++numTrios;
+				}else if( ctt == 2 ) {
+					++numParejas;
+				}	
 			}
-		}
-		// Comprobamos que haya alguna pareja o trio en las cartas de la mesa	
-		if( !hayTrio ) {
-			Carta.hay_N_CartasRepetidasMismoNumeroMesa(cartas, 3);
 		}
 		
-		if( hayPareja && hayTrio ) {
+		// Ya habriamos obtenido el FULL
+		if( numParejas > 0 && numTrios > 0 || numTrios > 1 ) {
 			return 1.0;
+			
+		// Tenemos que estudiar más
 		}else {
-			return probCompletarFullHouse(cartasPorMostrar,  hayPareja , hayTrio);
+			int numParejasMesa = 0;
+			int numTriosMesa = 0;
+			Carta cartaAux;
+			for( int idx1 = 2 ; idx1 < numCartas ; ++idx1 ) {
+				cartaAux = cartas.get(idx1);
+				if( !cartaAux.mismoNumeroQue(cartas.get(IDX_CARTA_MANO_1)) && !cartaAux.mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {
+					ctt = 0;
+					for( int idx = idx1 + 1 ; idx < numCartas ; ++idx ) {
+						if( cartaAux.mismoNumeroQue(cartas.get(idx)) ) {
+							++ctt;
+						}
+					}
+					if( ctt == 2 ) {
+						++numParejasMesa;
+					}else if( ctt > 2 ) {
+						++numTriosMesa;
+					}
+				}
+			}
+			return probCompletarFullHouse(cartasPorMostrar,  numParejas , numTrios, numParejasMesa, numTriosMesa);
 		}
 	}
 	/*
 	 * Esta función calcula la probabilidad de que salga FULL HOUSE en estos casos:
 	 * 
 	 */
-	private double probCompletarFullHouse( int cartasPorMostrar, boolean hayPareja, boolean hayTrio ){	
+	private double probCompletarFullHouse( int cartasPorMostrar, int numParejas, int numTrios, int numParejasMesa, int numTriosMesa ){	
 		
-		double prob = 0.0;
+		double prob;
+		
+		if( numParejas > 0 && numTriosMesa > 0 || numTrios > 0 && numParejasMesa > 0 || numTrios > 0 && numTriosMesa > 0 ) {
+			prob =  1.0;
+		}else {
+			prob = 0.0;
+			if( numTriosMesa > 0) {
+				/* Necesitariamos una sola carta de la mano, para hacer el FULL*/
+				prob += distribucionHiperGeometrica(1, 6, cartasPorMostrar);	
+			}
+			else if( numTrios > 0 ) {
+				/* Necesitariamos 1 carta más de las que hay en la mesa para obtener el FULL*/
+				prob += distribucionHiperGeometrica(1, (NUM_CARTAS_NUNCA_VES - cartasPorMostrar) * 3, cartasPorMostrar);
+			}
+			if( numParejas > 0 && numParejas + numParejasMesa > 1 ){
+				/* Necesitamos una carta de alguna de las parejas para formar un trio */
+				prob += distribucionHiperGeometrica(1, numParejas * 2 + numParejasMesa * 2, cartasPorMostrar);
+			}
+			else if( numParejas > 0 ) {
+				/* Necesitamos 2 cartas de alguna de las cartas de las cartas o 3 cartas de las que no han salido todavia*/
+				prob += distribucionHiperGeometrica(2, (NUM_CARTAS_NUNCA_VES - cartasPorMostrar - 2) * 3, cartasPorMostrar);
+				prob += distribucionHiperGeometrica(3, 4, cartasPorMostrar);
+			}else {
+				prob += distribucionHiperGeometrica(5, 8, cartasPorMostrar);
+			}
+			
+		}
 		return prob;
 	}
 	
@@ -519,9 +565,9 @@ public class CalculoDeProbabilidades {
 	 */
 	private double distribucionHiperGeometrica( int cartasNecesarias, int cartasValidasRestantes, int cartasPorMostrar) {
 		double prob;
-		if( cartasNecesarias <= 0 )
+		if( cartasNecesarias <= 0 ) {
 			prob = 1.0;
-		else if( cartasNecesarias > cartasPorMostrar ) {
+		}else if( cartasNecesarias > cartasPorMostrar ) {
 			prob = 0.0;
 		}else{
 			int combinacionesPosibles = C( NUM_CARTAS_NUNCA_VES + cartasPorMostrar , cartasPorMostrar );
