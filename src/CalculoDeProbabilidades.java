@@ -1,3 +1,10 @@
+/*
+ * MADE BY DRLK
+ */
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.List;
 
 public class CalculoDeProbabilidades {
@@ -11,16 +18,22 @@ public class CalculoDeProbabilidades {
 	private double probEscaleraColor;
 	private double probEscaleraReal;
 	
+	private double probEscaleraCont;
+	private double probColorCont;
+	private double probFullHouseCont;
+	private double probPokerCont;
+	private double probEscaleraColorCont;
+	private double probEscaleraRealCont;
+	
 	private final int MAX_CARTAS_VISIBLES = 7;
 	private final int IDX_CARTA_MANO_1 = 0;
 	private final int IDX_CARTA_MANO_2 = 1;
 	private final int NUM_CARTAS_NUNCA_VES = 45;
-	private final int NUM_CARTAS_NECESARIAS__ESCALERA = 5;
 
 	/*
-	 * Recalcula toda la información
-	 * 
+	 * Recalcula toda la información 
 	 * Se llamará cuando se actualicen los datos
+	 * Esta función manda la información al programa predictor mediante Sockets
 	 */
 	public void reiniciarDatos( List<Carta> cartas ) {
 		probEscalera = completarEscalera(cartas);
@@ -29,7 +42,40 @@ public class CalculoDeProbabilidades {
 		probPoker = completarPoker(cartas);
 		probEscaleraColor = completarEscaleraColor(cartas);
 		probEscaleraReal = completarEscaleraReal(cartas);
-	}
+		
+		try (ServerSocket serverSocket = new ServerSocket(5000)) {
+            System.out.println("Esperando conexión de Python...");
+            Socket clientSocket = serverSocket.accept();
+            System.out.println("Conexión establecida con Python");
+
+
+            // Enviar los datos a Python
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            // MIAS
+            out.println(probEscalera);
+            out.println(probColor);
+            out.println(probFullHouse);
+            out.println(probPoker);
+            out.println(probEscaleraColor);
+            out.println(probEscaleraReal);
+            // DE LOS CONTRINCANTES
+            out.println(probEscaleraCont);
+            out.println(probColorCont);
+            out.println(probFullHouseCont);
+            out.println(probPokerCont);
+            out.println(probEscaleraColorCont);
+            out.println(probEscaleraRealCont);
+
+            System.out.println("Datos enviados a Python");
+
+            // Cerrar la conexión
+            out.close();
+            clientSocket.close();
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 	
 	public double getProbEscalera() {
 		return probEscalera;
@@ -77,7 +123,6 @@ public class CalculoDeProbabilidades {
 	
 	/* 
 	 * Estas Funciones calcularán las posibilidades de obtener color
-	 * numCartasColor: 	son las cartas de **** que tienes en tu mano
 	 * 
 	 * 	CABE DESTACAR: El número de jugadores no interviene en las probabilidades que haya de obtener tu mano deseada
 	 * 
@@ -118,7 +163,7 @@ public class CalculoDeProbabilidades {
 	}
 	
 	/*
-	 * El conjunto de las siguiente funciones calcula la probabilidad de que nuestras cartas hagan escalera
+	 * El conjunto de las siguiente funciones calcula la probabilidad de que nuestras cartas hagan escalera normal
 	 */
 	private double completarEscalera( List<Carta> cartas ){
 			
@@ -234,18 +279,16 @@ public class CalculoDeProbabilidades {
 				if( ctt == 2 ) {
 					hayPareja = true;
 				}else if( ctt > 2 ) {
+					if( hayTrio ) {
+						hayPareja = true;
+					}
 					hayTrio = true;
 				}
 			}
 		}
 		// Comprobamos que haya alguna pareja o trio en las cartas de la mesa	
-		for( int idx1 = 2 ; idx1 < numCartas - 1 ; ++idx1 ) {
-			ctt = 0;
-			for( int idx = 2 ; idx < numCartas ; ++idx ) {
-				if( cartas.get(idx1).mismoNumeroQue(cartas.get(idx)) ) {
-					++ctt;
-				}
-			}
+		if( !hayTrio ) {
+			Carta.hay_N_CartasRepetidasMismoNumeroMesa(cartas, 3);
 		}
 		
 		if( hayPareja && hayTrio ) {
@@ -257,10 +300,6 @@ public class CalculoDeProbabilidades {
 	/*
 	 * Esta función calcula la probabilidad de que salga FULL HOUSE en estos casos:
 	 * 
-	 * 	numCartasTrio: Cartas que supuestamente harían trio
-	 *  numCartasPareja: Cartas que supuestamente harían pareja
-	 *  
-	 *  Alguna de estas cartas deben pertenecer a las cartas de nuestra mano
 	 */
 	private double probCompletarFullHouse( int cartasPorMostrar, boolean hayPareja, boolean hayTrio ){	
 		
@@ -348,7 +387,7 @@ public class CalculoDeProbabilidades {
 			}
 			prob = probCompletarEscaleraColor(numerosEscaleraColor, cartasPorMostrar, arrayInicio, arrayFinal);
 			
-		}else {	// Nuestras 2 cartas no pueden hacer escalera de color
+		}else {	// Nuestras 2 cartas no pueden hacer escalera de color entre ellas
 			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	
 				numerosEscaleraColor = new int[15];
 				numerosEscaleraColor[ cartas.get(idxCMano).getNumero() ] = 1;	// Añadimos la carta de la mano
@@ -362,7 +401,7 @@ public class CalculoDeProbabilidades {
 						numerosEscaleraColor[ cartas.get(idx).getNumero() ] = 1;
 					}
 					if( numerosEscaleraColor[14] == 1 ) {	// Está el AS, 14-1=13
-						numerosEscaleraColor[1] = 1;
+						numerosEscaleraColor[1]  =  1;
 					}
 					prob += probCompletarEscaleraColor(numerosEscaleraColor, cartasPorMostrar, arrayInicio, arrayFinal);
 				}
@@ -437,9 +476,8 @@ public class CalculoDeProbabilidades {
 		int numCartasEscalera = 1;
 		boolean cartaMano1Posible = false;
 		boolean cartaMano2Posible = false;
-		/*
-		 * Para hacerlo más eficiente
-		 */
+		
+		// Para hacerlo más eficiente
 		int inicioBucle = 1;
 		int topeBucle = 0;
 		
@@ -468,7 +506,7 @@ public class CalculoDeProbabilidades {
 				}
 			}
 			int cartasNecesarias = 5 - numCartasEscalera;
-			prob += distribucionHiperGeometrica(cartasNecesarias,cartasNecesarias, cartasPorMostrar);	// Las cartas necesarias son las mismas, a las válidas
+			prob += distribucionHiperGeometrica(cartasNecesarias,cartasNecesarias, cartasPorMostrar);	/* Las cartas necesarias son las mismas, a las válidas */
 			numCartasEscalera = 1;
 		}
 			
