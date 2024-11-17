@@ -218,33 +218,34 @@ public class CalculoDeProbabilidades {
 		boolean hayTrio   = false;
 		
 		int ctt;
-		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {
-			ctt = 0;
-			for( int idx = 2 ; idx < numCartas ; ++idx ) {
-				if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(idx)) ) {
-					++ctt;
-				}
-			}
+		
+		// Esta parte de la función calcula el número de veces que se repiten las cartas de nuestra mano. 
+		// En el caso de que nuestras cartas sean iguales
+		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	
+			ctt = Carta.vecesQueSeSaleEsteNumero(cartas, cartas.get(IDX_CARTA_MANO_1).getNumero());
 			if( ctt == 2 ) {
 				hayPareja = true;
 			}else if( ctt > 2 ) {
 				hayTrio = true;
 			}
-		}else {
-			for( int idxCarta = 0 ; idxCarta < 2 ; ++idxCarta ) {
-				ctt = 0;
-				for( int idx = 2 ; idx < numCartas ; ++idx ) {
-					if( cartas.get(idxCarta).mismoNumeroQue(cartas.get(idx)) ) {
-						++ctt;
-					}
-				}
-				if( ctt == 2 && hayTrio) {
+		}else {	// En el caso de que nuestras cartas no sean iguales
+			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {
+				ctt = Carta.vecesQueSeSaleEsteNumero(cartas, cartas.get(idxCMano).getNumero());
+				if( ctt == 2 ) {
 					hayPareja = true;
 				}else if( ctt > 2 ) {
 					hayTrio = true;
 				}
 			}
-			
+		}
+		// Comprobamos que haya alguna pareja o trio en las cartas de la mesa	
+		for( int idx1 = 2 ; idx1 < numCartas - 1 ; ++idx1 ) {
+			ctt = 0;
+			for( int idx = 2 ; idx < numCartas ; ++idx ) {
+				if( cartas.get(idx1).mismoNumeroQue(cartas.get(idx)) ) {
+					++ctt;
+				}
+			}
 		}
 		
 		if( hayPareja && hayTrio ) {
@@ -264,48 +265,6 @@ public class CalculoDeProbabilidades {
 	private double probCompletarFullHouse( int cartasPorMostrar, boolean hayPareja, boolean hayTrio ){	
 		
 		double prob = 0.0;
-		int cartasNecesariasTrio = 3 - numCartasTrio;
-		int cartasNecesariasPareja = 2 - numCartasPareja;
-		
-		int cartasQueQueremosTrio = 4 - numCartasTrio;
-		int cartasQueQueremosPareja = 4 - numCartasPareja;
-
-		
-		if( cartasNecesariasTrio <= 0 && cartasNecesariasPareja <= 0) {
-			prob = 1.0;
-		}else if( ronda < 3 ){
-	
-			int cartasQueNoHanSalido;
-			if( ronda == 0) {
-				cartasQueNoHanSalido = 50;
-				
-			}else if( ronda == 1 && (cartasNecesariasTrio + cartasNecesariasPareja) <= 2) {
-				cartasQueNoHanSalido = 47;
-			
-			}else if( ronda == 2 && (cartasNecesariasTrio + cartasNecesariasPareja) == 1 ) {
-				cartasQueNoHanSalido = 46;
-			}else {
-				return 0;	
-			}
-			
-			prob = 1.0;	
-			while( cartasNecesariasTrio > 0 ) {	
-				prob *= (double ) cartasQueQueremosTrio / cartasQueNoHanSalido;
-				cartasQueNoHanSalido -= 4;
-				--cartasNecesariasTrio;
-				--cartasQueNoHanSalido;
-				--cartasQueQueremosTrio;
-			}
-			
-			while( cartasNecesariasPareja > 0 ) {
-				prob *= (double ) cartasQueQueremosPareja / cartasQueNoHanSalido;
-				cartasQueNoHanSalido -= 4;
-				--cartasNecesariasPareja;
-				--cartasQueNoHanSalido;
-				--cartasQueQueremosPareja;
-			}
-			
-		}
 		return prob;
 	}
 	
