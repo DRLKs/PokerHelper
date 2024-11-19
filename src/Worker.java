@@ -63,7 +63,7 @@ public class Worker extends SwingWorker<Integer , Integer>{
 	
 	private int calcularProbabilidad() {
 		
-		calc.reiniciarDatos(cartas);
+		calc.reiniciarDatos(cartas , numContrincantes);
 		
 		sacarDatosObtenidos();
 		int prob =(int)(100*calc.getProbEscaleraColor()) ;
@@ -79,6 +79,9 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		System.out.println("Probabilidad Poker: " + calc.getProbPoker());
 		System.out.println("Probabilidad escalera de color : " + calc.getProbEscaleraColor());
 		System.out.println("Probabilidad escalera real: " + calc.getProbEscaleraReal());
+		
+		System.out.println("Probabilidad colo contr: " + calc.getProbColorCont());
+
 		System.out.println("-------------------------------------");
 	}
 	
