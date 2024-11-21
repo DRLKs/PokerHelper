@@ -183,7 +183,6 @@ public class CalculoDeProbabilidades {
 				numCartasColor = 1;
 			}
 		}
-
 		return prob;
 	}
 	
@@ -192,7 +191,7 @@ public class CalculoDeProbabilidades {
 	 */
 	private double completarEscalera( List<Carta> cartas ){
 			
-		double prob = 0.0;
+		double prob;
 		int numCartas = cartas.size();
 		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
 		int numCartaMano1 = cartas.get(IDX_CARTA_MANO_1).getNumero();
@@ -213,7 +212,7 @@ public class CalculoDeProbabilidades {
 		int[] numerosEscalera;	
 		int[] arrayFronterasEscalera;
 		
-		// Nuestras 2 cartas pueden hacer escalera
+		/* Nuestras 2 cartas pueden hacer escalera */
 		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) )) {	
 			numerosEscalera = new int[15];
 			
@@ -231,8 +230,9 @@ public class CalculoDeProbabilidades {
 				numerosEscalera[1] = 1;
 			}
 			prob = probCompletarEscalera(numerosEscalera, cartasPorMostrar, arrayInicio, arrayFinal);
-			
-		}else {	// Nuestras 2 cartas no pueden hacer escalera de
+		/* Nuestras 2 cartas no pueden hacer escalera */
+		}else {	
+			prob = 0.0;
 			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	
 				numerosEscalera = new int[15];
 				numerosEscalera[ cartas.get(idxCMano).getNumero() ] = 1;	// Añadimos la carta de la mano
@@ -252,9 +252,7 @@ public class CalculoDeProbabilidades {
 				}
 			}
 		}
-		
-		return prob;
-			
+		return prob;	
 		
 	}
 	
