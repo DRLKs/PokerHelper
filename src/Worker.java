@@ -73,6 +73,7 @@ public class Worker extends SwingWorker<Integer , Integer>{
 	
 	private void sacarDatosObtenidos() {
 		System.out.println("-------------------------------------");
+		System.out.println("Probabilidad trio: " + calc.getProbTrio());
 		System.out.println("Probabilidad escalera: " + calc.getProbEscalera());
 		System.out.println("Probabilidad color: " + calc.getProbColor());
 		System.out.println("Probabilidad FullHouse: " + calc.getProbFullHouse());

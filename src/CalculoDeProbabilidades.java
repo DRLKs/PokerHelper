@@ -21,6 +21,7 @@ public class CalculoDeProbabilidades {
 	private double probEscaleraColor;
 	private double probEscaleraReal;
 	
+	private double probTrio;
 	private double probEscaleraCont;
 	private double probColorCont;
 	private double probFullHouseCont;
@@ -40,6 +41,7 @@ public class CalculoDeProbabilidades {
 	 * Esta función manda la información al programa predictor mediante Sockets
 	 */
 	public void reiniciarDatos( List<Carta> cartas, int numContrincantes) {
+		probTrio = completarTrio(cartas);
 		probEscalera = completarEscalera(cartas);
 		probColor = completarColor(cartas);
 		probFullHouse = completarFullHouse(cartas);
@@ -90,6 +92,11 @@ public class CalculoDeProbabilidades {
 	 * 												GETTERS 
 	 * ##############################################################################################################
 	 */
+	
+
+	public double getProbTrio() {
+		return probTrio;
+	}
 	
 	public double getProbEscalera() {
 		return probEscalera;
@@ -145,8 +152,58 @@ public class CalculoDeProbabilidades {
 	 * ##############################################################################################################
 	 */
 	
-	/* 
-	 * Estas Funciones calcularán las posibilidades de obtener color
+	/** 
+	 * Función que devuelve la probabilidad de obtener un trio con las cartas que tenemos
+	 * 
+	 * @param cartas Son las cartas observables, las cartas de nuestra mano y las de la mesa
+	 * @return Probabilidad de obtener un trio con las cartas de nuestra mano (double)
+	 * */
+	private double completarTrio( List<Carta> cartas ) {
+		
+		double prob = 0.0;
+		int numCartas = cartas.size();
+		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
+		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
+
+		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	/* Nuestras cartas hacen pareja */
+			int num = cartas.get(IDX_CARTA_MANO_1).getNumero(); /* Número de nuestras cartas */
+			
+			for( int idx = 2 ; idx < numCartas ; ++idx ) {
+				
+				if( cartas.get(idx).getNumero() == num ) {	/* Ya tenemos un trio */
+					prob = 1.0;
+					break;
+				}
+			}
+			
+			if( prob == 0.0 ) {
+				prob = distribucionHiperGeometrica(1, 2, cartasTotales, cartasPorMostrar);
+			}
+			
+		}else {					/* Nuestras cartas no hacen pareja */
+			int numCartasTrio;
+			int num;
+			
+			for( int idxCartaMano = 0 ; idxCartaMano < 2 ; ++idxCartaMano ) {
+				numCartasTrio = 1;
+				num = cartas.get(idxCartaMano).getNumero(); /* Número de nuestra carta */
+				
+				for( int idx = 2 ; idx < numCartas ; ++idx ) {
+					if( cartas.get(idx).getNumero() == num ) {	/* Encontramos carta en la mesa con el mismo número */
+						++numCartas;
+					}
+				}
+				
+				prob += distribucionHiperGeometrica(3-numCartasTrio, 4-numCartasTrio, cartasTotales, cartasPorMostrar);
+			}
+
+			prob = 0;
+		}
+		return prob;
+	}
+	
+	/** 
+	 * Función que devuelve la probabilidad de obtener color con las cartas que tenemos
 	 * 
 	 * 	CABE DESTACAR: El número de jugadores no interviene en las probabilidades que haya de obtener tu mano deseada
 	 * 
@@ -657,9 +714,15 @@ public class CalculoDeProbabilidades {
 	 * ##############################################################################################################
 	 */
 	
-	/*
-	 * Mediante la distribución HiperGeométrica
-	 * Devolverá la probabilidad de que la mano X  se complete
+	/**
+	 * Esta función usa la distribución hipergeométrica para obtener la probabilidad de obtener una determinada mano
+	 * 
+	 * @param cartasNecesarias El número de cartas que necesitamos para completar nuestra mano
+	 * @param cartasValidasRestantes El número de cartas de ese tipo que nos sirven para completar la mano
+	 * @param cartasTotales El número de cartas totales que no han salido todavía
+	 * @param cartasPorMostrar El número de cartas que faltan por desvelar 
+	 * 
+	 * @return La probabilidad de que la mano se complete
 	 */
 	private double distribucionHiperGeometrica( int cartasNecesarias, int cartasValidasRestantes, int cartasTotales, int cartasPorMostrar) {
 		double prob;
