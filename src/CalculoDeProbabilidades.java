@@ -14,6 +14,7 @@ public class CalculoDeProbabilidades {
 	/*
 	 * Todas las probabilidades son sobre 1
 	 */
+	private double probTrio;
 	private double probEscalera;
 	private double probColor;
 	private double probFullHouse;
@@ -21,7 +22,7 @@ public class CalculoDeProbabilidades {
 	private double probEscaleraColor;
 	private double probEscaleraReal;
 	
-	private double probTrio;
+	private double probTrioCont;
 	private double probEscaleraCont;
 	private double probColorCont;
 	private double probFullHouseCont;
@@ -35,10 +36,11 @@ public class CalculoDeProbabilidades {
 	private final int IDX_CARTA_MANO_2 = 1;
 	private final int NUM_CARTAS_NUNCA_VES = 45;
 
-	/*
-	 * Recalcula toda la información 
-	 * Se llamará cuando se actualicen los datos
-	 * Esta función manda la información al programa predictor mediante Sockets
+	/**
+	 * Función que recalcula todas las probabilidades
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @param numContrincantes Número de contrincantes activos
 	 */
 	public void reiniciarDatos( List<Carta> cartas, int numContrincantes) {
 		probTrio = completarTrio(cartas);
@@ -50,6 +52,7 @@ public class CalculoDeProbabilidades {
 		probEscaleraReal = completarEscaleraReal(cartas);
 		
 		//probEscaleraCont
+		probTrioCont = completarTrioCont(cartas, numContrincantes);
 		probColorCont = completarColorCont( cartas, numContrincantes );
 		/*
 		try (ServerSocket serverSocket = new ServerSocket(5000)) {
@@ -92,7 +95,6 @@ public class CalculoDeProbabilidades {
 	 * 												GETTERS 
 	 * ##############################################################################################################
 	 */
-	
 
 	public double getProbTrio() {
 		return probTrio;
@@ -122,10 +124,22 @@ public class CalculoDeProbabilidades {
 		return probEscaleraReal;
 	}
 	
+	
+	public double getProbTrioCont() {
+		return probTrioCont;
+	}
+	
 	public double getProbColorCont() {
 		return probColorCont;
 	}
 	
+	/**
+	 * Función que devuelve las combinaciones entre 2 números
+	 * 
+	 * @param n Número de elementos en el conjunto
+	 * @param k Número de combinaciones
+	 * @return Número de combinaciones posibles
+	 */
 	public int C( int n ,int k) { // COMBINACIONES
 		
 		if (k > n || k < 0) return 0; // No existe combinatoria si k > n
@@ -155,38 +169,38 @@ public class CalculoDeProbabilidades {
 	/** 
 	 * Función que devuelve la probabilidad de obtener un trio con las cartas que tenemos
 	 * 
-	 * @param cartas Son las cartas observables, las cartas de nuestra mano y las de la mesa
+	 * @param cartas Lista que contiene las cartas conocidas
 	 * @return Probabilidad de obtener un trio con las cartas de nuestra mano (double)
 	 * */
 	private double completarTrio( List<Carta> cartas ) {
 		
-		double prob = 0.0;
+		double prob;
+		int numCartasTrio;
+
 		int numCartas = cartas.size();
 		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
 		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
 
 		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	/* Nuestras cartas hacen pareja */
+			numCartasTrio = 2;
 			int num = cartas.get(IDX_CARTA_MANO_1).getNumero(); /* Número de nuestras cartas */
-			
 			for( int idx = 2 ; idx < numCartas ; ++idx ) {
 				
 				if( cartas.get(idx).getNumero() == num ) {	/* Ya tenemos un trio */
-					prob = 1.0;
+					numCartasTrio = 3;
 					break;
 				}
 			}
-			
-			if( prob == 0.0 ) {
-				prob = distribucionHiperGeometrica(1, 2, cartasTotales, cartasPorMostrar);
-			}
+			prob = distribucionHiperGeometrica(3-numCartasTrio, 4-numCartasTrio, cartasTotales, cartasPorMostrar);
+
 			
 		}else {					/* Nuestras cartas no hacen pareja */
-			int numCartasTrio;
 			int num;
+			prob = 0.0;
 			
 			for( int idxCartaMano = 0 ; idxCartaMano < 2 ; ++idxCartaMano ) {
 				numCartasTrio = 1;
-				num = cartas.get(idxCartaMano).getNumero(); /* Número de nuestra carta */
+				num = cartas.get(idxCartaMano).getNumero(); 	/* Número de nuestra carta */
 				
 				for( int idx = 2 ; idx < numCartas ; ++idx ) {
 					if( cartas.get(idx).getNumero() == num ) {	/* Encontramos carta en la mesa con el mismo número */
@@ -197,7 +211,6 @@ public class CalculoDeProbabilidades {
 				prob += distribucionHiperGeometrica(3-numCartasTrio, 4-numCartasTrio, cartasTotales, cartasPorMostrar);
 			}
 
-			prob = 0;
 		}
 		return prob;
 	}
@@ -205,8 +218,8 @@ public class CalculoDeProbabilidades {
 	/** 
 	 * Función que devuelve la probabilidad de obtener color con las cartas que tenemos
 	 * 
-	 * 	CABE DESTACAR: El número de jugadores no interviene en las probabilidades que haya de obtener tu mano deseada
-	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener color con las cartas de nuestra mano (double)
 	 * */
 	private double completarColor( List<Carta> cartas ){
 		
@@ -243,8 +256,11 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	/*
-	 * El conjunto de las siguiente funciones calcula la probabilidad de que nuestras cartas hagan escalera normal
+	/**
+	 * Función que devuelve la probabilidad de obtener escalera con las cartas que tenemos
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener escalera con las cartas de nuestra mano (double)
 	 */
 	private double completarEscalera( List<Carta> cartas ){
 			
@@ -302,7 +318,7 @@ public class CalculoDeProbabilidades {
 						) {
 						numerosEscalera[ cartas.get(idx).getNumero() ] = 1;
 					}
-					if( numerosEscalera[14] == 1 ) {	// Está el AS, 14-1=13
+					if( numerosEscalera[14] == 1 ) {
 						numerosEscalera[1] = 1;
 					}
 					prob += probCompletarEscalera(numerosEscalera, cartasPorMostrar, arrayInicio, arrayFinal);
@@ -313,6 +329,15 @@ public class CalculoDeProbabilidades {
 		
 	}
 	
+	/**
+	 * Función auxiliar que ayuda a obtener la probabilidad de obtener una escalera con las cartas que tenemos
+	 *
+	 * @param numerosEscalera Array con los números de las cartas que tenemos
+	 * @param cartasPorMostrar Número de cartas que faltan por mostrar
+	 * @param arrayInicio Índice del array por el cual comenzaremos a estudiar la escalera (Frontera Por Debajo)
+	 * @param arrayFinal Índice del array por el cual terminaremos de estudiar la escalera (Frontera Por Encima)
+	 * @return Probabilidad de obtener escalera con una carta específica de nuestra mano (double)
+	 */
 	private double probCompletarEscalera( int[] numerosEscalera, int cartasPorMostrar, int arrayInicio, int arrayFinal ){
 		double prob = 0.0;
 		int numCartasEscalera;
@@ -332,9 +357,12 @@ public class CalculoDeProbabilidades {
 		}
 		return prob;
 	}
-	/*
-	 * El conjunto de las siguiente funciones calcula la probabilidad de que nuestras cartas hagan FULL
-	 *  Esta función tomará los posibles casos y la siguiente la probabilidad de que estos ocurran
+
+	/**
+	 * Función que devuelve la probabilidad de obtener un Full con las cartas que tenemos
+	 *
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener un Full con las cartas de nuestra mano (double)
 	 */
 	private double completarFullHouse( List<Carta> cartas ) {	// Falta por completar
 		
@@ -396,9 +424,12 @@ public class CalculoDeProbabilidades {
 			return probCompletarFullHouse(cartasPorMostrar,  numParejas , numTrios, numParejasMesa, numTriosMesa);
 		}
 	}
-	/*
-	 * Esta función calcula la probabilidad de que salga FULL HOUSE en estos casos:
-	 * 
+
+	/**
+	 * Función auxiliar que ayuda a obtener la probabilidad de tener un Full con las cartas que tenemos
+	 *
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener una escalera de color con las cartas de nuestra mano (double)
 	 */
 	private double probCompletarFullHouse( int cartasPorMostrar, int numParejas, int numTrios, int numParejasMesa, int numTriosMesa ){	
 		
@@ -442,6 +473,12 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
+	/**
+	 * Función que devuelve la probabilidad de obtener Poker con las cartas que tenemos
+	 *
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener Poker con las cartas de nuestra mano (double)
+	 */
 	private double completarPoker( List<Carta> cartas ) {
 		
 		double prob;
@@ -479,6 +516,12 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
+	/**
+	 * Función que devuelve la probabilidad de obtener escalera de color con las cartas que tenemos
+	 *
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener una escalera de color con las cartas de nuestra mano (double)
+	 */
 	private double completarEscaleraColor( List<Carta> cartas ){
 		
 		double prob = 0.0;
@@ -546,11 +589,13 @@ public class CalculoDeProbabilidades {
 		
 		return prob;
 	}
-	/*
-	 * Función utilizada por las funciones: completarEscalera, completarEscaleraColor
-	 * Dados 2 números o 1, devuelve un array de dimensión 2, con los límites a estudiar en el array "numerosEscaleraColor"
-	 * 	arrayFronterasEscalera[0] -> Límite inferior
-	 * 	arrayFronterasEscalera[1] -> Límite superior
+	/**
+	 * Función utilizada por las funciones: completarEscalera, completarEscaleraColor. Lo que hace esta función es determinar 
+	 * los valores que debemos analizar para la obtención de la probabilidad de conseguir escaleras
+	 *  
+	 * @param numCarta1 Número de la carta
+	 * @param numCarta2 Número de la segunda carta o -1 para indicar que solo tenemos una
+	 * @return Un array de dimensión 2, donde en la primera posición nos encontramos el límite inferior y en la segunda el límite superior
 	 */
 	private int[] encontrarFronterasEscaleras( int numCarta1, int numCarta2 ) {
 		int[] arrayFronterasEscalera = new int[2];
@@ -581,6 +626,15 @@ public class CalculoDeProbabilidades {
 		return arrayFronterasEscalera;
 	}
 	
+	/**
+	 * Función auxiliar que ayuda a obtener la probabilidad de obtener una escalera de color con las cartas que tenemos
+	 *
+	 * @param numerosEscaleraColor Array con los números de las cartas que tenemos
+	 * @param cartasPorMostrar Número de cartas que faltan por mostrar
+	 * @param arrayInicio Índice del array por el cual comenzaremos a estudiar la escalera (Frontera Por Debajo)
+	 * @param arrayFinal Índice del array por el cual terminaremos de estudiar la escalera (Frontera Por Encima)
+	 * @return Probabilidad de obtener escalera de color con una carta específica de nuestra mano (double)
+	 */
 	private double probCompletarEscaleraColor( int[] numerosEscaleraColor, int cartasPorMostrar, int arrayInicio, int arrayFinal ){
 		double prob = 0.0;
 		int numCartasNecesarias;
@@ -602,8 +656,11 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 
-	/*
-	 * FUNCIONA -> QUIZÁS ARREGLAR COMBINACIONES
+	/**
+	 * Función que devuelve la probabilidad de obtener escalera real con las cartas que tenemos
+	 *
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener escalera real con las cartas de nuestra mano (double)
 	 */
 	private double completarEscaleraReal( List<Carta> cartas ){
 		
@@ -657,10 +714,25 @@ public class CalculoDeProbabilidades {
 	 * ##############################################################################################################
 	 */
 	
-	/*
-	 * Esta función devuelve la probabilidad de que algún contrincante tenga las cartas que le indicamos 
+	/**
+	 * Función que devuelve la probabilidad de que uno de nuestro contrincantes obtenegan un trio con las cartas que conocemos
+	 *
+	 * @param cartas
+	 * @param numContrincantes
+	 * @return
 	 */
+	private double completarTrioCont(List<Carta> cartas, int numContrincantes) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 	
+	/**
+	 * Función que devuelve la probabilidad de que uno de nuestro contrincantes obtenegan color con las cartas que conocemos
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @param numContrincantes Número de contrincantes activos
+	 * @return Probabilidad de que un contrincante obtenga color con las cartas que conocemos (double)
+	 */
 	private double completarColorCont(List<Carta> cartas, int numContrincantes) {
 		
 		int numCartas = cartas.size();
@@ -741,7 +813,17 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	private double distribucionBinomial(int cartasNecesarias, int cartasPorMostrar) {	// No la uso
+	/**
+	 * Esta función usa la distribución binomial para obtener la probabilidad de obtener una determinada mano
+	 * 
+	 * @param cartasNecesarias El número de cartas que necesitamos para completar nuestra mano
+	 * @param cartasPorMostrar El número de cartas que faltan por desvelar 
+	 * 
+	 * @deprecated
+	 * 
+	 * @return La probabilidad de que la mano se complete
+	 */
+	private double distribucionBinomial(int cartasNecesarias, int cartasPorMostrar) {
 		
 		int cartasQueNoHanSalido = 45 + cartasPorMostrar;			//N = cartasQueNoHanSalido ; K = Cartas Necesarias
 		

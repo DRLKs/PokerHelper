@@ -41,12 +41,15 @@ public class Carta {
 	
 	public boolean puedenHacerEscalera( Carta otraCarta ) {
 		boolean hacenEscalera = false;
-		if( this.getNumero() == 14 && otraCarta.getNumero() <=5 || otraCarta.getNumero() == 14 && this.getNumero() <= 5) {	// Caso escaleras pequeñas con A
-			hacenEscalera =  true;
-		}else if( !this.mismoNumeroQue(otraCarta) ) {
-			int diferencia = this.getNumero() - otraCarta.getNumero();
-			hacenEscalera = diferencia <= 4 && diferencia >= -4;
+		if( !this.mismoNumeroQue(otraCarta) ) {
+			if( (this.getNumero() == 14 && otraCarta.getNumero() <=5) || (otraCarta.getNumero() == 14 && this.getNumero() <= 5)) {	// Caso escaleras pequeñas con A
+				hacenEscalera =  true;
+			}else{
+				int diferencia = this.getNumero() - otraCarta.getNumero();
+				hacenEscalera = diferencia <= 4 && diferencia >= -4;
+			}
 		}
+		
 		return hacenEscalera;
 	}
 	
