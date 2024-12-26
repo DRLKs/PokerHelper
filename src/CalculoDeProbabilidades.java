@@ -1,12 +1,7 @@
 /*
  * MADE BY DRLK
  */
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +9,7 @@ public class CalculoDeProbabilidades {
 	/*
 	 * Todas las probabilidades son sobre 1
 	 */
+	private double probPareja;
 	private double probTrio;
 	private double probEscalera;
 	private double probColor;
@@ -22,6 +18,7 @@ public class CalculoDeProbabilidades {
 	private double probEscaleraColor;
 	private double probEscaleraReal;
 	
+	private double probParejaCont;
 	private double probTrioCont;
 	private double probEscaleraCont;
 	private double probColorCont;
@@ -43,6 +40,7 @@ public class CalculoDeProbabilidades {
 	 * @param numContrincantes Número de contrincantes activos
 	 */
 	public void reiniciarDatos( List<Carta> cartas, int numContrincantes) {
+		probPareja = completarPareja(cartas);
 		probTrio = completarTrio(cartas);
 		probEscalera = completarEscalera(cartas);
 		probColor = completarColor(cartas);
@@ -96,6 +94,10 @@ public class CalculoDeProbabilidades {
 	 * ##############################################################################################################
 	 */
 
+	public double getProbPareja() {
+		return probPareja;
+	}
+	
 	public double getProbTrio() {
 		return probTrio;
 	}
@@ -167,6 +169,42 @@ public class CalculoDeProbabilidades {
 	 */
 	
 	/** 
+	 * Función que devuelve la probabilidad de obtener una pareja con las cartas que tenemos
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener una pareja con las cartas de nuestra mano (double)
+	 * */
+	private double completarPareja( List<Carta> cartas ) {
+		
+		double prob;
+
+		int numCartas = cartas.size();
+		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
+		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
+
+		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	/* Nuestras cartas hacen pareja */
+			return 1.0;
+		}else {					/* Nuestras cartas no hacen pareja */
+			int num;
+			prob = 0.0;
+			
+			for( int idxCartaMano = 0 ; idxCartaMano < 2 ; ++idxCartaMano ) {
+				num = cartas.get(idxCartaMano).getNumero(); 	/* Número de nuestra carta */
+				
+				for( int idx = 2 ; idx < numCartas ; idx++ ) {
+					if( cartas.get(idx).getNumero() == num ) {	/* Encontramos carta en la mesa con el mismo número */
+						return 1.0;
+					}
+				}
+				
+				prob += distribucionHiperGeometrica(1, 3, cartasTotales, cartasPorMostrar);
+			}
+
+		}
+		return prob;
+	}
+	
+	/** 
 	 * Función que devuelve la probabilidad de obtener un trio con las cartas que tenemos
 	 * 
 	 * @param cartas Lista que contiene las cartas conocidas
@@ -192,7 +230,6 @@ public class CalculoDeProbabilidades {
 				}
 			}
 			prob = distribucionHiperGeometrica(3-numCartasTrio, 4-numCartasTrio, cartasTotales, cartasPorMostrar);
-
 			
 		}else {					/* Nuestras cartas no hacen pareja */
 			int num;
@@ -202,9 +239,9 @@ public class CalculoDeProbabilidades {
 				numCartasTrio = 1;
 				num = cartas.get(idxCartaMano).getNumero(); 	/* Número de nuestra carta */
 				
-				for( int idx = 2 ; idx < numCartas ; ++idx ) {
+				for( int idx = 2 ; idx < numCartas ; idx++ ) {
 					if( cartas.get(idx).getNumero() == num ) {	/* Encontramos carta en la mesa con el mismo número */
-						++numCartas;
+						++numCartasTrio;
 					}
 				}
 				
@@ -722,8 +759,53 @@ public class CalculoDeProbabilidades {
 	 * @return
 	 */
 	private double completarTrioCont(List<Carta> cartas, int numContrincantes) {
-		// TODO Auto-generated method stub
-		return 0;
+		
+		int numCartas = cartas.size();
+		/* Si solo tenemos nuestrar cartas no calculamos nada de los contrincantes*/
+		if( numCartas < 3 ) {
+			return -1;
+		}
+		double prob = 0.0;
+		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
+		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
+		int numCartasNecesarias;
+		int numCartasValidas = 4;	/* Solo hay 4 cartas por número */
+		int numCartasQueYoTengo;
+		
+		Carta cartaAux;
+		int cttCartasNumero;
+		
+		/* Rellenamos el Map */
+		Map< Integer , Integer> contarCartas = new HashMap<>();
+		for( int idx = 2 ; idx < numCartas-1 ; ++idx ) {
+			cartaAux = cartas.get(idx);
+			cttCartasNumero = contarCartas.getOrDefault( cartaAux.getPalo(), 0) + 1;
+			contarCartas.put(cartaAux.getNumero(),cttCartasNumero);
+		}
+		
+		for( Map.Entry<Integer , Integer> tupla : contarCartas.entrySet() ) {
+			numCartasQueYoTengo = 0;
+			/* Contamos las cartas de este tipo que tenemos */
+			for( int idx = 0 ; idx < 2 ; ++idx ) {
+				if( cartas.get(idx).getNumero() == tupla.getKey() ) {
+					++numCartasQueYoTengo;
+				}
+			}
+		
+		
+			/* Las cartas que necesita el contrincante para conseguir un trio */
+			numCartasNecesarias  = 3 - tupla.getValue();
+			
+			/* Las cartas que no podemos ver y ayudarían a completar el trio */
+			numCartasValidas -= tupla.getValue() + numCartasQueYoTengo;
+			
+			for( int numCartasContrTendria = 0 ; numCartasContrTendria < numCartasNecesarias ; ++numCartasContrTendria ) {
+				prob += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidas,cartasTotales, cartasPorMostrar) * distribucionHiperGeometrica(numCartasContrTendria, numCartasValidas,numContrincantes*2, cartasPorMostrar);
+				/* Esto esta raro, no me acuerdo lo que hace aquí */
+			}
+		}
+
+		return prob;
 	}
 	
 	/**
@@ -773,7 +855,8 @@ public class CalculoDeProbabilidades {
 			numCartasValidas -= tupla.getValue() + numCartasQueYoTengo;
 			
 			for( int numCartasContrTendria = 0 ; numCartasContrTendria < numCartasNecesarias ; ++numCartasContrTendria ) {
-				prob += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidas,cartasTotales, cartasPorMostrar) * distribucionHiperGeometrica(numCartasContrTendria, numCartasValidas,numContrincantes*2, cartasPorMostrar);
+				prob += /*distribucionHiperGeometrica(numCartasNecesarias, numCartasValidas,cartasTotales, cartasPorMostrar) * */ distribucionHiperGeometrica(numCartasContrTendria, numCartasValidas,numContrincantes*2, cartasPorMostrar);
+				/* Esto esta raro, no me acuerdo lo que hace aquí */
 			}
 		}
 		

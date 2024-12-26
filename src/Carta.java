@@ -1,9 +1,7 @@
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public class Carta {
 	
@@ -13,32 +11,60 @@ public class Carta {
 	
 	public Carta( char palo, int numero) {
 		this.palo = palo;
-		if( numero == 1 ) {	// Hace código más fácil, menos excepciones
+		if( numero == 1 ) {	// Hace código más simple, menos excepciones
 			numero = 14;
 		}
 		this.numero = numero;
 	}
 	
+	/**
+	 * 
+	 * @return devuelve el palo de la carta en cuestión
+	 */
 	public char getPalo() {
 		return this.palo;
 	}
 	
+	/**
+	 * 
+	 * @return devuelve el número de la carta en cuestión
+	 */
 	public int getNumero() {
 		return this.numero;
 	}
 	
+	/**
+	 * 
+	 * @param otraCarta Carta con la que se compara la carta en cuestión
+	 * @return devuelve {@code true} si el número en de la carta en cuestión es superior a la otra carta, {@code false} en el caso contrario
+	 */
 	public boolean masAltaQue( Carta otraCarta ) {
 		return this.getNumero() > otraCarta.getNumero();
 	}
 	
+	/**
+	 * 
+	 * @param otraCarta Carta con la que se compara la carta en cuestión
+	 * @return devuelve True si el palo de la carta en cuestión es igual al de la otra carta, {@code false} en el caso contrario
+	 */
 	public boolean mismoPaloQue( Carta otraCarta ) {
 		return this.getPalo() == otraCarta.getPalo();
 	}
 	
+	/**
+	 * 
+	 * @param otraCarta Carta con la que se compara la carta en cuestión
+	 * @return devuelve {@code true} si el número de la carta en cuestión es igual al de la otra carta, {@code false} en el caso contrario
+	 */
 	public boolean mismoNumeroQue( Carta otraCarta ) {
 		return this.getNumero() == otraCarta.getNumero();
 	}
 	
+	/**
+	 * 
+	 * @param otraCarta Carta con la que se compara la carta en cuestión
+	 * @return devuelve {@code true} si las cartas pueden hacer escalera entre ellas, {@code false} en el caso contrario
+	 */
 	public boolean puedenHacerEscalera( Carta otraCarta ) {
 		boolean hacenEscalera = false;
 		if( !this.mismoNumeroQue(otraCarta) ) {
@@ -70,7 +96,7 @@ public class Carta {
 		return numero == other.numero && palo == other.palo;
 	}
 
-	/*
+	/**
 	 * Esta función nos ayudará a saber si hay cartas que aparecen n veces
 	 * 
 	 * Devolverá: 
@@ -111,8 +137,11 @@ public class Carta {
         return -1;
 	}
 	
-	/*
-	 * 	Devuelve el número de veces que se repite ese número enntre la mesa y nuestra mano
+	/**
+	 * 
+	 * @param cartas Lista con las cartas que podemos observar
+	 * @param numCarta Número el cual queremos conocer las veces que aparece entre las cartas observables
+	 * @return Número de veces que aparece el número seleccionado en las cartas observables
 	 */
 	static int vecesQueSeSaleEsteNumero( List<Carta> cartas , int numCarta ) {
 		

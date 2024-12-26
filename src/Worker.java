@@ -73,6 +73,7 @@ public class Worker extends SwingWorker<Integer , Integer>{
 	
 	private void sacarDatosObtenidos() {
 		System.out.println("-------------------------------------");
+		System.out.println("Probabilidad pareja: " + calc.getProbPareja());
 		System.out.println("Probabilidad trio: " + calc.getProbTrio());
 		System.out.println("Probabilidad escalera: " + calc.getProbEscalera());
 		System.out.println("Probabilidad color: " + calc.getProbColor());
@@ -80,8 +81,9 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		System.out.println("Probabilidad Poker: " + calc.getProbPoker());
 		System.out.println("Probabilidad escalera de color : " + calc.getProbEscaleraColor());
 		System.out.println("Probabilidad escalera real: " + calc.getProbEscaleraReal());
-		
-		System.out.println("Probabilidad colo contr: " + calc.getProbColorCont());
+
+		System.out.println("Probabilidad trio contr: " + calc.getProbTrio());
+		System.out.println("Probabilidad color contr: " + calc.getProbColorCont());
 
 		System.out.println("-------------------------------------");
 	}
