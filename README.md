@@ -21,4 +21,6 @@ Soy un apasionado del Poker, de la programación y de las matemáticas, por tant
 - pygetwindow (Manejo de Ventanas)
 - pyautogui (Captura de ventana)
 - OpenCV (Análisis de Imágenes)
- ''pip install pygetwindow pyautogui pytesseract opencv-python pillow
+
+```cmd
+pip install pygetwindow pyautogui pytesseract opencv-python pillow
