@@ -49,9 +49,13 @@ public class CalculoDeProbabilidades {
 		probEscaleraColor = completarEscaleraColor(cartas);
 		probEscaleraReal = completarEscaleraReal(cartas);
 		
-		//probEscaleraCont
-		probTrioCont = completarTrioCont(cartas, numContrincantes);
+		completarParejaTrioPokerCont(cartas, numContrincantes);
+		probEscaleraCont = completarEscaleraCont(cartas, numContrincantes);
 		probColorCont = completarColorCont( cartas, numContrincantes );
+		probFullHouseCont = completarFullHouseCont(cartas, numContrincantes);
+		probEscaleraColorCont = completarEscaleraColorCont(cartas, numContrincantes);
+		probEscaleraRealCont = completarEscaleraRealCont(cartas, numContrincantes);
+
 		/*
 		try (ServerSocket serverSocket = new ServerSocket(5000)) {
             System.out.println("Esperando conexión de Python...");
@@ -126,6 +130,10 @@ public class CalculoDeProbabilidades {
 		return probEscaleraReal;
 	}
 	
+
+	public double getProbParejaCont() {
+		return probParejaCont;
+	}
 	
 	public double getProbTrioCont() {
 		return probTrioCont;
@@ -133,6 +141,42 @@ public class CalculoDeProbabilidades {
 	
 	public double getProbColorCont() {
 		return probColorCont;
+	}
+	
+	public double getProbEscaleraCont() {
+		return probEscaleraCont;
+	}
+
+	public void setProbEscaleraCont(double probEscaleraCont) {
+		this.probEscaleraCont = probEscaleraCont;
+	}
+
+	public double getProbFullHouseCont() {
+		return probFullHouseCont;
+	}
+
+	public void setProbFullHouseCont(double probFullHouseCont) {
+		this.probFullHouseCont = probFullHouseCont;
+	}
+
+	public double getProbPokerCont() {
+		return probPokerCont;
+	}
+	
+	public double getProbEscaleraColorCont() {
+		return probEscaleraColorCont;
+	}
+
+	public void setProbEscaleraColorCont(double probEscaleraColorCont) {
+		this.probEscaleraColorCont = probEscaleraColorCont;
+	}
+
+	public double getProbEscaleraRealCont() {
+		return probEscaleraRealCont;
+	}
+
+	public void setProbEscaleraRealCont(double probEscaleraRealCont) {
+		this.probEscaleraRealCont = probEscaleraRealCont;
 	}
 	
 	/**
@@ -751,61 +795,88 @@ public class CalculoDeProbabilidades {
 	 * ##############################################################################################################
 	 */
 	
-	/**
-	 * Función que devuelve la probabilidad de que uno de nuestro contrincantes obtenegan un trio con las cartas que conocemos
-	 *
-	 * @param cartas
-	 * @param numContrincantes
-	 * @return
-	 */
-	private double completarTrioCont(List<Carta> cartas, int numContrincantes) {
+	/** 
+	 * Función que calcula la probabilidad de que uno de nuestro contrincantes obtengan una pareja o un trio o un poker con las cartas que conocemos
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @param numContrincantes número de contrincantes activos
+	 * */
+	private void completarParejaTrioPokerCont( List<Carta> cartas, int numContrincantes ) {
 		
 		int numCartas = cartas.size();
 		/* Si solo tenemos nuestrar cartas no calculamos nada de los contrincantes*/
 		if( numCartas < 3 ) {
-			return -1;
+			this.probParejaCont = -1;
+			this.probTrioCont = -1;
+			this.probPokerCont = -1;
+
 		}
-		double prob = 0.0;
-		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
-		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
-		int numCartasNecesarias;
-		int numCartasValidas = 4;	/* Solo hay 4 cartas por número */
-		int numCartasQueYoTengo;
-		
-		Carta cartaAux;
-		int cttCartasNumero;
-		
-		/* Rellenamos el Map */
-		Map< Integer , Integer> contarCartas = new HashMap<>();
-		for( int idx = 2 ; idx < numCartas-1 ; ++idx ) {
-			cartaAux = cartas.get(idx);
-			cttCartasNumero = contarCartas.getOrDefault( cartaAux.getPalo(), 0) + 1;
-			contarCartas.put(cartaAux.getNumero(),cttCartasNumero);
-		}
-		
-		for( Map.Entry<Integer , Integer> tupla : contarCartas.entrySet() ) {
-			numCartasQueYoTengo = 0;
-			/* Contamos las cartas de este tipo que tenemos */
-			for( int idx = 0 ; idx < 2 ; ++idx ) {
-				if( cartas.get(idx).getNumero() == tupla.getKey() ) {
-					++numCartasQueYoTengo;
+		else 
+		{
+			this.probParejaCont = 0;
+			this.probTrioCont = 0;
+			this.probPokerCont = 0;
+			
+			int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
+			int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
+			int numCartasNecesarias;
+			int numCartasValidasRestantes = 4;	/* Solo hay 4 cartas por número */
+			int numCartasQueYoTengo;
+	
+			Carta cartaAux;
+			int cttCartasNumero;
+			
+			/* Rellenamos el Map */
+			Map< Integer , Integer> contarCartas = new HashMap<>();
+			for( int idx = 2 ; idx < numCartas ; ++idx ) {
+				cartaAux = cartas.get(idx);
+				cttCartasNumero = contarCartas.getOrDefault( cartaAux.getNumero(), 0) + 1;
+				contarCartas.put(cartaAux.getNumero(),cttCartasNumero);
+			}
+			
+			for( Map.Entry<Integer , Integer> tupla : contarCartas.entrySet() ) {
+				numCartasQueYoTengo = 0;
+				/* Contamos las cartas de este tipo que tenemos */
+				for( int idx = 0 ; idx < 2 ; ++idx ) {
+					if( cartas.get(idx).getNumero() == tupla.getKey() ) {
+						++numCartasQueYoTengo;
+					}
+				}
+			
+			
+				/* Las cartas que necesita el contrincante para conseguir una pareja */
+				numCartasNecesarias  = 2 - tupla.getValue();
+				
+				/* Las cartas que no podemos ver y ayudarían a completar la pareja */
+				numCartasValidasRestantes = 4 - tupla.getValue() - numCartasQueYoTengo;
+				
+				for( int numCartasContrTendria = 0 ; numCartasContrTendria < numCartasNecesarias ; ++numCartasContrTendria ) {
+					this.probParejaCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar) * distribucionHiperGeometrica(numCartasContrTendria, numCartasValidasRestantes,numContrincantes*2, cartasPorMostrar);
+				}
+				
+				
+				/* Las cartas que no podemos ver y ayudarían a completar el trio */
+				numCartasNecesarias  = 3 - tupla.getValue();
+				
+				/* Las cartas que no podemos ver y ayudarían a completar el trio */
+				numCartasValidasRestantes = 4 - tupla.getValue() - numCartasQueYoTengo;
+				
+				for( int numCartasContrTendria = 0 ; numCartasContrTendria < numCartasNecesarias ; ++numCartasContrTendria ) {
+					this.probTrioCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar) * distribucionHiperGeometrica(numCartasContrTendria, numCartasValidasRestantes,numContrincantes*2, cartasPorMostrar);
+				}
+				
+				
+				/* Las cartas que no podemos ver y ayudarían a completar el poker */
+				numCartasNecesarias  = 4 - tupla.getValue();
+				
+				/* Las cartas que no podemos ver y ayudarían a completar el poker */
+				numCartasValidasRestantes = 4 - tupla.getValue() - numCartasQueYoTengo;
+				
+				for( int numCartasContrTendria = 0 ; numCartasContrTendria < numCartasNecesarias ; ++numCartasContrTendria ) {
+					this.probPokerCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar) * distribucionHiperGeometrica(numCartasContrTendria, numCartasValidasRestantes,numContrincantes*2, cartasPorMostrar);
 				}
 			}
-		
-		
-			/* Las cartas que necesita el contrincante para conseguir un trio */
-			numCartasNecesarias  = 3 - tupla.getValue();
-			
-			/* Las cartas que no podemos ver y ayudarían a completar el trio */
-			numCartasValidas -= tupla.getValue() + numCartasQueYoTengo;
-			
-			for( int numCartasContrTendria = 0 ; numCartasContrTendria < numCartasNecesarias ; ++numCartasContrTendria ) {
-				prob += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidas,cartasTotales, cartasPorMostrar) * distribucionHiperGeometrica(numCartasContrTendria, numCartasValidas,numContrincantes*2, cartasPorMostrar);
-				/* Esto esta raro, no me acuerdo lo que hace aquí */
-			}
 		}
-
-		return prob;
 	}
 	
 	/**
@@ -826,14 +897,14 @@ public class CalculoDeProbabilidades {
 		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
 		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
 		int numCartasNecesarias;
-		int numCartasValidas = 13;
+		int numCartasValidasRestantes = 13;
 		int numCartasQueYoTengo;
 		
 		int cttCartasColor;
 		Carta cartaAux;
 		Map< Character , Integer> contarCartas = new HashMap<>();
 		
-		for( int idx = 2 ; idx < numCartas-1 ; ++idx ) {
+		for( int idx = 2 ; idx < numCartas ; ++idx ) {
 			cartaAux = cartas.get(idx);
             cttCartasColor = contarCartas.getOrDefault( cartaAux.getPalo(), 0) + 1;
 			contarCartas.put(cartaAux.getPalo(),cttCartasColor);
@@ -852,15 +923,56 @@ public class CalculoDeProbabilidades {
 			numCartasNecesarias  = 5 - tupla.getValue();
 			
 			/* Las cartas que no podemos ver y ayudarían a completar el color */
-			numCartasValidas -= tupla.getValue() + numCartasQueYoTengo;
+			numCartasValidasRestantes -= tupla.getValue() + numCartasQueYoTengo;
 			
 			for( int numCartasContrTendria = 0 ; numCartasContrTendria < numCartasNecesarias ; ++numCartasContrTendria ) {
-				prob += /*distribucionHiperGeometrica(numCartasNecesarias, numCartasValidas,cartasTotales, cartasPorMostrar) * */ distribucionHiperGeometrica(numCartasContrTendria, numCartasValidas,numContrincantes*2, cartasPorMostrar);
+				prob += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar) *  distribucionHiperGeometrica(numCartasContrTendria, numCartasValidasRestantes,numContrincantes*2, cartasPorMostrar);
 				/* Esto esta raro, no me acuerdo lo que hace aquí */
 			}
 		}
 		
 		return prob;
+	}
+	
+	private double completarEscaleraCont(List<Carta> cartas, int numContrincantes) {
+		
+		int numCartas = cartas.size();
+		/* Si solo tenemos nuestrar cartas no calculamos nada de los contrincantes*/
+		if( numCartas < 3 ) {
+			return -1;
+		}
+		double prob = 0.0;
+		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
+		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
+		//int numCartasNecesarias;
+		//int numCartasValidas = 13;
+		//int numCartasQueYoTengo;
+		
+		
+		int[] numerosEscaleraCont = new int[15];;
+		
+		for( int idx = 2; idx < numCartas ; ++idx ) {
+			numerosEscaleraCont[ cartas.get(idx).getNumero() ] = 1;
+		}
+		if( numerosEscaleraCont[14] == 1 ) {	// Está el AS, 14-1=13
+			numerosEscaleraCont[1] = 1;
+		}
+		
+		/* Calculamos los límites de la baraja que debemos estudiar */
+		
+		return prob;
+	}
+	
+	private double completarFullHouseCont(List<Carta> cartas, int numContrincantes) {
+		return 0.0;
+	}
+	
+	private double completarEscaleraColorCont(List<Carta> cartas, int numContrincantes) {
+		return 0.0;
+	}
+	
+	private double completarEscaleraRealCont(List<Carta> cartas, int numContrincantes) {
+		return 0.0;
 	}
 	
 	/*
@@ -915,5 +1027,6 @@ public class CalculoDeProbabilidades {
 		
 		return (double) combinacionesNK * Math.pow(p, cartasNecesarias) * Math.pow(1.0-p, cartasQueNoHanSalido-cartasNecesarias);
 	}
+
 	
 }

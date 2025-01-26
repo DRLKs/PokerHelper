@@ -82,8 +82,14 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		System.out.println("Probabilidad escalera de color : " + calc.getProbEscaleraColor());
 		System.out.println("Probabilidad escalera real: " + calc.getProbEscaleraReal());
 
-		System.out.println("Probabilidad trio contr: " + calc.getProbTrio());
-		System.out.println("Probabilidad color contr: " + calc.getProbColorCont());
+		System.out.println("Probabilidad pareja contr: " + calc.getProbParejaCont());
+		System.out.println("Probabilidad trio contr: " + calc.getProbTrioCont());
+		System.out.println("Probabilidad escalera contr: " + calc.getProbEscaleraCont());
+		System.out.println("Probabilidad color contr contr: " + calc.getProbColorCont());
+		System.out.println("Probabilidad FullHouse contr: " + calc.getProbFullHouseCont());
+		System.out.println("Probabilidad Poker contr: " + calc.getProbPokerCont());
+		System.out.println("Probabilidad escalera de color contr: " + calc.getProbEscaleraColorCont());
+		System.out.println("Probabilidad escalera real contr: " + calc.getProbEscaleraRealCont());
 
 		System.out.println("-------------------------------------");
 	}
