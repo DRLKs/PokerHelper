@@ -27,10 +27,19 @@ public class CalculoDeProbabilidades {
 	private double probEscaleraColorCont;
 	private double probEscaleraRealCont;
 	
+	/**
+	 * El número máximo de cartas que podemos ver al mismo tiempo son 7
+	 */
 	private final int MAX_CARTAS_VISIBLES = 7;
+	/**
+	 * El número de cartas que tienen el mismo número es 4
+	 */
 	private final int MAX_CARTAS_NUMERO = 4;
 	private final int IDX_CARTA_MANO_1 = 0;
 	private final int IDX_CARTA_MANO_2 = 1;
+	/**
+	 * 45
+	 */
 	private final int NUM_CARTAS_NUNCA_VES = 45;
 
 	/**
@@ -227,7 +236,7 @@ public class CalculoDeProbabilidades {
 		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
 
 		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	/* Nuestras cartas hacen pareja */
-			return 1.0;
+			prob = 1.0;
 		}else {					/* Nuestras cartas no hacen pareja */
 			int num;
 			prob = 0.0;
@@ -237,13 +246,15 @@ public class CalculoDeProbabilidades {
 				
 				for( int idx = 2 ; idx < numCartas ; idx++ ) {
 					if( cartas.get(idx).getNumero() == num ) {	/* Encontramos carta en la mesa con el mismo número */
-						return 1.0;
+						prob = 1.0;
 					}
 				}
-				
-				prob += distribucionHiperGeometrica(1, 3, cartasTotales, cartasPorMostrar);
 			}
-
+			
+			if( prob <= 0.0 ) {	/* En el caso de que la probabilidad siga siendo 0.0, no hemos encontrado ninguna pareja */
+				prob += probabilidadComplementaria(MAX_CARTAS_NUMERO - 1, cartasTotales, cartasPorMostrar, 1) * 2;
+			}
+			
 		}
 		return prob;
 	}
@@ -843,38 +854,23 @@ public class CalculoDeProbabilidades {
 					}
 				}
 			
-			
-				/* Las cartas que necesita el contrincante para conseguir una pareja */
-				numCartasNecesarias  = 2 - tupla.getValue();
-				
-				/* Las cartas que no podemos ver y ayudarían a completar la pareja */
+				/* Las cartas que no podemos ver y ayudarían a completar la mano */
 				numCartasValidasRestantes = 4 - tupla.getValue() - numCartasQueYoTengo;
 				
-				for( int numCartasContrTendria = 0 ; numCartasContrTendria < numCartasNecesarias ; ++numCartasContrTendria ) {
-					this.probParejaCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar) * distribucionHiperGeometrica(numCartasContrTendria, numCartasValidasRestantes,numContrincantes*2, cartasPorMostrar);
-				}
+				/* Las cartas que necesita el contrincante para conseguir una pareja */
+				numCartasNecesarias  = 2 - tupla.getValue();
+				this.probParejaCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar);
 				
 				
 				/* Las cartas que no podemos ver y ayudarían a completar el trio */
 				numCartasNecesarias  = 3 - tupla.getValue();
-				
-				/* Las cartas que no podemos ver y ayudarían a completar el trio */
-				numCartasValidasRestantes = 4 - tupla.getValue() - numCartasQueYoTengo;
-				
-				for( int numCartasContrTendria = 0 ; numCartasContrTendria < numCartasNecesarias ; ++numCartasContrTendria ) {
-					this.probTrioCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar) * distribucionHiperGeometrica(numCartasContrTendria, numCartasValidasRestantes,numContrincantes*2, cartasPorMostrar);
-				}
+				this.probTrioCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar);
 				
 				
 				/* Las cartas que no podemos ver y ayudarían a completar el poker */
 				numCartasNecesarias  = 4 - tupla.getValue();
+				this.probPokerCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar);
 				
-				/* Las cartas que no podemos ver y ayudarían a completar el poker */
-				numCartasValidasRestantes = 4 - tupla.getValue() - numCartasQueYoTengo;
-				
-				for( int numCartasContrTendria = 0 ; numCartasContrTendria < numCartasNecesarias ; ++numCartasContrTendria ) {
-					this.probPokerCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar) * distribucionHiperGeometrica(numCartasContrTendria, numCartasValidasRestantes,numContrincantes*2, cartasPorMostrar);
-				}
 			}
 		}
 	}
@@ -1027,6 +1023,55 @@ public class CalculoDeProbabilidades {
 		
 		return (double) combinacionesNK * Math.pow(p, cartasNecesarias) * Math.pow(1.0-p, cartasQueNoHanSalido-cartasNecesarias);
 	}
+	
+	
+	/**
+	 * Obtenemos la probabilidad de obtener un determinado número de cartas, en un conjunto donde tenemos un numero de cartas válidas y del cual solo podemos tomar un número límitado de estas
+	 * 
+	 * @param numCartasValidas número de cartas del conjunto que son válidas para el individuo
+	 * @param numCartasPosibles número de cartas diferentes que podemos tomar
+	 * @param iteraciones número de cartas que posee el conjunto con el que trabajamos
+	 * @param numCartasNecesarias número de cartas del conjunto de cartas válidas que necesitamos
+	 * 
+	 */
+	private double probabilidadComplementaria( int numCartasValidas, int numCartasPosibles, int iteraciones, int numCartasNecesarias) {
+		double prob = 1.0;
+		
+		int numCartasPosiblesAux;
+		int numCartasValidasAux;
+		
+		if( numCartasNecesarias <= 2 && numCartasNecesarias > 0) {
+			
+			for( int co = 0 ; co < numCartasNecesarias ; co++ ) {	// co = cartas que obtienes
 
+				for( int io = 0 ; io < numCartasNecesarias ; io++ ) {	// io = iteracion donde obtiene la carta
+
+					numCartasValidasAux = numCartasValidas;
+					numCartasPosiblesAux = numCartasPosibles;
+					
+					for( int i = 0 ; i < iteraciones ; ++i ) {
+						
+						if( i == io && co > 0  ) {
+							prob *= (double) numCartasValidasAux / numCartasPosiblesAux;
+							--numCartasValidasAux;
+						}else {
+							prob *=  1.0 -  ((double) numCartasValidasAux / numCartasPosiblesAux);
+							--numCartasPosiblesAux;
+						}
+						
+					}
+				}
+			}
+			
+			prob = 1.0 - prob;
+			
+		}else if( numCartasNecesarias > 0) {	// Es mejor cambiar el método para estos casos para no elevar mucho la complejidad del algoritmo
+			
+			
+			
+		}
+		
+		return prob;
+	}
 	
 }
