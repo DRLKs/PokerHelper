@@ -12,18 +12,18 @@ public class Worker extends SwingWorker<Integer , Integer>{
 	private final int CARTA_MANO_2 = 1;
 	
 	private List<Carta> cartas;
-	private Panel panel;
 	private int numContrincantes;
 	private CalculoDeProbabilidades calc;
+	private Controlador controlador;
 	
-	public Worker( int numContrincantes, List<Carta> cartas, Panel panel) {
+	public Worker( int numContrincantes, List<Carta> cartas, Controlador controlador) {
 		this.cartas = cartas;
-		this.panel = panel;
+		this.controlador = controlador;
 		this.numContrincantes = numContrincantes;
 		this.calc = new CalculoDeProbabilidades();
 	}
 	
-	/*
+	/**
 	 * Función que llama al SwingWorker
 	 * Hilo que calcula la probabilidad en BackGround
 	 */
@@ -51,8 +51,21 @@ public class Worker extends SwingWorker<Integer , Integer>{
 	public void done() {
 		
 		try {
-			panel.setProbabilidad( get() );
-			panel.setErrores("Terminado");
+			String nuevaDecision;
+			int decision = get();
+			
+			switch (decision) {
+			case 0: 
+				nuevaDecision = "Apostar";
+				break;
+			case 1:
+				nuevaDecision = "Salir";
+				break;
+			default:
+				nuevaDecision = "Error";
+			}
+			
+			controlador.setDecision(nuevaDecision);
 
 		} catch (InterruptedException | ExecutionException e) {
 			e.printStackTrace();
@@ -61,6 +74,13 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		}
 	}
 	
+	/**
+	 * Función llamada en segundo plano, esta hace todos los calculos probabilísticos
+	 * 
+	 * <b> POR TERMINAR </b>
+	 * 
+	 * @return Devuelve un entero que identifica a una decisión que debe tomar el jugador
+	 */
 	private int calcularProbabilidad() {
 		
 		calc.reiniciarDatos(cartas , numContrincantes);
@@ -68,12 +88,13 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		sacarDatosObtenidos();
 		int prob =(int)(100*calc.getProbEscaleraColor()) ;
 		System.out.println(".............."+ prob);
-		return prob;
+		return 1;	
 	}
 	
 	private void sacarDatosObtenidos() {
 		System.out.println("-------------------------------------");
 		System.out.println("Probabilidad pareja: " + calc.getProbPareja());
+		
 		System.out.println("Probabilidad trio: " + calc.getProbTrio());
 		System.out.println("Probabilidad escalera: " + calc.getProbEscalera());
 		System.out.println("Probabilidad color: " + calc.getProbColor());
@@ -90,8 +111,20 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		System.out.println("Probabilidad Poker contr: " + calc.getProbPokerCont());
 		System.out.println("Probabilidad escalera de color contr: " + calc.getProbEscaleraColorCont());
 		System.out.println("Probabilidad escalera real contr: " + calc.getProbEscaleraRealCont());
-
+		
 		System.out.println("-------------------------------------");
+		
+		
+		controlador.setProbabilidad(0, (int) (calc.getProbPareja() 		  * 100) );
+		controlador.setProbabilidad(1, (int) (calc.getProbTrio() 		  * 100) );
+		controlador.setProbabilidad(2, (int) (calc.getProbEscalera() 	  * 100) );
+		controlador.setProbabilidad(3, (int) (calc.getProbColor() 		  * 100) );
+		controlador.setProbabilidad(4, (int) (calc.getProbFullHouse() 	  * 100) );
+		controlador.setProbabilidad(5, (int) (calc.getProbPoker() 		  * 100) );
+		controlador.setProbabilidad(6, (int) (calc.getProbEscaleraColor() * 100) );
+		controlador.setProbabilidad(7, (int) (calc.getProbEscaleraReal()  * 100) );
+
+		
 	}
 	
 	private double calcularProbabilidadMejoresCartasIndividualesContrincantes() {	// Asumimos que nadie va a sacar Escalera de color ni real, que los calculos ya son suficientemente complejos

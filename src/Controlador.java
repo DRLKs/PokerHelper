@@ -37,9 +37,8 @@ public class Controlador implements ActionListener,PropertyChangeListener {
 				
 				if( datosSuficientes ) {
 					int numContrincantes = panel.numJugadoresActuales();
-					panel.setErrores("Calculando Datos");
 					
-					worker = new Worker(numContrincantes, cartas, panel);
+					worker = new Worker(numContrincantes, cartas, this);
 					worker.addPropertyChangeListener(this);
 					worker.execute();
 				}
@@ -47,9 +46,9 @@ public class Controlador implements ActionListener,PropertyChangeListener {
 		
 		
 		}catch(NumberFormatException e) {
-			panel.setErrores("CONTRINCANTES VACIOS");
-		}catch(PokerException e) {	// NO FUNCIONA EL SETERROES, no es el try catch
-			panel.setErrores( e.getMessage() );
+			panel.setDecision("CONTRINCANTES VACIOS");
+		}catch(PokerException e) {
+			panel.setDecision( e.getMessage() );
 		}catch( Exception e) {
 			e.printStackTrace();
 		}
@@ -86,5 +85,47 @@ public class Controlador implements ActionListener,PropertyChangeListener {
 	public void propertyChange(PropertyChangeEvent evt) {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	// FUNCIONES PARA EL PANEL
+	void setDecision( String msg ) {
+		panel.setDecision(msg);
+	}
+	
+	/**
+	 * 
+	 * @param id para facilitar el código cada probabilidad tiene un identificador único
+	 * @param probabilidad
+	 */
+	void setProbabilidad(int id, int probabilidad) {
+		
+		switch (id) {
+		case 0: 
+			panel.setProbabilidadPareja(probabilidad);
+			break;
+		case 1: 
+			panel.setProbabilidadTrio(probabilidad);
+			break;
+		case 2: 
+			panel.setProbabilidadEscalera(probabilidad);
+			break;
+		case 3: 
+			panel.setProbabilidadColor(probabilidad);
+			break;
+		case 4: 
+			panel.setProbabilidadFull(probabilidad);
+			break;
+		case 5: 
+			panel.setProbabilidadPoker(probabilidad);
+			break;
+		case 6: 
+			panel.setProbabilidadEscaleraColor(probabilidad);
+			break;
+		case 7: 
+			panel.setProbabilidadEscaleraReal(probabilidad);
+			break;
+		default:
+			setDecision("Error");
+		}
 	}
 }

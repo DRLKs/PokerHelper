@@ -3,7 +3,6 @@ import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 
-import javax.management.RuntimeErrorException;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -12,12 +11,17 @@ import javax.swing.JTextField;
 
 public class Panel extends JPanel {
 	
-	// ETIQUETAS
-	private final JLabel etiquetaInstruccionesPalos = new JLabel("Trebol = T\nPica = P\nDiamante = D\nCorazon = C");
-	private final JLabel etiquetaInstruccionesCartas = new JLabel("J = 11 Q = 12 K = 13 AS = 1 ");
-	
-	private JLabel etiquetaErrores = new JLabel("TODO OK");
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7053570639591241429L;
 
+	// ETIQUETAS
+	/* Estas 2 primeras quizás se usan */
+	//private final JLabel etiquetaInstruccionesPalos = new JLabel("Trebol = T\nPica = P\nDiamante = D\nCorazon = C");
+	//private final JLabel etiquetaInstruccionesCartas = new JLabel("J = 11 Q = 12 K = 13 AS = 1 ");
+	
+	private JLabel etiquetaDecion = new JLabel("");	// Resultado del modelo
 
 	private final JLabel etiquetaCartasMano = new JLabel("CARTAS MANO");
 	private final JLabel etiquetaCartasMesa = new JLabel("CARTAS MESA");
@@ -38,8 +42,15 @@ public class Panel extends JPanel {
 	
 	private JTextField entradaJugadoresActivos = new JTextField(0);
 
-	// PROGRESS PANEL, %Victoria
-	private JProgressBar porcentajeVictoria = new JProgressBar(0, 100);
+	// PROGRESS PANEL
+	private JProgressBar porcentajePareja = new JProgressBar(0, 100);
+	private JProgressBar porcentajeTrio = new JProgressBar(0, 100);
+	private JProgressBar porcentajeEscalera = new JProgressBar(0, 100);
+	private JProgressBar porcentajeColor = new JProgressBar(0, 100);
+	private JProgressBar porcentajeFull = new JProgressBar(0, 100);
+	private JProgressBar porcentajePoker = new JProgressBar(0, 100);
+	private JProgressBar porcentajeEscaleraColor = new JProgressBar(0, 100);
+	private JProgressBar porcentajeEscaleraReal = new JProgressBar(0, 100);
 
 	
 	
@@ -111,7 +122,7 @@ public class Panel extends JPanel {
 		// SUR DEL PANEL
 		
 		JPanel sur = new JPanel();
-		sur.setLayout(new GridLayout(3, 1));
+		sur.setLayout(new GridLayout(4, 1));
 		
 		JPanel surArriba = new JPanel();
 		surArriba.add(etiquetaCartasMano);
@@ -124,10 +135,24 @@ public class Panel extends JPanel {
 		sur.add(BorderLayout.CENTER, surCentro);
 		
 		JPanel surAbajo = new JPanel();
-		surAbajo.add(porcentajeVictoria);
-		surAbajo.add(etiquetaErrores);
-		sur.add(BorderLayout.CENTER, surAbajo);
+		// Porcentajes
+		surAbajo.add(porcentajePareja);
+		surAbajo.add(porcentajeTrio);
+		surAbajo.add(porcentajeEscalera);
+		surAbajo.add(porcentajeColor);
 		
+		JPanel surAbajoAbajo = new JPanel();
+
+		surAbajoAbajo.add(porcentajeFull);
+		surAbajoAbajo.add(porcentajePoker);
+		surAbajoAbajo.add(porcentajeEscaleraColor);
+		surAbajoAbajo.add(porcentajeEscaleraReal);
+		
+		surAbajoAbajo.add(etiquetaDecion);
+		
+		sur.add(BorderLayout.CENTER, surAbajo);
+		sur.add(BorderLayout.CENTER, surAbajoAbajo);
+
 		this.add(BorderLayout.SOUTH, sur);
 		
 		// CONFIGURACION DE ETIQUETAS
@@ -141,11 +166,30 @@ public class Panel extends JPanel {
 		entradaCartasMesa5.setHorizontalAlignment(JTextField.CENTER);
 		entradaJugadoresActivos.setHorizontalAlignment(JTextField.CENTER);
 		
-		// P
-		porcentajeVictoria.setStringPainted(true);
-		setProbabilidad(100);
+		// Inicialización Porcentajes
+		porcentajePareja.setStringPainted(true);
+		setProbabilidad(porcentajePareja, 100);
 		
-		//
+		porcentajeTrio.setStringPainted(true);
+		setProbabilidad(porcentajeTrio, 100);
+		
+		porcentajeEscalera.setStringPainted(true);
+		setProbabilidad(porcentajeEscalera, 100);
+		
+		porcentajeColor.setStringPainted(true);
+		setProbabilidad(porcentajeColor, 100);
+		
+		porcentajeFull.setStringPainted(true);
+		setProbabilidad(porcentajeFull, 100);
+		
+		porcentajePoker.setStringPainted(true);
+		setProbabilidad(porcentajePoker, 100);
+		
+		porcentajeEscaleraColor.setStringPainted(true);
+		setProbabilidad(porcentajeEscaleraColor, 100);
+		
+		porcentajeEscaleraReal.setStringPainted(true);
+		setProbabilidad(porcentajeEscaleraReal, 100);
 
 	}
 	
@@ -193,24 +237,63 @@ public class Panel extends JPanel {
 		return salida;
 	}
 	
-	public void setProbabilidad( int p) {
-		if( p > 65 ) {
-			porcentajeVictoria.setForeground( new Color(0,160,0) );
-		}else if( p > 40 ) {
-			porcentajeVictoria.setForeground( new Color(255,165,0) );
-		}else {
-			porcentajeVictoria.setForeground( new Color(160,0,0) );
-		}
-		porcentajeVictoria.setValue(p);
+	void setProbabilidadPareja(int p) {
+		setProbabilidad(porcentajePareja,p);
 	}
 	
-	public void setErrores( String msg ) {
-		etiquetaErrores.setText(msg);
+	void setProbabilidadTrio(int p) {
+		setProbabilidad(porcentajeTrio,p);
 	}
-	/* 
+	
+	void setProbabilidadEscalera(int p) {
+		setProbabilidad(porcentajeEscalera,p);
+	}
+	
+	void setProbabilidadColor(int p) {
+		setProbabilidad(porcentajeColor,p);
+	}
+	
+	void setProbabilidadFull(int p) {
+		setProbabilidad(porcentajeFull,p);
+	}
+	
+	void setProbabilidadPoker(int p) {
+		setProbabilidad(porcentajePoker,p);
+	}
+	
+	void setProbabilidadEscaleraColor(int p) {
+		setProbabilidad(porcentajeEscaleraColor,p);
+	}
+	
+	void setProbabilidadEscaleraReal(int p) {
+		setProbabilidad(porcentajeEscaleraReal,p);
+	}
+	
+	
+	private void setProbabilidad( JProgressBar jpb,  int p) {
+		if( p > 65 ) {
+			jpb.setForeground( new Color(0,160,0) );
+		}else if( p > 40 ) {
+			jpb.setForeground( new Color(255,165,0) );
+		}else {
+			jpb.setForeground( new Color(160,0,0) );
+		}
+		jpb.setValue(p);
+	}
+	
+	public void setDecision( String msg ) {
+		etiquetaDecion.setText(msg);
+	}
+	
+	public void clearDecision() {
+		etiquetaDecion.setText("");
+	}
+	
+	/** 
 	 * Por implementar, en un futuro
 	 * La idea es que salga un despegable, un JFrame con todas las cartas seleccionables
-	*/
+	 */
+	@SuppressWarnings("unused")
 	private void interfazSeleccionarCartas() {
 		
 	}
