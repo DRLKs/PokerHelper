@@ -197,9 +197,9 @@ public class CalculoDeProbabilidades {
 	 */
 	public int C( int n ,int k) { // COMBINACIONES
 		
-		if (k > n || k < 0) return 0; // No existe combinatoria si k > n
+		if (k > n || k < 0) return -1; // No existe combinatoria si k > n
         if (k == 0 || k == n ) return 1;
-        // La combinación es simétrica, C(n, k) = C(n, n-k)
+        /* La combinación es simétrica, C(n, k) = C(n, n-k) */
         if (k > n - k) {
             k = n - k;
         }
@@ -252,7 +252,7 @@ public class CalculoDeProbabilidades {
 			}
 			
 			if( prob <= 0.0 ) {	/* En el caso de que la probabilidad siga siendo 0.0, no hemos encontrado ninguna pareja */
-				prob += probabilidadComplementaria(MAX_CARTAS_NUMERO - 1, cartasTotales, cartasPorMostrar, 1) * 2;
+				prob += distribucionHiperGeometrica(1, MAX_CARTAS_NUMERO - 1, cartasTotales, cartasPorMostrar);
 			}
 			
 		}
@@ -284,7 +284,7 @@ public class CalculoDeProbabilidades {
 					break;
 				}
 			}
-			prob = distribucionHiperGeometrica(3-numCartasTrio, 4-numCartasTrio, cartasTotales, cartasPorMostrar);
+			prob = distribucionHiperGeometrica(3 - numCartasTrio, MAX_CARTAS_NUMERO - numCartasTrio, cartasTotales, cartasPorMostrar);
 			
 		}else {					/* Nuestras cartas no hacen pareja */
 			int num;
@@ -300,7 +300,8 @@ public class CalculoDeProbabilidades {
 					}
 				}
 				
-				prob += distribucionHiperGeometrica(3-numCartasTrio, 4-numCartasTrio, cartasTotales, cartasPorMostrar);
+				prob += distribucionHiperGeometrica(3 - numCartasTrio, MAX_CARTAS_NUMERO - numCartasTrio, cartasTotales, cartasPorMostrar);
+
 			}
 
 		}
@@ -996,7 +997,7 @@ public class CalculoDeProbabilidades {
 		}else{
 			int combinacionesPosibles = C( cartasTotales , cartasPorMostrar );
 			int combinacionesFormasSalirCartasNecesarias = C( cartasValidasRestantes , cartasNecesarias );
-			int combinacionesDemasCartas = C( NUM_CARTAS_NUNCA_VES + (cartasPorMostrar-cartasNecesarias), (cartasPorMostrar-cartasNecesarias));
+			int combinacionesDemasCartas = C( cartasTotales - cartasValidasRestantes, cartasPorMostrar - cartasNecesarias);
 			
 			prob = (double) (combinacionesFormasSalirCartasNecesarias * combinacionesDemasCartas) / combinacionesPosibles;
 		}

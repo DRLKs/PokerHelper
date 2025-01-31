@@ -21,7 +21,7 @@ public class Panel extends JPanel {
 	//private final JLabel etiquetaInstruccionesPalos = new JLabel("Trebol = T\nPica = P\nDiamante = D\nCorazon = C");
 	//private final JLabel etiquetaInstruccionesCartas = new JLabel("J = 11 Q = 12 K = 13 AS = 1 ");
 	
-	private JLabel etiquetaDecion = new JLabel("");	// Resultado del modelo
+	private JLabel etiquetaDecision = new JLabel("");	// Resultado del modelo
 
 	private final JLabel etiquetaCartasMano = new JLabel("CARTAS MANO");
 	private final JLabel etiquetaCartasMesa = new JLabel("CARTAS MESA");
@@ -148,7 +148,7 @@ public class Panel extends JPanel {
 		surAbajoAbajo.add(porcentajeEscaleraColor);
 		surAbajoAbajo.add(porcentajeEscaleraReal);
 		
-		surAbajoAbajo.add(etiquetaDecion);
+		surAbajoAbajo.add(etiquetaDecision);
 		
 		sur.add(BorderLayout.CENTER, surAbajo);
 		sur.add(BorderLayout.CENTER, surAbajoAbajo);
@@ -282,11 +282,11 @@ public class Panel extends JPanel {
 	}
 	
 	public void setDecision( String msg ) {
-		etiquetaDecion.setText(msg);
+		etiquetaDecision.setText(msg);
 	}
 	
 	public void clearDecision() {
-		etiquetaDecion.setText("");
+		etiquetaDecision.setText("");
 	}
 	
 	/** 
