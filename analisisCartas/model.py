@@ -2,6 +2,8 @@ import tensorflow as tf
 from tensorflow.keras import layers, models
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
+import os
+import re
 
 # Configuración de rutas de los datasets
 train_dir = 'train'
@@ -111,3 +113,32 @@ plt.ylabel('Pérdida')
 plt.legend()
 
 plt.show()
+
+## GUARDAR MODELOS CON CONTROL DE VERSIONES
+
+# Directorio donde se guardan los modelos
+modelo_dir = "modelos"
+
+# Crear la carpeta si no existe
+if not os.path.exists(modelo_dir):
+    os.makedirs(modelo_dir)
+
+# Buscar la última versión del modelo
+modelos_existentes = [f for f in os.listdir(modelo_dir) if re.match(r'model(\d+)\.(\d+)\.h5', f)]
+
+if modelos_existentes:
+    # Extraer versiones y encontrar la última
+    versiones = sorted([tuple(map(int, re.findall(r'(\d+)\.(\d+)', m)[0])) for m in modelos_existentes])
+    ultima_version = versiones[-1]
+    nueva_version = (ultima_version[0], ultima_version[1] + 1)  # Incrementar subversión
+else:
+    nueva_version = (1, 0)  # Primera versión si no hay modelos
+
+# Nombre del nuevo modelo
+nuevo_modelo_nombre = f"model{nueva_version[0]}.{nueva_version[1]}.h5"
+ruta_modelo = os.path.join(modelo_dir, nuevo_modelo_nombre)
+
+# Suponiendo que tienes un modelo entrenado llamado 'model'
+model.save(ruta_modelo)
+
+print(f"Modelo guardado como: {ruta_modelo}")
