@@ -13,8 +13,10 @@ def seleccionar_ventana():
 
     # Filtrar ventanas con título (ignorar ventanas sin título)
     ventanas = [ventana for ventana in ventanas if ventana]
+    # Filtramos las ventanas, con las ventanas de PokerStars
+    mesas_poker = [v for v in ventanas if "PokerStars" in v]
 
-    if not ventanas:
+    if not mesas_poker:
         messagebox.showerror("Error", "No se encontraron ventanas abiertas.")
         return None
 
@@ -24,13 +26,13 @@ def seleccionar_ventana():
 
     # Variable para almacenar la ventana seleccionada
     ventana_seleccionada = tk.StringVar(root)
-    ventana_seleccionada.set(ventanas[0])  # Valor por defecto
+    ventana_seleccionada.set(mesas_poker[0])  # Valor por defecto
 
     # Crear un menú desplegable con las ventanas
     label = tk.Label(root, text="Seleccione la ventana que desea analizar:")
     label.pack(pady=10)
 
-    opciones = tk.OptionMenu(root, ventana_seleccionada, *ventanas)
+    opciones = tk.OptionMenu(root, ventana_seleccionada, *mesas_poker)
     opciones.pack(pady=10)
 
     # Función para confirmar la selección

@@ -9,6 +9,7 @@ Esto lo hará devolviendo al jugador la decisión que más le convenga en cada m
 
 Toda esta información la obtendremos mediante el análisis por visión por computador de una ventana donde el jugador se encuentre en una partida de Poker Online (Solo se implementará para Poker Stars), en el caso de que el jugador lo decida también podrá introducir los datos a mano.
 El dataSet utilizado para el apredizaje del modelo ha sido obtenido de [roboflow](https://universe.roboflow.com/), exactamente [dataSet](https://universe.roboflow.com/poker-nnnrc/poker-cards-nesyh/dataset/6), también lo podreis ver en el apartado de análisis de cartas.
+Para que este dataSet sea compatible con nuestro sistema, he creado un archivo [arreglarDataSet.bat](analisisCartas/arreglarDataSet.bat). Lo que hace este archivo es cambiar las especificaciones de las anotaciones del dataSet original, que se encuentran en alemán, al formato elegido en mi programa.
 
 ## Posibles Usos
 - Aprender a jugar a este famoso juego de cartas, memorizando cuales son las manos con las que será más probable ganar rondas.
