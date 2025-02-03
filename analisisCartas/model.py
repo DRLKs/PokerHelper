@@ -18,7 +18,6 @@ anotaciones_dir = 'anotaciones'
 anotaciones_fich = '_annotations.csv'    # Debemos añadir el prefijo 'train' ó 'valid'ó 'test' para reconocer las anotaciones
 
 # Parámetros del modelo
-img_height, img_width = 1200, 1920  # Tamaño de las imágenes, están configurados así en las anotaciones del dataSet
 batch_size = 32
 epochs = 10
 
@@ -62,20 +61,11 @@ def custom_image_generator(image_dir, anotacionesCSV):
 anotacionesCSV = pd.read_csv(anotaciones_dir + "\train" + anotaciones_fich )           
 train_generator = custom_image_generator(train_dir, anotacionesCSV)
 
-validation_generator = validation_datagen.flow_from_directory(
-    validation_dir,
-    target_size=(img_height, img_width),
-    batch_size=batch_size,
-    class_mode='categorical'  # Cambia a 'binary' si es un problema de clasificación binaria
-)
+anotacionesCSV = pd.read_csv(anotaciones_dir + "\valid" + anotaciones_fich )           
+validation_generator = custom_image_generator(validation_dir, anotacionesCSV)
 
-test_generator = test_datagen.flow_from_directory(
-    test_dir,
-    target_size=(img_height, img_width),
-    batch_size=batch_size,
-    class_mode='categorical',  # Cambia a 'binary' si es un problema de clasificación binaria
-    shuffle=False  # No mezclar para evaluar correctamente
-)
+anotacionesCSV = pd.read_csv(anotaciones_dir + "\test" + anotaciones_fich )           
+test_generator = custom_image_generator(test_dir, anotacionesCSV)
 
 # Definir el modelo CNN
 model = models.Sequential([
