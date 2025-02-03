@@ -18,6 +18,8 @@ anotaciones_dir = 'anotaciones'
 anotaciones_fich = '_annotations.csv'    # Debemos añadir el prefijo 'train' ó 'valid'ó 'test' para reconocer las anotaciones
 
 # Parámetros del modelo
+img_height = 1200
+img_width = 1920
 batch_size = 32
 epochs = 10
 
@@ -41,21 +43,22 @@ def custom_image_generator(image_dir, anotacionesCSV):
     image_paths = [os.path.join(image_dir, fname) for fname in os.listdir(image_dir)]
     num_images = len(image_paths)
     
-    while True:
-        for i in range(0, num_images, batch_size):
-            batch_paths = image_paths[i:i + batch_size]
-            batch_images = []
-            for path in batch_paths:
+    for i in range(0, num_images, batch_size):
+        batch_paths = image_paths[i:i + batch_size]
+        batch_images = []
+        batch_labels = []
+        for path in batch_paths:
                 
-                resultado = anotacionesCSV[ anotacionesCSV['filename'] == path ]    ### QUIZÁS PATH ESTÁ MAL Y NO SOLO ES EL NOMBRE DE LA IMAGEN
-                img_width = resultado.iloc[0]['width']
-                img_height = resultado.iloc[0]['height']
-                target_size = ( img_height , img_width )
+            filename = os.path.basename(path)  # Obtener solo el nombre del archivo
+            resultado = anotacionesCSV[ anotacionesCSV['filename'] == filename ]  
+            label = resultado['cl1'].toList()
+            target_size = ( img_height , img_width )
 
-                img = load_img(path, target_size=target_size)
-                img = img_to_array(img) / 255.0  # Normaliza la imagen
-                batch_images.append(img)
-            yield np.array(batch_images), batch_paths
+            img = load_img(path, target_size=target_size)
+            img = img_to_array(img) / 255.0  # Normaliza los valores de los píxeles al rango [0, 1].
+            batch_images.append(img)
+            batch_labels.append(label)
+        yield np.array(batch_images), np.array(batch_labels), batch_paths
 
 
 anotacionesCSV = pd.read_csv(anotaciones_dir + "\train" + anotaciones_fich )           
@@ -67,6 +70,30 @@ validation_generator = custom_image_generator(validation_dir, anotacionesCSV)
 anotacionesCSV = pd.read_csv(anotaciones_dir + "\test" + anotaciones_fich )           
 test_generator = custom_image_generator(test_dir, anotacionesCSV)
 
+
+''' 
+train_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(img_height, img_width),
+    batch_size=batch_size,
+    class_mode='categorical'  # Cambia a 'binary' si es un problema de clasificación binaria
+)
+
+train_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(img_height, img_width),
+    batch_size=batch_size,
+    class_mode='categorical'  # Cambia a 'binary' si es un problema de clasificación binaria
+)
+
+test_generator = test_datagen.flow_from_directory(
+    test_dir,
+    target_size=(img_height, img_width),
+    batch_size=batch_size,
+    class_mode='categorical',  # Cambia a 'binary' si es un problema de clasificación binaria
+    shuffle=False  # No mezclar para evaluar correctamente
+)
+'''
 # Definir el modelo CNN
 model = models.Sequential([
     layers.Conv2D(32, (3, 3), activation='relu', input_shape=(img_height, img_width, 3)),
