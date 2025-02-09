@@ -1,9 +1,13 @@
+package GUI;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
+
+import Clases.Carta;
 
 public class Controlador implements ActionListener,PropertyChangeListener {
 	

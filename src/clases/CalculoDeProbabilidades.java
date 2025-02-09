@@ -1,3 +1,5 @@
+package clases;
+
 /*
  * MADE BY DRLK
  */
@@ -26,6 +28,11 @@ public class CalculoDeProbabilidades {
 	private double probPokerCont;
 	private double probEscaleraColorCont;
 	private double probEscaleraRealCont;
+	
+	/**
+	 * Esta variable definirá la decisión que debe tomar el jugador<br> 
+	 */
+	private Decision decision;
 	
 	/**
 	 * El número máximo de cartas que podemos ver al mismo tiempo son 7
@@ -64,6 +71,8 @@ public class CalculoDeProbabilidades {
 		probFullHouseCont = completarFullHouseCont(cartas, numContrincantes);
 		probEscaleraColorCont = completarEscaleraColorCont(cartas, numContrincantes);
 		probEscaleraRealCont = completarEscaleraRealCont(cartas, numContrincantes);
+		
+		decision = calcularDecision();
 
 		/*
 		try (ServerSocket serverSocket = new ServerSocket(5000)) {
@@ -156,17 +165,10 @@ public class CalculoDeProbabilidades {
 		return probEscaleraCont;
 	}
 
-	public void setProbEscaleraCont(double probEscaleraCont) {
-		this.probEscaleraCont = probEscaleraCont;
-	}
-
 	public double getProbFullHouseCont() {
 		return probFullHouseCont;
 	}
 
-	public void setProbFullHouseCont(double probFullHouseCont) {
-		this.probFullHouseCont = probFullHouseCont;
-	}
 
 	public double getProbPokerCont() {
 		return probPokerCont;
@@ -176,17 +178,18 @@ public class CalculoDeProbabilidades {
 		return probEscaleraColorCont;
 	}
 
-	public void setProbEscaleraColorCont(double probEscaleraColorCont) {
-		this.probEscaleraColorCont = probEscaleraColorCont;
-	}
-
 	public double getProbEscaleraRealCont() {
 		return probEscaleraRealCont;
 	}
 
-	public void setProbEscaleraRealCont(double probEscaleraRealCont) {
-		this.probEscaleraRealCont = probEscaleraRealCont;
+	public Decision getDecision() {
+		return decision;
 	}
+
+	public void setDecision(Decision decision) {
+		this.decision = decision;
+	}
+	
 	
 	/**
 	 * Función que devuelve las combinaciones entre 2 números
@@ -974,6 +977,25 @@ public class CalculoDeProbabilidades {
 	
 	/*
 	 * ##############################################################################################################
+	 * 												TOMA DE DECISIONES
+	 * ##############################################################################################################
+	 */
+
+	private Decision calcularDecision() {
+		
+		Decision decision = new Decision();
+		
+		if( probEscaleraReal == 1.0 ) {
+			decision.setDecision( Decision.ALL_IN );
+		}
+		
+		
+		return decision;
+	}
+	
+	
+	/*
+	 * ##############################################################################################################
 	 * 									FUNCIONES PARA CALCULAR PROBABILIDAD 
 	 * ##############################################################################################################
 	 */
@@ -1074,5 +1096,6 @@ public class CalculoDeProbabilidades {
 		
 		return prob;
 	}
+
 	
 }
