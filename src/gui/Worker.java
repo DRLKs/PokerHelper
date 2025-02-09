@@ -1,29 +1,27 @@
-package GUI;
+package gui;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
 
-import Clases.*;
+import clases.*;
 
 public class Worker extends SwingWorker<Integer , Integer>{
 	
-	private final int TOTAL_CARTAS = 52;
-	private final int CARTA_MAS_ALTA = 14;
-	private final int COMBINACIONES_50_CARTAS = 1225; // No contamos nuestras cartas
-	private final int CARTA_MANO_1 = 0;
-	private final int CARTA_MANO_2 = 1;
-	
 	private List<Carta> cartas;
 	private int numContrincantes;
+	private int ciegaPequenya;
+	private int apuestaAcumulada;
 	private CalculoDeProbabilidades calc;
 	private Controlador controlador;
 	
-	public Worker( int numContrincantes, List<Carta> cartas, Controlador controlador) {
+	public Worker( int numContrincantes, List<Carta> cartas, Controlador controlador, int ciegaPequenya, int apuestaAcumulada) {
 		this.cartas = cartas;
 		this.controlador = controlador;
 		this.numContrincantes = numContrincantes;
+		this.ciegaPequenya = ciegaPequenya;
+		this.apuestaAcumulada = apuestaAcumulada;
 		this.calc = new CalculoDeProbabilidades();
 	}
 	
@@ -55,21 +53,16 @@ public class Worker extends SwingWorker<Integer , Integer>{
 	public void done() {
 		
 		try {
-			String nuevaDecision;
 			int decision = get();
 			
 			switch (decision) {
 			case 0: 
-				nuevaDecision = "Apostar";
 				break;
 			case 1:
-				nuevaDecision = "Salir";
 				break;
 			default:
-				nuevaDecision = "Error";
 			}
 			
-			controlador.setDecision(nuevaDecision);
 
 		} catch (InterruptedException | ExecutionException e) {
 			e.printStackTrace();
@@ -87,12 +80,12 @@ public class Worker extends SwingWorker<Integer , Integer>{
 	 */
 	private int calcularProbabilidad() {
 		
-		calc.reiniciarDatos(cartas , numContrincantes);
+		calc.reiniciarDatos(cartas , numContrincantes, ciegaPequenya, apuestaAcumulada);
 		
 		sacarDatosObtenidos();
 		int prob =(int)(100*calc.getProbEscaleraColor()) ;
 		System.out.println(".............."+ prob);
-		return 1;	
+		return calc.getDecision().getDecision();	
 	}
 	
 	private void sacarDatosObtenidos() {
@@ -128,43 +121,6 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		controlador.setProbabilidad(6, (int) (calc.getProbEscaleraColor() * 100) );
 		controlador.setProbabilidad(7, (int) (calc.getProbEscaleraReal()  * 100) );
 
-		
-	}
-	
-	private double calcularProbabilidadMejoresCartasIndividualesContrincantes() {	// Asumimos que nadie va a sacar Escalera de color ni real, que los calculos ya son suficientemente complejos
-		
-		double probabilidad = 0;
-		
-		if( cartas.get( CARTA_MANO_1 ).mismoNumeroQue(cartas.get( CARTA_MANO_2 )) ) {	 
-			
-			int cantidad_de_posibles_numeros_mas_altos = CARTA_MAS_ALTA - cartas.get( CARTA_MANO_1 ).getNumero();
-			int numeroManosMejores = calc.C(4, 2) * (cantidad_de_posibles_numeros_mas_altos + 1 );
-			int combinacionesCartas = calc.C( TOTAL_CARTAS - cartas.size() , 2 );
-			
-			double prob_mano_mejor_contrincante = (double) numeroManosMejores / combinacionesCartas;
-			double prob_mejores_manos_algún_contrincante = Math.pow(1 - prob_mano_mejor_contrincante, numContrincantes );
-			
-			probabilidad = (int) (prob_mejores_manos_algún_contrincante * 100);
-			//System.out.println(probabilidad + "-----" + prob_mano_mejor_contrincante + "-----" + prob_mejores_manos_algún_contrincante * 100 + "--" + numeroManosMejores + "----" + combinacionesCartas);
-			
-		}else if( cartas.get( CARTA_MANO_1 ).mismoPaloQue( cartas.get( CARTA_MANO_2 ) ) ) {	
-			
-			
-		}else if( cartas.get( CARTA_MANO_1 ).puedenHacerEscalera( cartas.get( CARTA_MANO_2 ) ) ) {
-				
-		}else {
-			
-			int numeroCartaAlta;
-			if( cartas.get( CARTA_MANO_1 ).masAltaQue( cartas.get(CARTA_MANO_2) ) ) {
-				numeroCartaAlta = cartas.get(CARTA_MANO_1).getNumero();
-			}else {
-				numeroCartaAlta = cartas.get(CARTA_MANO_2).getNumero();
-			}
-			
-			
-			
-		}
-		
-		return probabilidad;
+		controlador.setDecision( calc.getDecision().toString() );
 	}
 }

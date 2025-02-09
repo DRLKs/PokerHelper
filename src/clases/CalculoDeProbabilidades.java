@@ -54,8 +54,10 @@ public class CalculoDeProbabilidades {
 	 * 
 	 * @param cartas Lista que contiene las cartas conocidas
 	 * @param numContrincantes Número de contrincantes activos
+	 * @param ciegaPequenya Valor de la ciega pequenya de la mano
+	 * @param apuestaAcumulada Valor de la apuesta acumulada en la mano
 	 */
-	public void reiniciarDatos( List<Carta> cartas, int numContrincantes) {
+	public void reiniciarDatos( List<Carta> cartas, int numContrincantes, int ciegaPequenya, int apuestaAcumulada) {
 		probPareja = completarPareja(cartas);
 		probTrio = completarTrio(cartas);
 		probEscalera = completarEscalera(cartas);
@@ -72,7 +74,7 @@ public class CalculoDeProbabilidades {
 		probEscaleraColorCont = completarEscaleraColorCont(cartas, numContrincantes);
 		probEscaleraRealCont = completarEscaleraRealCont(cartas, numContrincantes);
 		
-		decision = calcularDecision();
+		decision = calcularDecision(ciegaPequenya, apuestaAcumulada);
 
 		/*
 		try (ServerSocket serverSocket = new ServerSocket(5000)) {
@@ -981,11 +983,22 @@ public class CalculoDeProbabilidades {
 	 * ##############################################################################################################
 	 */
 
-	private Decision calcularDecision() {
+	/**
+	 * 
+	 * @param ciegaPequenya Valor de la ciega pequenya de la mano
+	 * @param apuestaAcumulada Valor de la apuesta acumulada en la mano
+	 * 
+	 * @return Clase que define la decisión que debe tomar el jugador
+	 */
+	private Decision calcularDecision(int ciegaPequenya, int apuestaAcumulada) {
 		
 		Decision decision = new Decision();
 		
-		if( probEscaleraReal == 1.0 ) {
+		if( probEscaleraReal == 1.0 ) {				/* JUGADOR TIENE ESCALERA REAL (Mejor mano posible, no la puede tener nadie a la vez) */
+			decision.setDecision( Decision.ALL_IN );
+		}else if( probEscaleraColor == 1.0 && probEscaleraColorCont != 1.0) {
+			decision.setDecision( Decision.ALL_IN );
+		}else if( probPoker == 1.0 ) {
 			decision.setDecision( Decision.ALL_IN );
 		}
 		

@@ -1,4 +1,4 @@
-package GUI;
+package gui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -7,7 +7,7 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import Clases.Carta;
+import clases.*;
 
 public class Controlador implements ActionListener,PropertyChangeListener {
 	
@@ -42,7 +42,11 @@ public class Controlador implements ActionListener,PropertyChangeListener {
 				if( datosSuficientes ) {
 					int numContrincantes = panel.numJugadoresActuales();
 					
-					worker = new Worker(numContrincantes, cartas, this);
+					
+					int ciegaPequenya = 5;	/* SE DEBE CAMBIAR LA INTERFAZ PARA PODER OBTENER ESTOS DATOS*/
+					int apuestaAcumulada = 80; /* SE DEBE CAMBIAR LA INTERFAZ PARA PODER OBTENER ESTOS DATOS*/
+					
+					worker = new Worker(numContrincantes, cartas, this, ciegaPequenya, apuestaAcumulada);
 					worker.addPropertyChangeListener(this);
 					worker.execute();
 				}
