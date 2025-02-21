@@ -1,4 +1,4 @@
-package gui;
+package main.gui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -7,7 +7,7 @@ import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import clases.*;
+import main.clases.*;
 
 public class Controlador implements ActionListener,PropertyChangeListener {
 	

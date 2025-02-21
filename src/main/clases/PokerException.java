@@ -1,4 +1,4 @@
-package clases;
+package main.clases;
 
 
 public class PokerException extends Exception{

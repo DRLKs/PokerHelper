@@ -1,4 +1,4 @@
-package clases;
+package main.clases;
 
 /*
  * MADE BY DRLK
@@ -526,7 +526,6 @@ public class CalculoDeProbabilidades {
 	/**
 	 * Función auxiliar que ayuda a obtener la probabilidad de tener un Full con las cartas que tenemos
 	 *
-	 * @param cartas Lista que contiene las cartas conocidas
 	 * @return Probabilidad de obtener una escalera de color con las cartas de nuestra mano (double)
 	 */
 	private double probCompletarFullHouse( int cartasPorMostrar, int numParejas, int numTrios, int numParejasMesa, int numTriosMesa ){	
@@ -951,7 +950,7 @@ public class CalculoDeProbabilidades {
 		//int numCartasQueYoTengo;
 		
 		
-		int[] numerosEscaleraCont = new int[15];;
+		int[] numerosEscaleraCont = new int[15];
 		
 		for( int idx = 2; idx < numCartas ; ++idx ) {
 			numerosEscaleraCont[ cartas.get(idx).getNumero() ] = 1;
@@ -1063,7 +1062,9 @@ public class CalculoDeProbabilidades {
 	
 	/**
 	 * Obtenemos la probabilidad de obtener un determinado número de cartas, en un conjunto donde tenemos un numero de cartas válidas y del cual solo podemos tomar un número límitado de estas
-	 * 
+	 *
+	 * @deprecated
+	 *
 	 * @param numCartasValidas número de cartas del conjunto que son válidas para el individuo
 	 * @param numCartasPosibles número de cartas diferentes que podemos tomar
 	 * @param iteraciones número de cartas que posee el conjunto con el que trabajamos

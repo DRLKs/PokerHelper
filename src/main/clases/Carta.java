@@ -1,4 +1,4 @@
-package clases;
+package main.clases;
 
 import java.util.HashMap;
 import java.util.List;

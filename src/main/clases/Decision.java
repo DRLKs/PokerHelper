@@ -1,11 +1,11 @@
-package clases;
+package main.clases;
 /**
  * 
  * @author DRLK 
  */
 public class Decision {
 
-	/*
+	/**
 	 * FOLD = 0   <br> 
 	 * CHECK = 1  <br>
 	 * CALL = 2   <br>
@@ -35,7 +35,7 @@ public class Decision {
 		setDecision(FOLD);
 	}
 	
-	public int getDecision() {
+	public int getCodigoDecision() {
 		return decision;
 	}
 	

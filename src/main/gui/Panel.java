@@ -1,4 +1,4 @@
-package gui;
+package main.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -11,7 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 
-import clases.PokerException;
+import main.clases.PokerException;
 
 
 public class Panel extends JPanel {

@@ -1,11 +1,11 @@
-package gui;
+package main.gui;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
 
-import clases.*;
+import main.clases.*;
 
 public class Worker extends SwingWorker<Integer , Integer>{
 	
@@ -85,7 +85,7 @@ public class Worker extends SwingWorker<Integer , Integer>{
 		sacarDatosObtenidos();
 		int prob =(int)(100*calc.getProbEscaleraColor()) ;
 		System.out.println(".............."+ prob);
-		return calc.getDecision().getDecision();	
+		return calc.getDecision().getCodigoDecision();
 	}
 	
 	private void sacarDatosObtenidos() {

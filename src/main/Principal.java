@@ -1,7 +1,8 @@
+package main;
 
 import javax.swing.JFrame;
 
-import gui.*;
+import main.gui.*;
 
 public class Principal {
 
