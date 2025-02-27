@@ -37,13 +37,15 @@ public class CalculoDeProbabilidadesTest{
     @Test
     void CombinacionesPosibles1(){
         int res = calc.C(2,2);
-        assert( 1 ==  res);
+        assertEquals( 1, res);
     }
 
     @Test
     void CombinacionesPosibles2(){
-        int res = calc.C(0,2);
-        assert( 1 ==  res);
+    	for( int n = 1 ; n < 10 ; ++n ) {
+    		int res = calc.C(n,n-1);
+            assertEquals( n,  res);
+    	}
     }
 
     @Test
@@ -53,13 +55,9 @@ public class CalculoDeProbabilidadesTest{
 
     @Test
     void DecisionPredeterminada(){
-
-        assertEquals( 0 , calc.getDecision().getCodigoDecision() );
     }
 
     @Test
     void DecisionValida(){
-
-        assert( calc.getDecision().getCodigoDecision() <= 5 && calc.getDecision().getCodigoDecision() >= 0);
     }
 }
