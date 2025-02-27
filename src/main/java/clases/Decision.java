@@ -15,12 +15,12 @@ public class Decision {
 	 */
 	private int decision;
 	
-	static final int FOLD = 0;
-	static final int CHECK = 1;
-	static final int CALL = 2;
-	static final int RAISE = 3;
-	static final int BET = 4;
-	static final int ALL_IN = 5;
+	public static final int FOLD = 0;
+	public static final int CHECK = 1;
+	public static final int CALL = 2;
+	public static final int RAISE = 3;
+	public static final int BET = 4;
+	public static final int ALL_IN = 5;
 	
 	/**
 	 * Apuesta que debería realizar el jugador
@@ -37,6 +37,15 @@ public class Decision {
 	
 	public int getCodigoDecision() {
 		return decision;
+	}
+	
+	/**
+	 * 
+	 * @param codigo numérico que define la decisión
+	 * @return La decisión es igual al enviado
+	 */
+	public boolean decideEsto( int codigo ) {
+		return this.getCodigoDecision() == codigo;
 	}
 	
 	void setDecision(int decision) {

@@ -4,14 +4,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.BeforeAll;
+
 
 public class CalculoDeProbabilidadesTest{
 
     private final int RESULTADO_ERROR_COMBINACIONES = -1;
 
-    CalculoDeProbabilidades calc;
+    private CalculoDeProbabilidades calc;
 
-    @BeforeEach
+    @BeforeAll
     void setup() {
         calc = new CalculoDeProbabilidades();
     }
@@ -51,13 +53,5 @@ public class CalculoDeProbabilidadesTest{
     @Test
     void ProbPareja(){
 
-    }
-
-    @Test
-    void DecisionPredeterminada(){
-    }
-
-    @Test
-    void DecisionValida(){
     }
 }
