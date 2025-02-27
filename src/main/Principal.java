@@ -2,7 +2,7 @@ package main;
 
 import javax.swing.JFrame;
 
-import main.gui.*;
+import main.java.gui.*;
 
 public class Principal {
 

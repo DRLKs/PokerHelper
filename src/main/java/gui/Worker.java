@@ -1,11 +1,11 @@
-package main.gui;
+package main.java.gui;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.SwingWorker;
 
-import main.clases.*;
+import main.java.clases.*;
 
 public class Worker extends SwingWorker<Integer , Integer>{
 	

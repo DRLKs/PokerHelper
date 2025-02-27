@@ -1,5 +1,5 @@
 package test.java;
-import main.clases.CalculoDeProbabilidades;
+import main.java.clases.CalculoDeProbabilidades;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

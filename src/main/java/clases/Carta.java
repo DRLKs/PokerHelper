@@ -1,4 +1,4 @@
-package main.clases;
+package main.java.clases;
 
 import java.util.HashMap;
 import java.util.List;
