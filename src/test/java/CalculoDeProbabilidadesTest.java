@@ -1,10 +1,8 @@
 package test.java;
 import main.java.clases.CalculoDeProbabilidades;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.BeforeAll;
 
 
 public class CalculoDeProbabilidadesTest{
@@ -13,9 +11,8 @@ public class CalculoDeProbabilidadesTest{
 
     private CalculoDeProbabilidades calc;
 
-    @BeforeAll
-    void setup() {
-        calc = new CalculoDeProbabilidades();
+    public CalculoDeProbabilidadesTest() {
+    	calc = new CalculoDeProbabilidades();
     }
 
     @Test
