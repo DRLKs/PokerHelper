@@ -1,0 +1,7 @@
+/* Importación de todos los estilos de componentes */
+@import './layout.css';
+@import './language-selector.css';
+@import './poker-card.css';
+@import './poker-hand.css';
+@import './card-selector.css';
+@import './analysis-display.css';

@@ -1,0 +1,61 @@
+/* Estilos para el selector de idioma */
+
+.language-selector {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  z-index: 1000;
+  padding: var(--spacing-sm);
+}
+
+.language-label {
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: 500;
+}
+
+.language-select {
+  background: linear-gradient(145deg, var(--bg-card), var(--bg-card-secondary));
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-width: 140px;
+}
+
+.language-select:hover {
+  border-color: var(--border-gold);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+}
+
+.language-select:focus {
+  outline: none;
+  border-color: var(--border-gold);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.3);
+}
+
+.language-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: var(--spacing-sm);
+}
+
+/* Responsive para selector de idioma */
+@media (max-width: 480px) {
+  .language-selector {
+    position: static;
+    justify-content: center;
+    margin-top: var(--spacing-md);
+  }
+  
+  .language-select {
+    min-width: 120px;
+    font-size: var(--font-xs);
+  }
+}

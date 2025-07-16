@@ -1,0 +1,58 @@
+/* Estilos para el layout principal de la aplicación */
+
+.container {
+  padding: var(--spacing-xl);
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xxl);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+  position: relative;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  overflow: visible;
+}
+
+.title {
+  font-size: var(--font-title);
+  font-weight: bold;
+  background: linear-gradient(135deg, var(--primary-gold), var(--primary-orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: var(--gold-glow);
+  margin: 0;
+}
+
+/* Responsive para layout */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--spacing-md);
+    gap: var(--spacing-xl);
+  }
+  
+  .header {
+    min-height: 50px;
+  }
+  
+  .title {
+    font-size: var(--font-xxl);
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    align-items: center;
+    min-height: auto;
+  }
+}

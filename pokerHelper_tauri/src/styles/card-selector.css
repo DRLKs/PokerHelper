@@ -1,0 +1,141 @@
+/* Estilos para el selector de cartas (dropdown) */
+
+.dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdown-menu {
+  background: linear-gradient(145deg, var(--bg-card), var(--bg-card-secondary));
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 0 50px rgba(88, 166, 255, 0.2);
+}
+
+.dropdown-header {
+  color: var(--text-primary);
+  font-size: var(--font-lg);
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-accent);
+}
+
+.suits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+.suit-section {
+  background: rgba(33, 38, 45, 0.5);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-secondary);
+}
+
+.suit-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.suit-icon {
+  font-size: var(--font-xl);
+}
+
+.suit-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: var(--font-sm);
+}
+
+.ranks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.rank-button {
+  background: var(--card-bg-filled);
+  border: 1px solid #d0d7de;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-weight: bold;
+  font-size: var(--font-sm);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-button:hover {
+  background: linear-gradient(145deg, #f8f9fa, #ffffff);
+  border-color: var(--border-accent);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(88, 166, 255, 0.3);
+}
+
+.rank-button:active {
+  transform: scale(0.95);
+}
+
+.clear-button {
+  background: linear-gradient(145deg, var(--danger), #cf222e);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: var(--spacing-md);
+  width: 100%;
+  transition: all var(--transition-fast);
+}
+
+.clear-button:hover {
+  background: linear-gradient(145deg, #cf222e, var(--danger));
+  box-shadow: 0 2px 8px rgba(218, 54, 51, 0.3);
+}
+
+/* Responsive para dropdown */
+@media (max-width: 768px) {
+  .suits-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dropdown-menu {
+    margin: var(--spacing-md);
+    max-width: calc(100vw - 2rem);
+  }
+  
+  .ranks-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .ranks-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

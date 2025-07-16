@@ -1,0 +1,81 @@
+/* Estilos para las cartas de poker */
+
+.card-wrapper {
+  position: relative;
+}
+
+.poker-card {
+  width: 100px;
+  height: 140px;
+  border: 2px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  background: var(--card-bg-filled);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 0 20px rgba(255, 215, 0, 0.1);
+}
+
+.poker-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    0 0 30px rgba(255, 215, 0, 0.2);
+  border-color: var(--border-gold);
+}
+
+.poker-card.empty {
+  background: var(--card-bg-empty);
+  border: 2px dashed var(--border-accent);
+  color: var(--border-accent);
+}
+
+.poker-card.empty:hover {
+  border-color: var(--border-gold);
+  background: linear-gradient(145deg, #2d333b, #373e47);
+}
+
+.poker-card.filled {
+  background: var(--card-bg-filled);
+  border-color: var(--border-primary);
+}
+
+.card-display {
+  font-size: var(--font-lg);
+  font-weight: bold;
+  text-align: center;
+}
+
+.card-placeholder {
+  font-size: var(--font-xxl);
+  font-weight: bold;
+  opacity: 0.6;
+}
+
+/* Responsive para cartas */
+@media (max-width: 768px) {
+  .poker-card {
+    width: 80px;
+    height: 112px;
+  }
+  
+  .card-display {
+    font-size: var(--font-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .poker-card {
+    width: 60px;
+    height: 84px;
+  }
+  
+  .card-display {
+    font-size: var(--font-xs);
+  }
+}

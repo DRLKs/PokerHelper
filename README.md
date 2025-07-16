@@ -24,3 +24,12 @@ En el apartado de análisis de cartas, te encontrarás un archivo de texto, dond
 
 ```cmd
 pip install -r requirements.txt
+
+
+
+
+## Dependencias
+- rustc En windows usa https://rustup.rs/
+- cargo
+- npnm
+
