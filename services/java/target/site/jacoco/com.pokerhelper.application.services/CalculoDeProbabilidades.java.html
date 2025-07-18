@@ -1,0 +1,1120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CalculoDeProbabilidades.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Poker Helper - Probability Service</a> &gt; <a href="index.source.html" class="el_package">com.pokerhelper.application.services</a> &gt; <span class="el_source">CalculoDeProbabilidades.java</span></div><h1>CalculoDeProbabilidades.java</h1><pre class="source lang-java linenums">package com.pokerhelper.application.services;
+
+/*
+ * MADE BY DRLK
+ */
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import com.app.service.domain.model.Carta;
+import com.pokerhelper.domain.model.Card;
+import com.pokerhelper.domain.model.Decision;
+
+<span class="nc" id="L13">public class CalculoDeProbabilidades {</span>
+	/*
+	 * Todas las probabilidades son sobre 1
+	 */
+	private double probPareja;
+	private double probTrio;
+	private double probEscalera;
+	private double probColor;
+	private double probFullHouse;
+	private double probPoker;
+	private double probEscaleraColor;
+	private double probEscaleraReal;
+	
+	private double probParejaCont;
+	private double probTrioCont;
+	private double probEscaleraCont;
+	private double probColorCont;
+	private double probFullHouseCont;
+	private double probPokerCont;
+	private double probEscaleraColorCont;
+	private double probEscaleraRealCont;
+	
+	/**
+	 * Esta variable definirá la decisión que debe tomar el jugador&lt;br&gt; 
+	 */
+	private Decision decision;
+	
+	/**
+	 * El número máximo de cartas que podemos ver al mismo tiempo son 7
+	 */
+<span class="nc" id="L43">	private final int MAX_CARTAS_VISIBLES = 7;</span>
+	/**
+	 * El número de cartas que tienen el mismo número es 4
+	 */
+<span class="nc" id="L47">	private final int MAX_CARTAS_NUMERO = 4;</span>
+<span class="nc" id="L48">	private final int IDX_CARTA_MANO_1 = 0;</span>
+<span class="nc" id="L49">	private final int IDX_CARTA_MANO_2 = 1;</span>
+	/**
+	 * 45
+	 */
+<span class="nc" id="L53">	private final int NUM_CARTAS_NUNCA_VES = 45;</span>
+
+	/**
+	 * Función que recalcula todas las probabilidades
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @param numContrincantes Número de contrincantes activos
+	 * @param ciegaPequenya Valor de la ciega pequenya de la mano
+	 * @param apuestaAcumulada Valor de la apuesta acumulada en la mano
+	 */
+	public void reiniciarDatos( List&lt;Carta&gt; cartas, int numContrincantes, int ciegaPequenya, int apuestaAcumulada) {
+<span class="nc" id="L64">		probPareja = completarPareja(cartas);</span>
+<span class="nc" id="L65">		probTrio = completarTrio(cartas);</span>
+<span class="nc" id="L66">		probEscalera = completarEscalera(cartas);</span>
+<span class="nc" id="L67">		probColor = completarColor(cartas);</span>
+<span class="nc" id="L68">		probFullHouse = completarFullHouse(cartas);</span>
+<span class="nc" id="L69">		probPoker = completarPoker(cartas);</span>
+<span class="nc" id="L70">		probEscaleraColor = completarEscaleraColor(cartas);</span>
+<span class="nc" id="L71">		probEscaleraReal = completarEscaleraReal(cartas);</span>
+		
+<span class="nc" id="L73">		completarParejaTrioPokerCont(cartas, numContrincantes);</span>
+<span class="nc" id="L74">		probEscaleraCont = completarEscaleraCont(cartas, numContrincantes);</span>
+<span class="nc" id="L75">		probColorCont = completarColorCont( cartas, numContrincantes );</span>
+<span class="nc" id="L76">		probFullHouseCont = completarFullHouseCont(cartas, numContrincantes);</span>
+<span class="nc" id="L77">		probEscaleraColorCont = completarEscaleraColorCont(cartas, numContrincantes);</span>
+<span class="nc" id="L78">		probEscaleraRealCont = completarEscaleraRealCont(cartas, numContrincantes);</span>
+		
+<span class="nc" id="L80">		decision = calcularDecision(ciegaPequenya, apuestaAcumulada);</span>
+
+		/*
+		try (ServerSocket serverSocket = new ServerSocket(5000)) {
+            System.out.println(&quot;Esperando conexión de Python...&quot;);
+            Socket clientSocket = serverSocket.accept();
+            System.out.println(&quot;Conexión establecida con Python&quot;);
+
+
+            // Enviar los datos a Python
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            // MIAS
+            out.println(probEscalera);
+            out.println(probColor);
+            out.println(probFullHouse);
+            out.println(probPoker);
+            out.println(probEscaleraColor);
+            out.println(probEscaleraReal);
+            // DE LOS CONTRINCANTES
+            out.println(probEscaleraCont);
+            out.println(probColorCont);
+            out.println(probFullHouseCont);
+            out.println(probPokerCont);
+            out.println(probEscaleraColorCont);
+            out.println(probEscaleraRealCont);
+
+            System.out.println(&quot;Datos enviados a Python&quot;);
+
+            // Cerrar la conexión
+            out.close();
+            clientSocket.close();
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        */
+<span class="nc" id="L116">    }</span>
+
+	/*
+	 * ##############################################################################################################
+	 * 												GETTERS 
+	 * ##############################################################################################################
+	 */
+
+	public double getProbPareja() {
+<span class="nc" id="L125">		return probPareja;</span>
+	}
+	
+	public double getProbTrio() {
+<span class="nc" id="L129">		return probTrio;</span>
+	}
+	
+	public double getProbEscalera() {
+<span class="nc" id="L133">		return probEscalera;</span>
+	}
+
+	public double getProbColor() {
+<span class="nc" id="L137">		return probColor;</span>
+	}
+
+	public double getProbFullHouse() {
+<span class="nc" id="L141">		return probFullHouse;</span>
+	}
+
+	public double getProbPoker() {
+<span class="nc" id="L145">		return probPoker;</span>
+	}
+
+	public double getProbEscaleraColor() {
+<span class="nc" id="L149">		return probEscaleraColor;</span>
+	}
+
+	public double getProbEscaleraReal() {
+<span class="nc" id="L153">		return probEscaleraReal;</span>
+	}
+	
+
+	public double getProbParejaCont() {
+<span class="nc" id="L158">		return probParejaCont;</span>
+	}
+	
+	public double getProbTrioCont() {
+<span class="nc" id="L162">		return probTrioCont;</span>
+	}
+	
+	public double getProbColorCont() {
+<span class="nc" id="L166">		return probColorCont;</span>
+	}
+	
+	public double getProbEscaleraCont() {
+<span class="nc" id="L170">		return probEscaleraCont;</span>
+	}
+
+	public double getProbFullHouseCont() {
+<span class="nc" id="L174">		return probFullHouseCont;</span>
+	}
+
+
+	public double getProbPokerCont() {
+<span class="nc" id="L179">		return probPokerCont;</span>
+	}
+	
+	public double getProbEscaleraColorCont() {
+<span class="nc" id="L183">		return probEscaleraColorCont;</span>
+	}
+
+	public double getProbEscaleraRealCont() {
+<span class="nc" id="L187">		return probEscaleraRealCont;</span>
+	}
+
+	public Decision getDecision() {
+<span class="nc" id="L191">		return decision;</span>
+	}
+
+	public void setDecision(Decision decision) {
+<span class="nc" id="L195">		this.decision = decision;</span>
+<span class="nc" id="L196">	}</span>
+	
+	
+	/**
+	 * Función que devuelve las combinaciones entre 2 números
+	 * 
+	 * @param n Número de elementos en el conjunto
+	 * @param k Número de combinaciones
+	 * @return Número de combinaciones posibles
+	 */
+	public int C( int n ,int k) { // COMBINACIONES
+		
+<span class="nc bnc" id="L208" title="All 4 branches missed.">		if (k &gt; n || k &lt; 0) return -1; // No existe combinatoria si k &gt; n</span>
+<span class="nc bnc" id="L209" title="All 4 branches missed.">        if (k == 0 || k == n ) return 1;</span>
+        /* La combinación es simétrica, C(n, k) = C(n, n-k) */
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        if (k &gt; n - k) {</span>
+<span class="nc" id="L212">            k = n - k;</span>
+        }
+<span class="nc" id="L214">        int ini = 1 + n - k; </span>
+<span class="nc" id="L215">        int resultado = 1;</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        for (int i = ini; i &lt;= n; ++i) {</span>
+<span class="nc" id="L217">            resultado *= i;</span>
+        }
+<span class="nc bnc" id="L219" title="All 2 branches missed.">        for(int i = 2 ; i &lt;= k ; ++i) {</span>
+<span class="nc" id="L220">        	resultado /= i;</span>
+        }
+
+<span class="nc" id="L223">        return resultado;</span>
+	}
+	
+	/*
+	 * ##############################################################################################################
+	 * 								FUNCIONES PARA CALCULAR NUESTRAS PROBABILIDADES
+	 * ##############################################################################################################
+	 */
+	
+	/** 
+	 * Función que devuelve la probabilidad de obtener una pareja con las cartas que tenemos
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener una pareja con las cartas de nuestra mano (double)
+	 * */
+	private double completarPareja( List&lt;Carta&gt; cartas ) {
+		
+		double prob;
+
+<span class="nc" id="L242">		int numCartas = cartas.size();</span>
+<span class="nc" id="L243">		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L244">		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+
+<span class="nc bnc" id="L246" title="All 2 branches missed.">		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	/* Nuestras cartas hacen pareja */</span>
+<span class="nc" id="L247">			prob = 1.0;</span>
+		}else {					/* Nuestras cartas no hacen pareja */
+			int num;
+<span class="nc" id="L250">			prob = 0.0;</span>
+			
+<span class="nc bnc" id="L252" title="All 2 branches missed.">			for( int idxCartaMano = 0 ; idxCartaMano &lt; 2 ; ++idxCartaMano ) {</span>
+<span class="nc" id="L253">				num = cartas.get(idxCartaMano).getNumero(); 	/* Número de nuestra carta */</span>
+				
+<span class="nc bnc" id="L255" title="All 2 branches missed.">				for( int idx = 2 ; idx &lt; numCartas ; idx++ ) {</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">					if( cartas.get(idx).getNumero() == num ) {	/* Encontramos carta en la mesa con el mismo número */</span>
+<span class="nc" id="L257">						prob = 1.0;</span>
+					}
+				}
+			}
+			
+<span class="nc bnc" id="L262" title="All 2 branches missed.">			if( prob &lt;= 0.0 ) {	/* En el caso de que la probabilidad siga siendo 0.0, no hemos encontrado ninguna pareja */</span>
+<span class="nc" id="L263">				prob += distribucionHiperGeometrica(1, MAX_CARTAS_NUMERO - 1, cartasTotales, cartasPorMostrar);</span>
+			}
+			
+		}
+<span class="nc" id="L267">		return prob;</span>
+	}
+	
+	/** 
+	 * Función que devuelve la probabilidad de obtener un trio con las cartas que tenemos
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener un trio con las cartas de nuestra mano (double)
+	 * */
+	private double completarTrio( List&lt;Carta&gt; cartas ) {
+		
+		double prob;
+		int numCartasTrio;
+
+<span class="nc" id="L281">		int numCartas = cartas.size();</span>
+<span class="nc" id="L282">		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L283">		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+
+<span class="nc bnc" id="L285" title="All 2 branches missed.">		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	/* Nuestras cartas hacen pareja */</span>
+<span class="nc" id="L286">			numCartasTrio = 2;</span>
+<span class="nc" id="L287">			int num = cartas.get(IDX_CARTA_MANO_1).getNumero(); /* Número de nuestras cartas */</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">			for( int idx = 2 ; idx &lt; numCartas ; ++idx ) {</span>
+				
+<span class="nc bnc" id="L290" title="All 2 branches missed.">				if( cartas.get(idx).getNumero() == num ) {	/* Ya tenemos un trio */</span>
+<span class="nc" id="L291">					numCartasTrio = 3;</span>
+<span class="nc" id="L292">					break;</span>
+				}
+			}
+<span class="nc" id="L295">			prob = distribucionHiperGeometrica(3 - numCartasTrio, MAX_CARTAS_NUMERO - numCartasTrio, cartasTotales, cartasPorMostrar);</span>
+			
+<span class="nc" id="L297">		}else {					/* Nuestras cartas no hacen pareja */</span>
+			int num;
+<span class="nc" id="L299">			prob = 0.0;</span>
+			
+<span class="nc bnc" id="L301" title="All 2 branches missed.">			for( int idxCartaMano = 0 ; idxCartaMano &lt; 2 ; ++idxCartaMano ) {</span>
+<span class="nc" id="L302">				numCartasTrio = 1;</span>
+<span class="nc" id="L303">				num = cartas.get(idxCartaMano).getNumero(); 	/* Número de nuestra carta */</span>
+				
+<span class="nc bnc" id="L305" title="All 2 branches missed.">				for( int idx = 2 ; idx &lt; numCartas ; idx++ ) {</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">					if( cartas.get(idx).getNumero() == num ) {	/* Encontramos carta en la mesa con el mismo número */</span>
+<span class="nc" id="L307">						++numCartasTrio;</span>
+					}
+				}
+				
+<span class="nc" id="L311">				prob += distribucionHiperGeometrica(3 - numCartasTrio, MAX_CARTAS_NUMERO - numCartasTrio, cartasTotales, cartasPorMostrar);</span>
+
+			}
+
+		}
+<span class="nc" id="L316">		return prob;</span>
+	}
+	
+	/** 
+	 * Función que devuelve la probabilidad de obtener color con las cartas que tenemos
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener color con las cartas de nuestra mano (double)
+	 * */
+	private double completarColor( List&lt;Carta&gt; cartas ){
+		
+		double prob;
+<span class="nc" id="L328">		int numCartasColor = 1;</span>
+<span class="nc" id="L329">		int numCartas = cartas.size();</span>
+<span class="nc" id="L330">		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L331">		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+		int numCartasNecesarias;
+<span class="nc bnc" id="L333" title="All 2 branches missed.">		if( cartas.get(0).mismoPaloQue( cartas.get(1) ) ) {</span>
+<span class="nc" id="L334">			++numCartasColor;</span>
+			
+<span class="nc bnc" id="L336" title="All 2 branches missed.">			for( int i = 2; i &lt; numCartas ; ++i ) {</span>
+<span class="nc bnc" id="L337" title="All 2 branches missed.">				if( cartas.get(i).mismoPaloQue(cartas.get(0)) ) {</span>
+<span class="nc" id="L338">					++numCartasColor;</span>
+				}
+			}
+<span class="nc" id="L341">			numCartasNecesarias = 5-numCartasColor;</span>
+<span class="nc" id="L342">			prob = distribucionHiperGeometrica(numCartasNecesarias, 13-numCartasColor, cartasTotales, cartasPorMostrar);</span>
+		}else {
+			
+<span class="nc" id="L345">			prob = 0.0;</span>
+<span class="nc bnc" id="L346" title="All 2 branches missed.">			for( int idxCMano = 0 ; idxCMano &lt; 2 ; ++idxCMano ) {	</span>
+<span class="nc bnc" id="L347" title="All 2 branches missed.">					for( int i = 2; i &lt; numCartas ; ++i ) {</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">						if( cartas.get(i).mismoPaloQue(cartas.get(idxCMano)) ) {</span>
+<span class="nc" id="L349">							++numCartasColor;</span>
+					}
+				}
+<span class="nc" id="L352">				numCartasNecesarias = 5 - numCartasColor;</span>
+<span class="nc" id="L353">				prob += distribucionHiperGeometrica(numCartasNecesarias, 13-numCartasColor, cartasTotales, cartasPorMostrar);</span>
+<span class="nc" id="L354">				numCartasColor = 1;</span>
+			}
+		}
+<span class="nc" id="L357">		return prob;</span>
+	}
+	
+	/**
+	 * Función que devuelve la probabilidad de obtener escalera con las cartas que tenemos
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener escalera con las cartas de nuestra mano (double)
+	 */
+	private double completarEscalera( List&lt;Carta&gt; cartas ){
+			
+		double prob;
+<span class="nc" id="L369">		int numCartas = cartas.size();</span>
+<span class="nc" id="L370">		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L371">		int numCartaMano1 = cartas.get(IDX_CARTA_MANO_1).getNumero();</span>
+<span class="nc" id="L372">		int numCartaMano2 = cartas.get(IDX_CARTA_MANO_2).getNumero();</span>
+		int arrayInicio;
+		int arrayFinal;
+		
+		/*
+		 * El array &quot;numerosEscalera&quot; tendrá un tamaño igual a 14
+		 *  En este array podremos comprobar si tenemos un número, por ejemplo:
+		 *  
+		 *  Comprobamos que tenemos el AS -&gt; numerosEscalera[14] == 1
+		 *  		TRUE -&gt; Tenemos el AS
+		 *  		FALSE -&gt; No tenemos el AS
+		 *  El AS al tener asociado el número 14, lo podremos comprobar en el lugar 14 y a la 1
+		 *  No usaremos la posición 0
+		 */
+		int[] numerosEscalera;	
+		int[] arrayFronterasEscalera;
+		
+		/* Nuestras 2 cartas pueden hacer escalera */
+<span class="nc bnc" id="L390" title="All 2 branches missed.">		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) )) {	</span>
+<span class="nc" id="L391">			numerosEscalera = new int[15];</span>
+			
+<span class="nc" id="L393">			numerosEscalera[ numCartaMano1 ] = 1;</span>
+<span class="nc" id="L394">			numerosEscalera[ numCartaMano2 ] = 1;</span>
+			
+<span class="nc" id="L396">			arrayFronterasEscalera = encontrarFronterasEscaleras(numCartaMano1, numCartaMano2);</span>
+<span class="nc" id="L397">			arrayInicio = arrayFronterasEscalera[0];</span>
+<span class="nc" id="L398">			arrayFinal  = arrayFronterasEscalera[1];</span>
+			
+<span class="nc bnc" id="L400" title="All 2 branches missed.">			for( int idx = 2; idx &lt; numCartas ; ++idx ) {</span>
+<span class="nc" id="L401">				numerosEscalera[ cartas.get(idx).getNumero() ] = 1;</span>
+			}
+<span class="nc bnc" id="L403" title="All 2 branches missed.">			if( numerosEscalera[14] == 1 ) {	// Está el AS, 14-1=13</span>
+<span class="nc" id="L404">				numerosEscalera[1] = 1;</span>
+			}
+<span class="nc" id="L406">			prob = probCompletarEscalera(numerosEscalera, cartasPorMostrar, arrayInicio, arrayFinal);</span>
+		/* Nuestras 2 cartas no pueden hacer escalera */
+		}else {	
+<span class="nc" id="L409">			prob = 0.0;</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">			for( int idxCMano = 0 ; idxCMano &lt; 2 ; ++idxCMano ) {	</span>
+<span class="nc" id="L411">				numerosEscalera = new int[15];</span>
+<span class="nc" id="L412">				numerosEscalera[ cartas.get(idxCMano).getNumero() ] = 1;	// Añadimos la carta de la mano</span>
+<span class="nc" id="L413">				arrayFronterasEscalera = encontrarFronterasEscaleras(cartas.get(idxCMano).getNumero(), -1);</span>
+<span class="nc" id="L414">				arrayInicio = arrayFronterasEscalera[0];</span>
+<span class="nc" id="L415">				arrayFinal  = arrayFronterasEscalera[1];</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">				for( int idx = 2; idx &lt; numCartas ; ++idx ) {</span>
+<span class="nc" id="L417">					if( </span>
+<span class="nc bnc" id="L418" title="All 2 branches missed.">						cartas.get(idxCMano).mismoPaloQue(cartas.get(idx))</span>
+						) {
+<span class="nc" id="L420">						numerosEscalera[ cartas.get(idx).getNumero() ] = 1;</span>
+					}
+<span class="nc bnc" id="L422" title="All 2 branches missed.">					if( numerosEscalera[14] == 1 ) {</span>
+<span class="nc" id="L423">						numerosEscalera[1] = 1;</span>
+					}
+<span class="nc" id="L425">					prob += probCompletarEscalera(numerosEscalera, cartasPorMostrar, arrayInicio, arrayFinal);</span>
+				}
+			}
+		}
+<span class="nc" id="L429">		return prob;	</span>
+		
+	}
+	
+	/**
+	 * Función auxiliar que ayuda a obtener la probabilidad de obtener una escalera con las cartas que tenemos
+	 *
+	 * @param numerosEscalera Array con los números de las cartas que tenemos
+	 * @param cartasPorMostrar Número de cartas que faltan por mostrar
+	 * @param arrayInicio Índice del array por el cual comenzaremos a estudiar la escalera (Frontera Por Debajo)
+	 * @param arrayFinal Índice del array por el cual terminaremos de estudiar la escalera (Frontera Por Encima)
+	 * @return Probabilidad de obtener escalera con una carta específica de nuestra mano (double)
+	 */
+	private double probCompletarEscalera( int[] numerosEscalera, int cartasPorMostrar, int arrayInicio, int arrayFinal ){
+<span class="nc" id="L443">		double prob = 0.0;</span>
+		int numCartasEscalera;
+<span class="nc" id="L445">		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+<span class="nc bnc" id="L446" title="All 2 branches missed.">		for( int idx1 = arrayInicio ; idx1 &lt;= arrayFinal - 4 ; ++idx1 ) {</span>
+<span class="nc" id="L447">			numCartasEscalera = 0;</span>
+<span class="nc bnc" id="L448" title="All 2 branches missed.">			for( int idx = idx1 ; idx &lt;= idx1+4 ; ++idx) {</span>
+<span class="nc bnc" id="L449" title="All 2 branches missed.">				if( numerosEscalera[idx] == 1 ) {</span>
+<span class="nc" id="L450">					++numCartasEscalera;</span>
+<span class="nc bnc" id="L451" title="All 2 branches missed.">					if( numCartasEscalera &gt;= 5 ) {</span>
+<span class="nc" id="L452">						return 1.0;</span>
+					}
+				}
+			}
+<span class="nc" id="L456">			int cartasNecesarias = 5-numCartasEscalera;</span>
+<span class="nc" id="L457">			prob += distribucionHiperGeometrica(cartasNecesarias, cartasNecesarias*4,cartasTotales, cartasPorMostrar);</span>
+		}
+<span class="nc" id="L459">		return prob;</span>
+	}
+
+	/**
+	 * Función que devuelve la probabilidad de obtener un Full con las cartas que tenemos
+	 *
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener un Full con las cartas de nuestra mano (double)
+	 */
+	private double completarFullHouse( List&lt;Carta&gt; cartas ) {	// Falta por completar
+		
+<span class="nc" id="L470">		int numCartas = cartas.size();</span>
+<span class="nc" id="L471">		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L472">		int numParejas = 0;	// Parejas que hacen las cartas de nuestra mano</span>
+<span class="nc" id="L473">		int numTrios   = 0;	// Trios   que hacen las cartas de nuestra mano</span>
+		
+		int ctt;
+		
+		// Esta parte de la función calculamos el número de parejas o trios que tenemos con nuestras cartas
+		// En el caso de que nuestras cartas sean iguales
+<span class="nc bnc" id="L479" title="All 2 branches missed.">		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	</span>
+<span class="nc" id="L480">			ctt = Carta.vecesQueSeSaleEsteNumero(cartas, cartas.get(IDX_CARTA_MANO_1).getNumero());</span>
+<span class="nc bnc" id="L481" title="All 2 branches missed.">			if( ctt &gt; 2 ) {</span>
+<span class="nc" id="L482">				++numTrios;</span>
+			}else {
+<span class="nc" id="L484">				++numParejas;</span>
+			}
+			
+		// En el caso de que nuestas cartas no sean iguales
+		}else {
+<span class="nc bnc" id="L489" title="All 2 branches missed.">			for( int idx = 0 ; idx &lt; 2 ; ++idx ) {</span>
+<span class="nc" id="L490">				ctt = Carta.vecesQueSeSaleEsteNumero(cartas, cartas.get(idx).getNumero());</span>
+					
+<span class="nc bnc" id="L492" title="All 2 branches missed.">				if( ctt &gt; 2 ) {</span>
+<span class="nc" id="L493">					++numTrios;</span>
+<span class="nc bnc" id="L494" title="All 2 branches missed.">				}else if( ctt == 2 ) {</span>
+<span class="nc" id="L495">					++numParejas;</span>
+				}	
+			}
+		}
+		
+		// Ya habriamos obtenido el FULL
+<span class="nc bnc" id="L501" title="All 6 branches missed.">		if( numParejas &gt; 0 &amp;&amp; numTrios &gt; 0 || numTrios &gt; 1 ) {</span>
+<span class="nc" id="L502">			return 1.0;</span>
+			
+		// Tenemos que estudiar más
+		}else {
+<span class="nc" id="L506">			int numParejasMesa = 0;</span>
+<span class="nc" id="L507">			int numTriosMesa = 0;</span>
+			Carta cartaAux;
+<span class="nc bnc" id="L509" title="All 2 branches missed.">			for( int idx1 = 2 ; idx1 &lt; numCartas ; ++idx1 ) {</span>
+<span class="nc" id="L510">				cartaAux = cartas.get(idx1);</span>
+<span class="nc bnc" id="L511" title="All 4 branches missed.">				if( !cartaAux.mismoNumeroQue(cartas.get(IDX_CARTA_MANO_1)) &amp;&amp; !cartaAux.mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {</span>
+<span class="nc" id="L512">					ctt = 0;</span>
+<span class="nc bnc" id="L513" title="All 2 branches missed.">					for( int idx = idx1 + 1 ; idx &lt; numCartas ; ++idx ) {</span>
+<span class="nc bnc" id="L514" title="All 2 branches missed.">						if( cartaAux.mismoNumeroQue(cartas.get(idx)) ) {</span>
+<span class="nc" id="L515">							++ctt;</span>
+						}
+					}
+<span class="nc bnc" id="L518" title="All 2 branches missed.">					if( ctt == 2 ) {</span>
+<span class="nc" id="L519">						++numParejasMesa;</span>
+<span class="nc bnc" id="L520" title="All 2 branches missed.">					}else if( ctt &gt; 2 ) {</span>
+<span class="nc" id="L521">						++numTriosMesa;</span>
+					}
+				}
+			}
+<span class="nc" id="L525">			return probCompletarFullHouse(cartasPorMostrar,  numParejas , numTrios, numParejasMesa, numTriosMesa);</span>
+		}
+	}
+
+	/**
+	 * Función auxiliar que ayuda a obtener la probabilidad de tener un Full con las cartas que tenemos
+	 *
+	 * @return Probabilidad de obtener una escalera de color con las cartas de nuestra mano (double)
+	 */
+	private double probCompletarFullHouse( int cartasPorMostrar, int numParejas, int numTrios, int numParejasMesa, int numTriosMesa ){	
+		
+		double prob;
+		
+		/* Ya tendriamos el poker */
+<span class="nc bnc" id="L539" title="All 12 branches missed.">		if( numParejas &gt; 0 &amp;&amp; numTriosMesa &gt; 0 || numTrios &gt; 0 &amp;&amp; numParejasMesa &gt; 0 || numTrios &gt; 0 &amp;&amp; numTriosMesa &gt; 0 ) {</span>
+<span class="nc" id="L540">			prob =  1.0;</span>
+		}else {
+		/* Debemos seguir estudiandolo */	
+<span class="nc" id="L543">			prob = 0.0;</span>
+<span class="nc" id="L544">			int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+<span class="nc bnc" id="L545" title="All 2 branches missed.">			if( numTriosMesa &gt; 0) {</span>
+				/* Necesitariamos una sola carta de la mano, para hacer el FULL*/
+<span class="nc" id="L547">				prob += distribucionHiperGeometrica(1, (MAX_CARTAS_NUMERO - 1) * 2,cartasTotales, cartasPorMostrar);	</span>
+			}
+<span class="nc bnc" id="L549" title="All 2 branches missed.">			else if( numTrios &gt; 0 ) {</span>
+				/* Necesitariamos 1 carta más de las que hay en la mesa para obtener el FULL*/
+<span class="nc" id="L551">				prob += distribucionHiperGeometrica(1, (MAX_CARTAS_VISIBLES - cartasPorMostrar) * 3,cartasTotales, cartasPorMostrar);</span>
+				/* Necesitamos 2 cartas más de las que no han salido en la mesa */
+<span class="nc" id="L553">				prob += distribucionHiperGeometrica(2, MAX_CARTAS_NUMERO ,cartasTotales, cartasPorMostrar);</span>
+			}
+			
+<span class="nc bnc" id="L556" title="All 4 branches missed.">			if( numParejas &gt; 0 &amp;&amp; numParejas + numParejasMesa &gt; 1 ){</span>
+				/* Necesitamos una carta de alguna de las parejas para formar un trio */
+<span class="nc" id="L558">				prob += distribucionHiperGeometrica(1, numParejas * 2 + numParejasMesa * 2,cartasTotales, cartasPorMostrar);</span>
+				/* Necesitamos 3 cartas más de algun número que no ha salido todavía */
+<span class="nc" id="L560">				prob += distribucionHiperGeometrica(3, MAX_CARTAS_NUMERO,cartasTotales, cartasPorMostrar);</span>
+			}
+<span class="nc bnc" id="L562" title="All 2 branches missed.">			else if( numParejas &gt; 0 ) {</span>
+				/* Necesitamos 2 cartas de alguna de las cartas de las cartas */
+<span class="nc" id="L564">				prob += distribucionHiperGeometrica(2, (MAX_CARTAS_VISIBLES - cartasPorMostrar - 2) * 3,cartasTotales, cartasPorMostrar);</span>
+				/* Necesitamos 3 cartas de las que no han salido todavia */
+<span class="nc" id="L566">				prob += distribucionHiperGeometrica(3, MAX_CARTAS_NUMERO,cartasTotales, cartasPorMostrar);</span>
+			}else {
+				/* Obtener pareja y trio de las cartas de nuestra mano */
+<span class="nc" id="L569">				prob += distribucionHiperGeometrica(3, 6,cartasTotales, cartasPorMostrar);</span>
+			}
+			
+		}
+<span class="nc" id="L573">		return prob;</span>
+	}
+	
+	/**
+	 * Función que devuelve la probabilidad de obtener Poker con las cartas que tenemos
+	 *
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener Poker con las cartas de nuestra mano (double)
+	 */
+	private double completarPoker( List&lt;Carta&gt; cartas ) {
+		
+		double prob;
+		
+<span class="nc" id="L586">		int numCartas = cartas.size();</span>
+<span class="nc" id="L587">		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L588">		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+		int cttCartasPoker;
+		int numCartasNecesarias;
+<span class="nc bnc" id="L591" title="All 2 branches missed.">		if( cartas.get(0).mismoNumeroQue( cartas.get(1) ) ) {</span>
+<span class="nc" id="L592">			cttCartasPoker = 2;</span>
+			
+<span class="nc bnc" id="L594" title="All 2 branches missed.">			for(  int idx = 2 ; idx &lt; numCartas ; ++idx ) {</span>
+<span class="nc bnc" id="L595" title="All 2 branches missed.">				if(cartas.get(0).mismoNumeroQue(cartas.get(idx))) {</span>
+<span class="nc" id="L596">					++cttCartasPoker;</span>
+				}
+			}
+<span class="nc" id="L599">			numCartasNecesarias = MAX_CARTAS_NUMERO - cttCartasPoker;</span>
+<span class="nc" id="L600">			prob = distribucionHiperGeometrica(numCartasNecesarias, numCartasNecesarias, cartasTotales, cartasPorMostrar);</span>
+		}else {
+<span class="nc" id="L602">			prob = 0.0;</span>
+<span class="nc bnc" id="L603" title="All 2 branches missed.">			for(  int idxCarta = 0 ; idxCarta &lt; 2 ; ++idxCarta ) {</span>
+<span class="nc" id="L604">				cttCartasPoker = 1;</span>
+<span class="nc bnc" id="L605" title="All 2 branches missed.">				for( int idx = 2 ; idx &lt; numCartas ; ++idx ) {</span>
+<span class="nc bnc" id="L606" title="All 2 branches missed.">					if(cartas.get(idxCarta).mismoNumeroQue(cartas.get(idx))) {</span>
+<span class="nc" id="L607">						++cttCartasPoker;</span>
+					}
+				}
+<span class="nc" id="L610">				numCartasNecesarias = MAX_CARTAS_NUMERO - cttCartasPoker;</span>
+<span class="nc" id="L611">				prob += distribucionHiperGeometrica(numCartasNecesarias, numCartasNecesarias,cartasTotales, cartasPorMostrar);</span>
+			}
+			
+		}
+		
+<span class="nc" id="L616">		return prob;</span>
+	}
+	
+	/**
+	 * Función que devuelve la probabilidad de obtener escalera de color con las cartas que tenemos
+	 *
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener una escalera de color con las cartas de nuestra mano (double)
+	 */
+	private double completarEscaleraColor( List&lt;Carta&gt; cartas ){
+		
+<span class="nc" id="L627">		double prob = 0.0;</span>
+<span class="nc" id="L628">		int numCartas = cartas.size();</span>
+<span class="nc" id="L629">		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L630">		int numCartaMano1 = cartas.get(IDX_CARTA_MANO_1).getNumero();</span>
+<span class="nc" id="L631">		int numCartaMano2 = cartas.get(IDX_CARTA_MANO_2).getNumero();</span>
+		int arrayInicio;
+		int arrayFinal;
+		
+		/*
+		 * El array &quot;numerosEscaleraColor&quot; tendrá un tamaño igual a 14
+		 *  En este array podremos comprobar si tenemos un número, por ejemplo:
+		 *  
+		 *  Comprobamos que tenemos el AS -&gt; numerosEscaleraColor[14] == 1
+		 *  		TRUE -&gt; Tenemos el AS
+		 *  		FALSE -&gt; No tenemos el AS
+		 *  El AS al tener asociado el número 14, lo podremos comprobar en el lugar 14 y a la 1
+		 *  No usaremos la posición 0
+		 */
+		int[] numerosEscaleraColor;	
+		int[] arrayFronterasEscalera;
+		
+		// Nuestras 2 pueden hacer escalera color
+<span class="nc bnc" id="L649" title="All 4 branches missed.">		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) ) &amp;&amp;  cartas.get(0).mismoPaloQue( cartas.get(1))) {	</span>
+<span class="nc" id="L650">			numerosEscaleraColor = new int[15];</span>
+			
+<span class="nc" id="L652">			numerosEscaleraColor[ numCartaMano1 ] = 1;</span>
+<span class="nc" id="L653">			numerosEscaleraColor[ numCartaMano2 ] = 1;</span>
+			
+<span class="nc" id="L655">			arrayFronterasEscalera = encontrarFronterasEscaleras(numCartaMano1, numCartaMano2);</span>
+<span class="nc" id="L656">			arrayInicio = arrayFronterasEscalera[0];</span>
+<span class="nc" id="L657">			arrayFinal  = arrayFronterasEscalera[1];</span>
+			
+<span class="nc bnc" id="L659" title="All 2 branches missed.">			for( int idx = 2; idx &lt; numCartas ; ++idx ) {</span>
+<span class="nc bnc" id="L660" title="All 2 branches missed.">				if( cartas.get(0).mismoPaloQue(cartas.get(idx)) ) {		// Que no puedan hacer escalera no importa, se filtra luego</span>
+<span class="nc" id="L661">					numerosEscaleraColor[ cartas.get(idx).getNumero() ] = 1;</span>
+				}
+			}
+<span class="nc bnc" id="L664" title="All 2 branches missed.">			if( numerosEscaleraColor[14] == 1 ) {	// Está el AS, 14-1=13</span>
+<span class="nc" id="L665">				numerosEscaleraColor[1] = 1;</span>
+			}
+<span class="nc" id="L667">			prob = probCompletarEscaleraColor(numerosEscaleraColor, cartasPorMostrar, arrayInicio, arrayFinal);</span>
+			
+		}else {	// Nuestras 2 cartas no pueden hacer escalera de color entre ellas
+<span class="nc bnc" id="L670" title="All 2 branches missed.">			for( int idxCMano = 0 ; idxCMano &lt; 2 ; ++idxCMano ) {	</span>
+<span class="nc" id="L671">				numerosEscaleraColor = new int[15];</span>
+<span class="nc" id="L672">				numerosEscaleraColor[ cartas.get(idxCMano).getNumero() ] = 1;	// Añadimos la carta de la mano</span>
+<span class="nc" id="L673">				arrayFronterasEscalera = encontrarFronterasEscaleras(cartas.get(idxCMano).getNumero(), -1);</span>
+<span class="nc" id="L674">				arrayInicio = arrayFronterasEscalera[0];</span>
+<span class="nc" id="L675">				arrayFinal  = arrayFronterasEscalera[1];</span>
+<span class="nc bnc" id="L676" title="All 2 branches missed.">				for( int idx = 2; idx &lt; numCartas ; ++idx ) {</span>
+<span class="nc" id="L677">					if( </span>
+<span class="nc bnc" id="L678" title="All 2 branches missed.">						cartas.get(idxCMano).mismoPaloQue(cartas.get(idx))</span>
+						) {
+<span class="nc" id="L680">						numerosEscaleraColor[ cartas.get(idx).getNumero() ] = 1;</span>
+					}
+<span class="nc bnc" id="L682" title="All 2 branches missed.">					if( numerosEscaleraColor[14] == 1 ) {	// Está el AS, 14-1=13</span>
+<span class="nc" id="L683">						numerosEscaleraColor[1]  =  1;</span>
+					}
+<span class="nc" id="L685">					prob += probCompletarEscaleraColor(numerosEscaleraColor, cartasPorMostrar, arrayInicio, arrayFinal);</span>
+				}
+			}
+		}
+		
+<span class="nc" id="L690">		return prob;</span>
+	}
+	/**
+	 * Función utilizada por las funciones: completarEscalera, completarEscaleraColor. Lo que hace esta función es determinar 
+	 * los valores que debemos analizar para la obtención de la probabilidad de conseguir escaleras
+	 *  
+	 * @param numCarta1 Número de la carta
+	 * @param numCarta2 Número de la segunda carta o -1 para indicar que solo tenemos una
+	 * @return Un array de dimensión 2, donde en la primera posición nos encontramos el límite inferior y en la segunda el límite superior
+	 */
+	private int[] encontrarFronterasEscaleras( int numCarta1, int numCarta2 ) {
+<span class="nc" id="L701">		int[] arrayFronterasEscalera = new int[2];</span>
+		int arrayFinal;
+		int arrayInicio;
+<span class="nc bnc" id="L704" title="All 4 branches missed.">		if( numCarta1 == 14 || numCarta2 == 14 ) {	// se puede optimizar</span>
+<span class="nc" id="L705">			arrayInicio = 1;</span>
+<span class="nc" id="L706">			arrayFinal = 14;</span>
+		}else {
+		
+<span class="nc" id="L709">			arrayInicio = numCarta1 - 4;</span>
+<span class="nc bnc" id="L710" title="All 4 branches missed.">			if( numCarta2 != -1 &amp;&amp; arrayInicio &lt; numCarta2 - 4 ) {</span>
+<span class="nc" id="L711">				arrayInicio = numCarta2 - 4;</span>
+<span class="nc" id="L712">				arrayFinal = numCarta2 + 4;</span>
+			}else {
+<span class="nc" id="L714">				arrayFinal = numCarta1 + 4;</span>
+			}
+<span class="nc bnc" id="L716" title="All 2 branches missed.">			if( arrayFinal &gt; 14 ) {</span>
+<span class="nc" id="L717">				arrayFinal = 14;</span>
+			}
+<span class="nc bnc" id="L719" title="All 2 branches missed.">			if( arrayInicio &lt; 1 ) {</span>
+<span class="nc" id="L720">				arrayInicio = 1;</span>
+			}
+		}
+<span class="nc" id="L723">		arrayFronterasEscalera[0] = arrayInicio;</span>
+<span class="nc" id="L724">		arrayFronterasEscalera[1] = arrayFinal;</span>
+		
+<span class="nc" id="L726">		return arrayFronterasEscalera;</span>
+	}
+	
+	/**
+	 * Función auxiliar que ayuda a obtener la probabilidad de obtener una escalera de color con las cartas que tenemos
+	 *
+	 * @param numerosEscaleraColor Array con los números de las cartas que tenemos
+	 * @param cartasPorMostrar Número de cartas que faltan por mostrar
+	 * @param arrayInicio Índice del array por el cual comenzaremos a estudiar la escalera (Frontera Por Debajo)
+	 * @param arrayFinal Índice del array por el cual terminaremos de estudiar la escalera (Frontera Por Encima)
+	 * @return Probabilidad de obtener escalera de color con una carta específica de nuestra mano (double)
+	 */
+	private double probCompletarEscaleraColor( int[] numerosEscaleraColor, int cartasPorMostrar, int arrayInicio, int arrayFinal ){
+<span class="nc" id="L739">		double prob = 0.0;</span>
+		int numCartasNecesarias;
+		int numCartasEscalera;
+<span class="nc" id="L742">		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+<span class="nc bnc" id="L743" title="All 2 branches missed.">		for( int idx1 = arrayInicio ; idx1 &lt;= arrayFinal - 4 ; ++idx1 ) {</span>
+<span class="nc" id="L744">			numCartasEscalera = 0;</span>
+<span class="nc bnc" id="L745" title="All 2 branches missed.">			for( int idx = idx1 ; idx &lt;= idx1+4 ; ++idx) {</span>
+<span class="nc bnc" id="L746" title="All 2 branches missed.">				if( numerosEscaleraColor[idx] == 1 ) {</span>
+<span class="nc" id="L747">					++numCartasEscalera;</span>
+<span class="nc bnc" id="L748" title="All 2 branches missed.">					if( numCartasEscalera &gt;= 5 ) {</span>
+<span class="nc" id="L749">						return 1.0;</span>
+					}
+				}
+			}
+<span class="nc" id="L753">			numCartasNecesarias = 5 - numCartasEscalera;</span>
+<span class="nc" id="L754">			prob += distribucionHiperGeometrica( numCartasNecesarias, numCartasNecesarias, cartasTotales,  cartasPorMostrar );</span>
+		}
+<span class="nc" id="L756">		return prob;</span>
+	}
+
+	/**
+	 * Función que devuelve la probabilidad de obtener escalera real con las cartas que tenemos
+	 *
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @return Probabilidad de obtener escalera real con las cartas de nuestra mano (double)
+	 */
+	private double completarEscaleraReal( List&lt;Carta&gt; cartas ){
+		
+<span class="nc" id="L767">		double prob = 0.0;</span>
+<span class="nc" id="L768">		int numCartas = cartas.size();</span>
+<span class="nc" id="L769">		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L770">		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+<span class="nc" id="L771">		int numCartasEscalera = 1;</span>
+<span class="nc" id="L772">		boolean cartaMano1Posible = false;</span>
+<span class="nc" id="L773">		boolean cartaMano2Posible = false;</span>
+		
+		// Para hacerlo más eficiente
+<span class="nc" id="L776">		int inicioBucle = 1;</span>
+<span class="nc" id="L777">		int topeBucle = 0;</span>
+		
+		/* Comprobamos las cartas de nuestra mano sean aptas para la escalera real*/
+<span class="nc bnc" id="L780" title="All 2 branches missed.">		if( cartas.get(0).getNumero() &gt;= 10 ) {</span>
+<span class="nc" id="L781">			cartaMano1Posible = true;</span>
+<span class="nc" id="L782">			inicioBucle = 0;</span>
+		}
+<span class="nc bnc" id="L784" title="All 2 branches missed.">		if( cartas.get(1).getNumero() &gt;= 10 ) {</span>
+<span class="nc" id="L785">			cartaMano2Posible = true;</span>
+<span class="nc" id="L786">			topeBucle = 1;</span>
+		}
+		
+<span class="nc bnc" id="L789" title="All 6 branches missed.">		if( cartas.get(0).mismoPaloQue( cartas.get(1)) &amp;&amp; cartaMano1Posible &amp;&amp; cartaMano2Posible) {</span>
+<span class="nc" id="L790">			numCartasEscalera = 2;</span>
+<span class="nc" id="L791">			topeBucle = 0;</span>
+		}
+		
+<span class="nc bnc" id="L794" title="All 2 branches missed.">		for( int idxCartaMano = inicioBucle ; idxCartaMano &lt;= topeBucle ; ++idxCartaMano ) {</span>
+<span class="nc bnc" id="L795" title="All 2 branches missed.">			for( int idxCartaMesa = 2; idxCartaMesa &lt; numCartas ; ++idxCartaMesa ) {</span>
+<span class="nc" id="L796">				if( </span>
+<span class="nc bnc" id="L797" title="All 2 branches missed.">					cartas.get(idxCartaMesa).getNumero() &gt;= 10	&amp;&amp;</span>
+<span class="nc bnc" id="L798" title="All 2 branches missed.">					cartas.get(idxCartaMano).mismoPaloQue(cartas.get(idxCartaMesa))			</span>
+					) {
+<span class="nc" id="L800">					++numCartasEscalera;	</span>
+				}
+			}
+<span class="nc" id="L803">			int cartasNecesarias = 5 - numCartasEscalera;</span>
+<span class="nc" id="L804">			prob += distribucionHiperGeometrica(cartasNecesarias,cartasNecesarias,cartasTotales, cartasPorMostrar);	/* Las cartas necesarias son las mismas, a las válidas */</span>
+<span class="nc" id="L805">			numCartasEscalera = 1;</span>
+		}
+			
+<span class="nc" id="L808">		return prob;</span>
+	}
+	
+	/*
+	 * ##############################################################################################################
+	 * 								CALCULAR PROBABILIDAD DE LOS CONTRINCANTES
+	 * ##############################################################################################################
+	 */
+	
+	/** 
+	 * Función que calcula la probabilidad de que uno de nuestro contrincantes obtengan una pareja o un trio o un poker con las cartas que conocemos
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @param numContrincantes número de contrincantes activos
+	 * */
+	private void completarParejaTrioPokerCont( List&lt;Carta&gt; cartas, int numContrincantes ) {
+		
+<span class="nc" id="L825">		int numCartas = cartas.size();</span>
+		/* Si solo tenemos nuestrar cartas no calculamos nada de los contrincantes*/
+<span class="nc bnc" id="L827" title="All 2 branches missed.">		if( numCartas &lt; 3 ) {</span>
+<span class="nc" id="L828">			this.probParejaCont = -1;</span>
+<span class="nc" id="L829">			this.probTrioCont = -1;</span>
+<span class="nc" id="L830">			this.probPokerCont = -1;</span>
+
+		}
+		else 
+		{
+<span class="nc" id="L835">			this.probParejaCont = 0;</span>
+<span class="nc" id="L836">			this.probTrioCont = 0;</span>
+<span class="nc" id="L837">			this.probPokerCont = 0;</span>
+			
+<span class="nc" id="L839">			int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L840">			int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+			int numCartasNecesarias;
+<span class="nc" id="L842">			int numCartasValidasRestantes = 4;	/* Solo hay 4 cartas por número */</span>
+			int numCartasQueYoTengo;
+	
+			Carta cartaAux;
+			int cttCartasNumero;
+			
+			/* Rellenamos el Map */
+<span class="nc" id="L849">			Map&lt; Integer , Integer&gt; contarCartas = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L850" title="All 2 branches missed.">			for( int idx = 2 ; idx &lt; numCartas ; ++idx ) {</span>
+<span class="nc" id="L851">				cartaAux = cartas.get(idx);</span>
+<span class="nc" id="L852">				cttCartasNumero = contarCartas.getOrDefault( cartaAux.getNumero(), 0) + 1;</span>
+<span class="nc" id="L853">				contarCartas.put(cartaAux.getNumero(),cttCartasNumero);</span>
+			}
+			
+<span class="nc bnc" id="L856" title="All 2 branches missed.">			for( Map.Entry&lt;Integer , Integer&gt; tupla : contarCartas.entrySet() ) {</span>
+<span class="nc" id="L857">				numCartasQueYoTengo = 0;</span>
+				/* Contamos las cartas de este tipo que tenemos */
+<span class="nc bnc" id="L859" title="All 2 branches missed.">				for( int idx = 0 ; idx &lt; 2 ; ++idx ) {</span>
+<span class="nc bnc" id="L860" title="All 2 branches missed.">					if( cartas.get(idx).getNumero() == tupla.getKey() ) {</span>
+<span class="nc" id="L861">						++numCartasQueYoTengo;</span>
+					}
+				}
+			
+				/* Las cartas que no podemos ver y ayudarían a completar la mano */
+<span class="nc" id="L866">				numCartasValidasRestantes = 4 - tupla.getValue() - numCartasQueYoTengo;</span>
+				
+				/* Las cartas que necesita el contrincante para conseguir una pareja */
+<span class="nc" id="L869">				numCartasNecesarias  = 2 - tupla.getValue();</span>
+<span class="nc" id="L870">				this.probParejaCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar);</span>
+				
+				
+				/* Las cartas que no podemos ver y ayudarían a completar el trio */
+<span class="nc" id="L874">				numCartasNecesarias  = 3 - tupla.getValue();</span>
+<span class="nc" id="L875">				this.probTrioCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar);</span>
+				
+				
+				/* Las cartas que no podemos ver y ayudarían a completar el poker */
+<span class="nc" id="L879">				numCartasNecesarias  = 4 - tupla.getValue();</span>
+<span class="nc" id="L880">				this.probPokerCont += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar);</span>
+				
+<span class="nc" id="L882">			}</span>
+		}
+<span class="nc" id="L884">	}</span>
+	
+	/**
+	 * Función que devuelve la probabilidad de que uno de nuestro contrincantes obtenegan color con las cartas que conocemos
+	 * 
+	 * @param cartas Lista que contiene las cartas conocidas
+	 * @param numContrincantes Número de contrincantes activos
+	 * @return Probabilidad de que un contrincante obtenga color con las cartas que conocemos (double)
+	 */
+	private double completarColorCont(List&lt;Carta&gt; cartas, int numContrincantes) {
+		
+<span class="nc" id="L895">		int numCartas = cartas.size();</span>
+		/* Si solo tenemos nuestrar cartas no calculamos nada de los contrincantes*/
+<span class="nc bnc" id="L897" title="All 2 branches missed.">		if( numCartas &lt; 3 ) {</span>
+<span class="nc" id="L898">			return -1;</span>
+		}
+<span class="nc" id="L900">		double prob = 0.0;</span>
+<span class="nc" id="L901">		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L902">		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+		int numCartasNecesarias;
+<span class="nc" id="L904">		int numCartasValidasRestantes = 13;</span>
+		int numCartasQueYoTengo;
+		
+		int cttCartasColor;
+		Carta cartaAux;
+<span class="nc" id="L909">		Map&lt; Character , Integer&gt; contarCartas = new HashMap&lt;&gt;();</span>
+		
+<span class="nc bnc" id="L911" title="All 2 branches missed.">		for( int idx = 2 ; idx &lt; numCartas ; ++idx ) {</span>
+<span class="nc" id="L912">			cartaAux = cartas.get(idx);</span>
+<span class="nc" id="L913">            cttCartasColor = contarCartas.getOrDefault( cartaAux.getPalo(), 0) + 1;</span>
+<span class="nc" id="L914">			contarCartas.put(cartaAux.getPalo(),cttCartasColor);</span>
+		}
+		
+<span class="nc bnc" id="L917" title="All 2 branches missed.">		for( Map.Entry&lt;Character , Integer&gt; tupla : contarCartas.entrySet() ) {</span>
+			
+			/* Cuento las cartas que tengo de este color */
+<span class="nc" id="L920">			numCartasQueYoTengo = 0;</span>
+<span class="nc bnc" id="L921" title="All 2 branches missed.">			for( int idx = 0 ; idx &lt; 2 ; ++idx ) {</span>
+<span class="nc bnc" id="L922" title="All 2 branches missed.">				if( cartas.get(idx).getPalo() == tupla.getKey() ) {</span>
+<span class="nc" id="L923">					++numCartasQueYoTengo;</span>
+				}
+			}
+			/* Las cartas que necesita el contrincante para conseguir color */
+<span class="nc" id="L927">			numCartasNecesarias  = 5 - tupla.getValue();</span>
+			
+			/* Las cartas que no podemos ver y ayudarían a completar el color */
+<span class="nc" id="L930">			numCartasValidasRestantes -= tupla.getValue() + numCartasQueYoTengo;</span>
+			
+<span class="nc bnc" id="L932" title="All 2 branches missed.">			for( int numCartasContrTendria = 0 ; numCartasContrTendria &lt; numCartasNecesarias ; ++numCartasContrTendria ) {</span>
+<span class="nc" id="L933">				prob += distribucionHiperGeometrica(numCartasNecesarias, numCartasValidasRestantes,cartasTotales, cartasPorMostrar) *  distribucionHiperGeometrica(numCartasContrTendria, numCartasValidasRestantes,numContrincantes*2, cartasPorMostrar);</span>
+				/* Esto esta raro, no me acuerdo lo que hace aquí */
+			}
+<span class="nc" id="L936">		}</span>
+		
+<span class="nc" id="L938">		return prob;</span>
+	}
+	
+	private double completarEscaleraCont(List&lt;Carta&gt; cartas, int numContrincantes) {
+		
+<span class="nc" id="L943">		int numCartas = cartas.size();</span>
+		/* Si solo tenemos nuestrar cartas no calculamos nada de los contrincantes*/
+<span class="nc bnc" id="L945" title="All 2 branches missed.">		if( numCartas &lt; 3 ) {</span>
+<span class="nc" id="L946">			return -1;</span>
+		}
+<span class="nc" id="L948">		double prob = 0.0;</span>
+<span class="nc" id="L949">		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;</span>
+<span class="nc" id="L950">		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;</span>
+		//int numCartasNecesarias;
+		//int numCartasValidas = 13;
+		//int numCartasQueYoTengo;
+		
+		
+<span class="nc" id="L956">		int[] numerosEscaleraCont = new int[15];</span>
+		
+<span class="nc bnc" id="L958" title="All 2 branches missed.">		for( int idx = 2; idx &lt; numCartas ; ++idx ) {</span>
+<span class="nc" id="L959">			numerosEscaleraCont[ cartas.get(idx).getNumero() ] = 1;</span>
+		}
+<span class="nc bnc" id="L961" title="All 2 branches missed.">		if( numerosEscaleraCont[14] == 1 ) {	// Está el AS, 14-1=13</span>
+<span class="nc" id="L962">			numerosEscaleraCont[1] = 1;</span>
+		}
+		
+		/* Calculamos los límites de la baraja que debemos estudiar */
+		
+<span class="nc" id="L967">		return prob;</span>
+	}
+	
+	private double completarFullHouseCont(List&lt;Carta&gt; cartas, int numContrincantes) {
+<span class="nc" id="L971">		return 0.0;</span>
+	}
+	
+	private double completarEscaleraColorCont(List&lt;Carta&gt; cartas, int numContrincantes) {
+<span class="nc" id="L975">		return 0.0;</span>
+	}
+	
+	private double completarEscaleraRealCont(List&lt;Carta&gt; cartas, int numContrincantes) {
+<span class="nc" id="L979">		return 0.0;</span>
+	}
+	
+	/*
+	 * ##############################################################################################################
+	 * 												TOMA DE DECISIONES
+	 * ##############################################################################################################
+	 */
+
+	/**
+	 * 
+	 * @param ciegaPequenya Valor de la ciega pequenya de la mano
+	 * @param apuestaAcumulada Valor de la apuesta acumulada en la mano
+	 * 
+	 * @return Clase que define la decisión que debe tomar el jugador
+	 */
+	private Decision calcularDecision(int ciegaPequenya, int apuestaAcumulada) {
+		
+		Decision decision;
+
+<span class="nc bnc" id="L999" title="All 2 branches missed.">		if( probEscaleraReal == 1.0 ) {				/* JUGADOR TIENE ESCALERA REAL (Mejor mano posible, no la puede tener nadie a la vez) */</span>
+<span class="nc" id="L1000">			decision = new Decision( Decision.ALL_IN, apuestaAcumulada );</span>
+<span class="nc bnc" id="L1001" title="All 4 branches missed.">		}else if( probEscaleraColor == 1.0 &amp;&amp; probEscaleraColorCont != 1.0) {</span>
+<span class="nc" id="L1002">			decision = new Decision( Decision.ALL_IN, apuestaAcumulada );</span>
+<span class="nc bnc" id="L1003" title="All 2 branches missed.">		}else if( probPoker == 1.0 ) {</span>
+<span class="nc" id="L1004">			decision = new Decision( Decision.ALL_IN, apuestaAcumulada );</span>
+		}else{
+<span class="nc" id="L1006">			decision = new Decision( Decision.FOLD, 0 );</span>
+		}
+		
+<span class="nc" id="L1009">		return decision;</span>
+	}
+	
+	
+	/*
+	 * ##############################################################################################################
+	 * 									FUNCIONES PARA CALCULAR PROBABILIDAD 
+	 * ##############################################################################################################
+	 */
+	
+	/**
+	 * Esta función usa la distribución hipergeométrica para obtener la probabilidad de obtener una determinada mano
+	 * 
+	 * @param cartasNecesarias El número de cartas que necesitamos para completar nuestra mano
+	 * @param cartasValidasRestantes El número de cartas de ese tipo que nos sirven para completar la mano
+	 * @param cartasTotales El número de cartas totales que no han salido todavía
+	 * @param cartasPorMostrar El número de cartas que faltan por desvelar 
+	 * 
+	 * @return La probabilidad de que la mano se complete
+	 */
+	private double distribucionHiperGeometrica( int cartasNecesarias, int cartasValidasRestantes, int cartasTotales, int cartasPorMostrar) {
+		double prob;
+<span class="nc bnc" id="L1031" title="All 2 branches missed.">		if( cartasNecesarias &lt;= 0 ) {</span>
+<span class="nc" id="L1032">			prob = 1.0;</span>
+<span class="nc bnc" id="L1033" title="All 2 branches missed.">		}else if( cartasNecesarias &gt; cartasPorMostrar ) {</span>
+<span class="nc" id="L1034">			prob = 0.0;</span>
+		}else{
+<span class="nc" id="L1036">			int combinacionesPosibles = C( cartasTotales , cartasPorMostrar );</span>
+<span class="nc" id="L1037">			int combinacionesFormasSalirCartasNecesarias = C( cartasValidasRestantes , cartasNecesarias );</span>
+<span class="nc" id="L1038">			int combinacionesDemasCartas = C( cartasTotales - cartasValidasRestantes, cartasPorMostrar - cartasNecesarias);</span>
+			
+<span class="nc" id="L1040">			prob = (double) (combinacionesFormasSalirCartasNecesarias * combinacionesDemasCartas) / combinacionesPosibles;</span>
+		}
+		
+<span class="nc" id="L1043">		return prob;</span>
+	}
+	
+	/**
+	 * Esta función usa la distribución binomial para obtener la probabilidad de obtener una determinada mano
+	 * 
+	 * @param cartasNecesarias El número de cartas que necesitamos para completar nuestra mano
+	 * @param cartasPorMostrar El número de cartas que faltan por desvelar 
+	 * 
+	 * @deprecated
+	 * 
+	 * @return La probabilidad de que la mano se complete
+	 */
+	private double distribucionBinomial(int cartasNecesarias, int cartasPorMostrar) {
+		
+<span class="nc" id="L1058">		int cartasQueNoHanSalido = 45 + cartasPorMostrar;			//N = cartasQueNoHanSalido ; K = Cartas Necesarias</span>
+		
+<span class="nc" id="L1060">		long combinacionesNK = C(cartasQueNoHanSalido, cartasNecesarias);</span>
+<span class="nc" id="L1061">		double p = cartasNecesarias / cartasQueNoHanSalido;</span>
+		
+<span class="nc" id="L1063">		return (double) combinacionesNK * Math.pow(p, cartasNecesarias) * Math.pow(1.0-p, cartasQueNoHanSalido-cartasNecesarias);</span>
+	}
+	
+	
+	/**
+	 * Obtenemos la probabilidad de obtener un determinado número de cartas, en un conjunto donde tenemos un numero de cartas válidas y del cual solo podemos tomar un número límitado de estas
+	 *
+	 * @deprecated
+	 *
+	 * @param numCartasValidas número de cartas del conjunto que son válidas para el individuo
+	 * @param numCartasPosibles número de cartas diferentes que podemos tomar
+	 * @param iteraciones número de cartas que posee el conjunto con el que trabajamos
+	 * @param numCartasNecesarias número de cartas del conjunto de cartas válidas que necesitamos
+	 * 
+	 */
+	private double probabilidadComplementaria( int numCartasValidas, int numCartasPosibles, int iteraciones, int numCartasNecesarias) {
+<span class="nc" id="L1079">		double prob = 1.0;</span>
+		
+		int numCartasPosiblesAux;
+		int numCartasValidasAux;
+		
+<span class="nc bnc" id="L1084" title="All 4 branches missed.">		if( numCartasNecesarias &lt;= 2 &amp;&amp; numCartasNecesarias &gt; 0) {</span>
+			
+<span class="nc bnc" id="L1086" title="All 2 branches missed.">			for( int co = 0 ; co &lt; numCartasNecesarias ; co++ ) {	// co = cartas que obtienes</span>
+
+<span class="nc bnc" id="L1088" title="All 2 branches missed.">				for( int io = 0 ; io &lt; numCartasNecesarias ; io++ ) {	// io = iteracion donde obtiene la carta</span>
+
+<span class="nc" id="L1090">					numCartasValidasAux = numCartasValidas;</span>
+<span class="nc" id="L1091">					numCartasPosiblesAux = numCartasPosibles;</span>
+					
+<span class="nc bnc" id="L1093" title="All 2 branches missed.">					for( int i = 0 ; i &lt; iteraciones ; ++i ) {</span>
+						
+<span class="nc bnc" id="L1095" title="All 4 branches missed.">						if( i == io &amp;&amp; co &gt; 0  ) {</span>
+<span class="nc" id="L1096">							prob *= (double) numCartasValidasAux / numCartasPosiblesAux;</span>
+<span class="nc" id="L1097">							--numCartasValidasAux;</span>
+						}else {
+<span class="nc" id="L1099">							prob *=  1.0 -  ((double) numCartasValidasAux / numCartasPosiblesAux);</span>
+<span class="nc" id="L1100">							--numCartasPosiblesAux;</span>
+						}
+						
+					}
+				}
+			}
+			
+<span class="nc" id="L1107">			prob = 1.0 - prob;</span>
+			
+<span class="nc bnc" id="L1109" title="All 2 branches missed.">		}else if( numCartasNecesarias &gt; 0) {	// Es mejor cambiar el método para estos casos para no elevar mucho la complejidad del algoritmo</span>
+			
+			
+			
+		}
+		
+<span class="nc" id="L1115">		return prob;</span>
+	}
+
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

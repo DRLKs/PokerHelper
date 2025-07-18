@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.pokerhelper.infrastructure.adapters.input.http.PokerHttpAdapterTest
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.682 s -- in com.pokerhelper.infrastructure.adapters.input.http.PokerHttpAdapterTest

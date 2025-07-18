@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Carta.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Poker Helper - Probability Service</a> &gt; <a href="index.source.html" class="el_package">com.app.service.domain.model</a> &gt; <span class="el_source">Carta.java</span></div><h1>Carta.java</h1><pre class="source lang-java linenums">package com.app.service.domain.model;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+public class Carta {
+	
+	private char palo;
+	private int numero;
+	
+	
+<span class="fc" id="L14">	public Carta( char palo, int numero) {</span>
+<span class="fc" id="L15">		this.palo = palo;</span>
+<span class="fc bfc" id="L16" title="All 2 branches covered.">		if( numero == 1 ) {	// Hace código más simple, menos excepciones</span>
+<span class="fc" id="L17">			numero = 14;</span>
+		}
+<span class="fc" id="L19">		this.numero = numero;</span>
+<span class="fc" id="L20">	}</span>
+	
+	/**
+	 * 
+	 * @return devuelve el palo de la carta en cuestión
+	 */
+	public char getPalo() {
+<span class="fc" id="L27">		return this.palo;</span>
+	}
+	
+	/**
+	 * 
+	 * @return devuelve el número de la carta en cuestión
+	 */
+	public int getNumero() {
+<span class="fc" id="L35">		return this.numero;</span>
+	}
+	
+	/**
+	 * 
+	 * @param otraCarta Carta con la que se compara la carta en cuestión
+	 * @return devuelve {@code true} si el número en de la carta en cuestión es superior a la otra carta, {@code false} en el caso contrario
+	 */
+	public boolean masAltaQue( Carta otraCarta ) {
+<span class="nc bnc" id="L44" title="All 2 branches missed.">		return this.getNumero() &gt; otraCarta.getNumero();</span>
+	}
+	
+	/**
+	 * 
+	 * @param otraCarta Carta con la que se compara la carta en cuestión
+	 * @return devuelve True si el palo de la carta en cuestión es igual al de la otra carta, {@code false} en el caso contrario
+	 */
+	public boolean mismoPaloQue( Carta otraCarta ) {
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">		return this.getPalo() == otraCarta.getPalo();</span>
+	}
+	
+	/**
+	 * 
+	 * @param otraCarta Carta con la que se compara la carta en cuestión
+	 * @return devuelve {@code true} si el número de la carta en cuestión es igual al de la otra carta, {@code false} en el caso contrario
+	 */
+	public boolean mismoNumeroQue( Carta otraCarta ) {
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">		return this.getNumero() == otraCarta.getNumero();</span>
+	}
+	
+	/**
+	 * 
+	 * @param otraCarta Carta con la que se compara la carta en cuestión
+	 * @return devuelve {@code true} si las cartas pueden hacer escalera entre ellas, {@code false} en el caso contrario
+	 */
+	public boolean puedenHacerEscalera( Carta otraCarta ) {
+<span class="fc" id="L71">		boolean hacenEscalera = false;</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">		if( !this.mismoNumeroQue(otraCarta) ) {</span>
+<span class="pc bpc" id="L73" title="5 of 8 branches missed.">			if( (this.getNumero() == 14 &amp;&amp; otraCarta.getNumero() &lt;=5) || (otraCarta.getNumero() == 14 &amp;&amp; this.getNumero() &lt;= 5)) {	// Caso escaleras pequeñas con A</span>
+<span class="nc" id="L74">				hacenEscalera =  true;</span>
+			}else{
+<span class="fc" id="L76">				int diferencia = this.getNumero() - otraCarta.getNumero();</span>
+<span class="pc bpc" id="L77" title="2 of 4 branches missed.">				hacenEscalera = diferencia &lt;= 4 &amp;&amp; diferencia &gt;= -4;</span>
+			}
+		}
+		
+<span class="fc" id="L81">		return hacenEscalera;</span>
+	}
+	
+	@Override
+	public int hashCode() {
+<span class="nc" id="L86">		return Objects.hash(numero, palo);</span>
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">		if (this == obj)</span>
+<span class="nc" id="L92">			return true;</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">		if (obj == null)</span>
+<span class="nc" id="L94">			return false;</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">		if (getClass() != obj.getClass())</span>
+<span class="nc" id="L96">			return false;</span>
+<span class="nc" id="L97">		Carta other = (Carta) obj;</span>
+<span class="nc bnc" id="L98" title="All 4 branches missed.">		return numero == other.numero &amp;&amp; palo == other.palo;</span>
+	}
+
+	/**
+	 * Esta función nos ayudará a saber si hay cartas que aparecen n veces
+	 * 
+	 * Devolverá: 
+	 * 	-1 --&gt; No hay ninguna carta que se repita tantas veces
+	 *   c --&gt; Siendo c un entero igual al numero de la carta que se repite n veces
+	 */
+	public static int hay_N_CartasRepetidasMismoNumero( List&lt;Carta&gt; cartas , int n) {
+		
+<span class="nc" id="L110">		Map&lt; Integer , Integer&gt; contarCartas = new HashMap&lt;&gt;();</span>
+
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        for (Carta c : cartas) {</span>
+<span class="nc" id="L113">        	int numeroC = c.getNumero();</span>
+<span class="nc" id="L114">            int count = contarCartas.getOrDefault( numeroC, 0) + 1;</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">            if (count &gt;= n) {</span>
+<span class="nc" id="L116">                return numeroC; // Detenernos en cuanto encontramos un elemento con n apariciones</span>
+            }
+<span class="nc" id="L118">            contarCartas.put(numeroC, count);</span>
+<span class="nc" id="L119">        }</span>
+        
+        // Si no encontramos ningún elemento con exactamente 'n' apariciones
+<span class="nc" id="L122">        return -1;</span>
+	}
+	
+	public static int hay_N_CartasRepetidasMismoNumeroMesa( List&lt;Carta&gt; cartas , int n) {
+		
+<span class="nc" id="L127">		Map&lt; Integer , Integer&gt; contarCartas = new HashMap&lt;&gt;();</span>
+
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        for ( int i = 2 ; i &lt; cartas.size() ; ++i ) {</span>
+<span class="nc" id="L130">        	int numeroC = cartas.get(i).getNumero();</span>
+<span class="nc" id="L131">            int count = contarCartas.getOrDefault( numeroC, 0) + 1;</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            if (count &gt;= n) {</span>
+<span class="nc" id="L133">                return numeroC; // Detenernos en cuanto encontramos un elemento con n apariciones</span>
+            }
+<span class="nc" id="L135">            contarCartas.put(numeroC, count);</span>
+        }
+        
+        // Si no encontramos ningún elemento con exactamente 'n' apariciones
+<span class="nc" id="L139">        return -1;</span>
+	}
+	
+	/**
+	 * 
+	 * @param cartas Lista con las cartas que podemos observar
+	 * @param numCarta Número el cual queremos conocer las veces que aparece entre las cartas observables
+	 * @return Número de veces que aparece el número seleccionado en las cartas observables
+	 */
+	public static int vecesQueSeSaleEsteNumero( List&lt;Carta&gt; cartas , int numCarta ) {
+		
+<span class="fc" id="L150">		Map&lt; Integer , Integer&gt; contarCartas = new HashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        for (Carta c : cartas) {</span>
+<span class="fc" id="L153">        	int numeroC = c.getNumero();</span>
+<span class="fc" id="L154">            int count = contarCartas.getOrDefault( numeroC, 0) + 1;</span>
+<span class="fc" id="L155">            contarCartas.put(numeroC, count);</span>
+<span class="fc" id="L156">        }</span>
+        
+<span class="fc" id="L158">        return contarCartas.get( numCarta );</span>
+	}
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
