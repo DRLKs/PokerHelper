@@ -136,5 +136,3 @@ Content-Type: application/json
 - **CPU Efficient**: Minimal overhead for intensive calculations
 - **Simple**: No complex configuration
 - **Embeddable**: Perfect for desktop applications
-
-Perfect for embedding in desktop applications!

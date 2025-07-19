@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+
 /**
  * HTTP adapter for poker calculation endpoints
  */
@@ -39,9 +40,13 @@ public class PokerHttpAdapter {
      * Configure routes for this adapter
      */
     public void configureRoutes(Javalin app) {
-        app.post("/api/poker/calculate", this::calculateProbabilities);
-        app.post("/api/poker/decision", this::makeDecision);
-        app.get("/api/poker/info", this::getApiInfo);
+        String javaApiUrl = System.getenv("JAVA_API_PATH");
+        if (javaApiUrl == null) {
+            javaApiUrl = "/api/poker"; // Default path
+        }
+        app.post(javaApiUrl + "/calculate", this::calculateProbabilities);
+        app.post(javaApiUrl + "/decision", this::makeDecision);
+        app.get(javaApiUrl + "/info", this::getApiInfo);
     }
 
     /**

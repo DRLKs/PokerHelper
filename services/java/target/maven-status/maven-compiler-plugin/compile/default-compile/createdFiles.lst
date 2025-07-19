@@ -26,5 +26,6 @@ com/pokerhelper/application/services/PokerCalculatorService.class
 com/pokerhelper/PokerHelperApplication$HealthResponse.class
 com/app/service/domain/ports/output/CardsRepository.class
 com/pokerhelper/domain/model/Card.class
+com/pokerhelper/utils/EnvLoader.class
 com/app/service/applications/service/CalculoDeProbabilidades.class
 com/pokerhelper/application/services/PokerCalculatorService$PokerCalculationException.class

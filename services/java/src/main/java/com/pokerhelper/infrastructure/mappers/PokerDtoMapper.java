@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Mapper to convert between DTOs and domain models
+ * Mapper to convert between DTOs and domain models                                                                     
  */
 public class PokerDtoMapper {
 

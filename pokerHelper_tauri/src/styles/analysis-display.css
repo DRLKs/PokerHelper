@@ -1,5 +1,142 @@
 /* Estilos para el componente de análisis */
 
+/* Layout principal */
+.analysis-layout {
+  display: flex;
+  gap: 20px;
+  height: 100%;
+  min-height: 400px;
+}
+
+.poker-analysis-panel {
+  flex: 0 0 320px; /* Fixed width for left panel */
+  border-right: 1px solid var(--border-accent);
+  padding-right: 20px;
+  overflow-y: auto;
+}
+
+.additional-content-panel {
+  flex: 1; /* Takes remaining space */
+  padding-left: 20px;
+}
+
+/* Secciones del análisis */
+.probability-section,
+.decision-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-accent);
+  padding-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.probability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.probability-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(33, 38, 45, 0.4);
+  border: 1px solid var(--border-secondary);
+  border-radius: 6px;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.probability-item:hover {
+  background: rgba(33, 38, 45, 0.6);
+  border-color: var(--border-accent);
+}
+
+.prob-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.prob-value {
+  font-weight: 600;
+  color: var(--primary-gold);
+  font-family: 'Courier New', monospace;
+}
+
+/* Sección de decisión */
+.decision-info {
+  background: linear-gradient(145deg, rgba(41, 128, 185, 0.1), rgba(52, 152, 219, 0.1));
+  border: 1px solid rgba(52, 152, 219, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.decision-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.decision-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.decision-value {
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+/* Colores para acciones */
+.action-fold {
+  color: #e74c3c;
+}
+
+.action-call {
+  color: #f39c12;
+}
+
+.action-raise,
+.action-bet {
+  color: #27ae60;
+}
+
+.decision-description {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.decision-description p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.analysis-timestamp {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-secondary);
+  font-family: 'Courier New', monospace;
+}
+
+/* Estilos para el componente de análisis */
+
 .analysis-container {
   background: linear-gradient(145deg, var(--bg-card), var(--bg-card-secondary));
   border: 1px solid var(--border-accent);
@@ -202,6 +339,26 @@
 }
 
 /* Responsive */
+@media (max-width: 768px) {
+  .analysis-layout {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .poker-analysis-panel {
+    flex: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border-accent);
+    padding-right: 0;
+    padding-bottom: 16px;
+  }
+  
+  .additional-content-panel {
+    padding-left: 0;
+    padding-top: 16px;
+  }
+}
+
 @media (max-width: 768px) {
   .analysis-item {
     flex-direction: column;

@@ -15,6 +15,7 @@
 /home/drlk/GitHub/PokerHelper/services/java/src/main/java/com/pokerhelper/infrastructure/adapters/input/http/PokerHttpAdapter.java
 /home/drlk/GitHub/PokerHelper/services/java/src/main/java/com/pokerhelper/infrastructure/dto/CardDto.java
 /home/drlk/GitHub/PokerHelper/services/java/src/main/java/com/pokerhelper/application/ports/input/PokerCalculatorUseCases.java
+/home/drlk/GitHub/PokerHelper/services/java/src/main/java/com/pokerhelper/utils/EnvLoader.java
 /home/drlk/GitHub/PokerHelper/services/java/src/main/java/com/pokerhelper/infrastructure/config/ApplicationConfig.java
 /home/drlk/GitHub/PokerHelper/services/java/src/main/java/com/pokerhelper/application/services/CalculoDeProbabilidades.java
 /home/drlk/GitHub/PokerHelper/services/java/src/main/java/com/app/service/applications/service/Decision.java

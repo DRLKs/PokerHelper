@@ -1,6 +1,6 @@
 import "./styles/global.css";
 import "./styles/App.css";
-import { PokerHand, PlayerHand, LanguageSelector, AnalysisDisplay } from "./components";
+import { PokerHand, PlayerHand, LanguageSelector, AnalysisDisplay, AnalysisOptions } from "./components";
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 import { PokerGameProvider } from "./contexts/PokerGameContext";
 
@@ -16,6 +16,7 @@ function AppContent() {
       
       <PlayerHand />
       <PokerHand />
+      <AnalysisOptions />
       <AnalysisDisplay />
     </main>
   );

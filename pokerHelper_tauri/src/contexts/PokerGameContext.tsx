@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Card } from '../types/Card';
-import { usePokerAnalysis } from '../hooks/usePokerAnalysis';
+import { usePokerAnalysis, PokerAnalysisOptions } from '../hooks/usePokerAnalysis';
 import { PokerHandAnalysis } from '../services/pokerAPI';
 
 interface PokerGameContextType {
@@ -16,6 +16,10 @@ interface PokerGameContextType {
   analysis: PokerHandAnalysis | null;
   isLoading: boolean;
   error: string | null;
+  
+  // Opciones de análisis
+  analysisOptions: PokerAnalysisOptions;
+  updateAnalysisOptions: (options: Partial<PokerAnalysisOptions>) => void;
   
   // Función para limpiar todo
   clearAll: () => void;
@@ -43,6 +47,13 @@ export const PokerGameProvider: React.FC<PokerGameProviderProps> = ({ children }
     { suit: '', rank: '' }
   ]);
 
+  // Opciones de análisis
+  const [analysisOptions, setAnalysisOptions] = useState<PokerAnalysisOptions>({
+    numberOfOpponents: 3,
+    smallBlind: 5,
+    accumulatedBet: 0
+  });
+
   // Hook para el análisis
   const { analysis, isLoading, error, analyzeCards, clearAnalysis } = usePokerAnalysis();
 
@@ -64,6 +75,11 @@ export const PokerGameProvider: React.FC<PokerGameProviderProps> = ({ children }
     });
   };
 
+  // Función para actualizar opciones de análisis
+  const updateAnalysisOptions = (newOptions: Partial<PokerAnalysisOptions>) => {
+    setAnalysisOptions(prev => ({ ...prev, ...newOptions }));
+  };
+
   // Función para limpiar todo
   const clearAll = () => {
     setPlayerHand([
@@ -80,15 +96,15 @@ export const PokerGameProvider: React.FC<PokerGameProviderProps> = ({ children }
     clearAnalysis();
   };
 
-  // Efecto para hacer petición cuando cambien las cartas
+  // Efecto para hacer petición cuando cambien las cartas o las opciones
   useEffect(() => {
     // Debounce para evitar demasiadas peticiones
     const timeoutId = setTimeout(() => {
-      analyzeCards(playerHand, communityCards);
+      analyzeCards(playerHand, communityCards, analysisOptions);
     }, 300); // Esperar 300ms después del último cambio
 
     return () => clearTimeout(timeoutId);
-  }, [playerHand, communityCards, analyzeCards]);
+  }, [playerHand, communityCards, analysisOptions, analyzeCards]);
 
   const value: PokerGameContextType = {
     playerHand,
@@ -98,6 +114,8 @@ export const PokerGameProvider: React.FC<PokerGameProviderProps> = ({ children }
     analysis,
     isLoading,
     error,
+    analysisOptions,
+    updateAnalysisOptions,
     clearAll
   };
 

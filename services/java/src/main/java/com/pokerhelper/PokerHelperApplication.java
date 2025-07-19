@@ -31,6 +31,13 @@ public class PokerHelperApplication {
         Javalin app = Javalin.create(javalinConfig -> {
             javalinConfig.jsonMapper(new JavalinJackson(objectMapper));
             javalinConfig.showJavalinBanner = false;
+            // Enable CORS for frontend communication
+            javalinConfig.plugins.enableCors(cors -> {
+                cors.add(it -> {
+                    it.anyHost(); // Allow any host (for development)
+                    it.allowCredentials = false;
+                });
+            });
         });
         
         // Configure routes
