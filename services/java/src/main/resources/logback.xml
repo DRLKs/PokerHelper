@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    
+    <!-- Configuración optimizada para desarrollo rápido -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <!-- Reducir logging para inicio más rápido -->
+    <logger name="io.javalin" level="WARN"/>
+    <logger name="org.eclipse.jetty" level="WARN"/>
+    <logger name="com.fasterxml.jackson" level="WARN"/>
+    
+    <!-- Solo INFO para nuestro código -->
+    <logger name="com.pokerhelper" level="INFO"/>
+    
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+    
+</configuration>

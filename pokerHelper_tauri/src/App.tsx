@@ -14,10 +14,17 @@ function AppContent() {
         <LanguageSelector />
       </div>
       
-      <PlayerHand />
-      <PokerHand />
-      <AnalysisOptions />
-      <AnalysisDisplay />
+      <div className="main-content">
+        <div className="analysis-section">
+          <AnalysisDisplay />
+        </div>
+        
+        <div className="game-section">
+          <PokerHand />
+          <PlayerHand />
+          <AnalysisOptions />
+        </div>
+      </div>
     </main>
   );
 }

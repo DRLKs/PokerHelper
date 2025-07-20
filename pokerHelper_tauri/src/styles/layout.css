@@ -1,20 +1,20 @@
 /* Estilos para el layout principal de la aplicación */
 
 .container {
-  padding: var(--spacing-xl);
-  max-width: 1200px;
+  padding: var(--spacing-lg);
+  max-width: 1400px;
   margin: 0 auto;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xxl);
+  gap: var(--spacing-lg);
 }
 
 .header {
   text-align: center;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   position: relative;
-  min-height: 60px;
+  min-height: 50px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -33,19 +33,60 @@
   margin: 0;
 }
 
+/* Layout principal compacto */
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+  flex: 1;
+  align-items: start;
+}
+
+.analysis-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.game-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
 /* Responsive para layout */
+@media (max-width: 1024px) {
+  .main-content {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+  
+  .analysis-section {
+    order: 2;
+  }
+  
+  .game-section {
+    order: 1;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
     padding: var(--spacing-md);
-    gap: var(--spacing-xl);
+    gap: var(--spacing-md);
   }
   
   .header {
-    min-height: 50px;
+    min-height: 40px;
   }
   
   .title {
     font-size: var(--font-xxl);
+  }
+  
+  .main-content {
+    gap: var(--spacing-md);
   }
 }
 
@@ -54,5 +95,9 @@
     flex-direction: column;
     align-items: center;
     min-height: auto;
+  }
+  
+  .container {
+    padding: var(--spacing-sm);
   }
 }
