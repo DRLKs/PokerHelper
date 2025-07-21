@@ -12,7 +12,6 @@ export interface Translations {
     clubs: string;
     spades: string;
   };
-  language: string;
   analysis: {
     title: string;
     loading: string;

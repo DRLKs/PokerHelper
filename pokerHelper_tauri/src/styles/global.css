@@ -16,6 +16,7 @@
   --text-primary: #e6edf3;
   --text-secondary: #7d8590;
   --text-muted: rgba(255, 255, 255, 0.6);
+  --text-secundary: #000;
   
   /* Colores de las cartas */
   --card-red: #dc2626;

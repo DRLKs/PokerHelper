@@ -12,9 +12,6 @@ export const LanguageSelector = () => {
 
   return (
     <div className="language-selector">
-      <label className="language-label">
-        {t.language}:
-      </label>
       <select 
         value={currentLanguage} 
         onChange={(e) => setLanguage(e.target.value as Language)}

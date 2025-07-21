@@ -98,120 +98,65 @@ export const AnalysisDisplay: React.FC = () => {
   }
 
   return (
-    <div className="analysis-container">
-      <div className="analysis-layout">
-        {/* Left side - Poker Analysis */}
-        <div className="poker-analysis-panel">
-          <h3 className="analysis-title">{t.analysis.title}</h3>
-          
-          {/* Player Probabilities */}
-          <div className="probability-section">
-            <h4 className="section-title">Player Probabilities</h4>
-            <div className="probability-list">
-              <div className="probability-item">
-                <span className="prob-label">Pair:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.pair)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Three of a Kind:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.threeOfAKind)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Straight:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.straight)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Flush:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.flush)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Full House:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.fullHouse)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Four of a Kind:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.fourOfAKind)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Straight Flush:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.straightFlush)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Royal Flush:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.royalFlush)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Opponent Probabilities */}
-          <div className="probability-section">
-            <h4 className="section-title">Opponent Probabilities</h4>
-            <div className="probability-list">
-              <div className="probability-item">
-                <span className="prob-label">Pair:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.pair)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Three of a Kind:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.threeOfAKind)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Straight:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.straight)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Flush:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.flush)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Full House:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.fullHouse)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Four of a Kind:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.fourOfAKind)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Straight Flush:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.straightFlush)}</span>
-              </div>
-              <div className="probability-item">
-                <span className="prob-label">Royal Flush:</span>
-                <span className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.royalFlush)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Decision */}
-          <div className="decision-section">
-            <h4 className="section-title">Recommended Action</h4>
-            <div className="decision-info">
-              <div className="decision-item">
-                <span className="decision-label">Action:</span>
-                <span className={`decision-value action-${pokerAnalysis.decision.action.toLowerCase()}`}>
-                  {pokerAnalysis.decision.action}
-                </span>
-              </div>
-              {pokerAnalysis.decision.betAmount > 0 && (
-                <div className="decision-item">
-                  <span className="decision-label">Bet Amount:</span>
-                  <span className="decision-value">${pokerAnalysis.decision.betAmount}</span>
-                </div>
-              )}
-              <div className="decision-description">
-                <p>{pokerAnalysis.decision.description}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="analysis-timestamp">
-            Updated: {new Date(pokerAnalysis.timestamp).toLocaleTimeString()}
+    <div className="analysis-container compact">
+      <h3 className="analysis-title">{t.analysis.title}</h3>
+      
+      <div className="analysis-grid">
+        {/* Player vs Opponent Comparison */}
+        <div className="probabilities-comparison">
+          <div className="prob-grid">
+            <div className="prob-header">Hand</div>
+            <div className="prob-header">You</div>
+            <div className="prob-header">Opponent</div>
+            
+            <div className="prob-label">Pair</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.pair)}</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.pair)}</div>
+            
+            <div className="prob-label">3 of Kind</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.threeOfAKind)}</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.threeOfAKind)}</div>
+            
+            <div className="prob-label">Straight</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.straight)}</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.straight)}</div>
+            
+            <div className="prob-label">Flush</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.flush)}</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.flush)}</div>
+            
+            <div className="prob-label">Full House</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.fullHouse)}</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.fullHouse)}</div>
+            
+            <div className="prob-label">4 of Kind</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.fourOfAKind)}</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.fourOfAKind)}</div>
+            
+            <div className="prob-label">Str. Flush</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.straightFlush)}</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.straightFlush)}</div>
+            
+            <div className="prob-label">Royal</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.playerProbabilities.royalFlush)}</div>
+            <div className="prob-value">{formatProbability(pokerAnalysis.opponentProbabilities.royalFlush)}</div>
           </div>
         </div>
 
-        {/* Right side - Additional content area */}
-        <div className="additional-content-panel">
-          {/* This area can be used for other components or information */}
+        {/* Decision */}
+        <div className="decision-compact">
+          <div className="decision-action">
+            <span className={`action-badge action-${pokerAnalysis.decision.action.toLowerCase()}`}>
+              {pokerAnalysis.decision.action}
+            </span>
+            {pokerAnalysis.decision.betAmount > 0 && (
+              <span className="bet-amount">${pokerAnalysis.decision.betAmount}</span>
+            )}
+          </div>
+          <p className="decision-description">{pokerAnalysis.decision.description}</p>
+          <div className="timestamp">
+            {new Date(pokerAnalysis.timestamp).toLocaleTimeString()}
+          </div>
         </div>
       </div>
     </div>

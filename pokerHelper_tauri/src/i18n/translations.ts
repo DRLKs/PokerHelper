@@ -13,7 +13,6 @@ export const translations: Record<Language, Translations> = {
       clubs: 'Tréboles',
       spades: 'Picas'
     },
-    language: 'Idioma',
     analysis: {
       title: 'Análisis de Mano',
       loading: 'Calculando probabilidades...',
@@ -38,7 +37,6 @@ export const translations: Record<Language, Translations> = {
       clubs: 'Clubs',
       spades: 'Spades'
     },
-    language: 'Language',
     analysis: {
       title: 'Hand Analysis',
       loading: 'Calculating probabilities...',
@@ -63,7 +61,6 @@ export const translations: Record<Language, Translations> = {
       clubs: 'Trèfles',
       spades: 'Piques'
     },
-    language: 'Langue',
     analysis: {
       title: 'Analyse de Main',
       loading: 'Calcul des probabilités...',
