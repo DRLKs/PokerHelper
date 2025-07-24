@@ -26,9 +26,6 @@ epochs = 10
 # Preprocesamiento de datos
 train_datagen = ImageDataGenerator(
     rescale=1.0 / 255,  # Normalizar los valores de píxeles a [0, 1], facilita el entrenamiento de la red neuronal.
-    #rotation_range=20,  # Aumento de datos: rotación aleatoria, Esto ayuda a que el modelo sea más robusto a rotaciones en las imágenes, no creo que sea necesairo en este caso
-    width_shift_range=0.2,  # Aumento de datos: desplazamiento horizontal, no creo que sea necesairo en este caso
-    height_shift_range=0.2,  # Aumento de datos: desplazamiento vertical, no creo que sea necesairo en este caso
     shear_range=0.2,  # Aumento de datos: inclinación, no creo que sea necesairo en este caso
     zoom_range=0.2,  # Aumento de datos: zoom, no creo que sea necesairo en este caso
     #horizontal_flip=True,  # Aumento de datos: volteo horizontal, no creo que sea necesairo en este caso
