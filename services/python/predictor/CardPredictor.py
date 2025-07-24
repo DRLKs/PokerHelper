@@ -5,10 +5,10 @@ import numpy as np
 from PIL import Image
 import os
 
-from card_detector import CardDetector
-from image_preprocessor import ImagePreprocessor
-from model_loader import ModelLoader
-from visualizer import ResultVisualizer
+from core.card_detector import CardDetector
+from core.image_preprocessor import ImagePreprocessor
+from core.model_loader import ModelLoader
+from core.visualizer import ResultVisualizer
 
 
 class CardPredictor:

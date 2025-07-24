@@ -15,7 +15,7 @@ import cv2
 # Añadir el directorio padre al path para importar los módulos
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from card_detector import CardDetector
+from core.card_detector import CardDetector
 
 
 class CardDetectorVisualizer:
@@ -240,50 +240,109 @@ class CardDetectorVisualizer:
         Args:
             image_path: Ruta de la imagen
         """
-        if not self.last_detections or not self.last_image is not None:
+        if not self.last_detections or self.last_image is None:
             print("Primero detecta cartas en una imagen.")
             return
             
         try:
+            print(f"Extrayendo recortes de {len(self.last_detections)} detecciones...")
+            print(f"Forma de la imagen: {self.last_image.shape}")
+            
             # Extraer recortes de cartas
             crops = self.detector.extract_card_crops(self.last_image, self.last_detections)
             
+            print(f"Se extrajeron {len(crops)} recortes válidos")
+            
             if not crops:
                 print("No hay recortes de cartas para mostrar.")
+                print("Detecciones disponibles:", self.last_detections)
                 return
+            
             
             # Calcular disposición de subplots
             n_crops = len(crops)
             cols = min(4, n_crops)
             rows = (n_crops + cols - 1) // cols
             
-            fig, axes = plt.subplots(rows, cols, figsize=(15, 4*rows))
+            # Ajustar tamaño de figura según número de recortes
+            fig_width = min(16, 4 * cols)
+            fig_height = max(6, 4 * rows)
+            
+            fig, axes = plt.subplots(rows, cols, figsize=(fig_width, fig_height))
+            
+            # Manejar diferentes casos de disposición de axes
             if n_crops == 1:
                 axes = [axes]
-            elif rows == 1:
-                axes = [axes]
-            else:
+            elif rows == 1 and cols > 1:
+                axes = list(axes)
+            elif rows > 1 and cols == 1:
+                axes = list(axes)
+            elif rows > 1 and cols > 1:
                 axes = axes.flatten()
+            else:
+                axes = [axes]
             
+            # Mostrar cada recorte
             for i, crop_info in enumerate(crops):
                 if i < len(axes):
-                    crop_img = crop_info['crop']
-                    metadata = crop_info['metadata']
-                    
-                    axes[i].imshow(crop_img)
-                    axes[i].set_title(f'Carta {i+1}\n{metadata["width"]}x{metadata["height"]}')
-                    axes[i].axis('off')
+                    try:
+                        crop_img = crop_info['crop']
+                        metadata = crop_info['metadata']
+                        
+                        print(f"Procesando recorte {i+1}: {crop_img.size} píxeles")
+                        
+                        # Verificar que el recorte no esté vacío
+                        if hasattr(crop_img, 'size') and crop_img.size[0] > 0 and crop_img.size[1] > 0:
+                            axes[i].imshow(crop_img)
+                            axes[i].set_title(
+                                f'Carta {i+1}\n{metadata["width"]}x{metadata["height"]}\n'
+                                f'Área: {metadata.get("area", "N/A")}', 
+                                fontsize=10
+                            )
+                            axes[i].axis('off')
+                            
+                            # Añadir información adicional si está disponible
+                            if "position" in metadata:
+                                x, y = metadata["position"]
+                                axes[i].text(0.02, 0.98, f'Pos: ({x},{y})', 
+                                           transform=axes[i].transAxes, 
+                                           fontsize=8, color='blue',
+                                           verticalalignment='top',
+                                           bbox=dict(boxstyle="round,pad=0.3", 
+                                                   facecolor='white', alpha=0.8))
+                        else:
+                            axes[i].text(0.5, 0.5, f'Carta {i+1}\nVacía', 
+                                       ha='center', va='center')
+                            axes[i].set_title(f'Carta {i+1} - Error')
+                            axes[i].axis('off')
+                            print(f"Recorte {i+1} está vacío")
+                    except Exception as e:
+                        print(f"Error procesando recorte {i+1}: {e}")
+                        axes[i].text(0.5, 0.5, f'Carta {i+1}\nError: {str(e)}', 
+                                   ha='center', va='center')
+                        axes[i].set_title(f'Carta {i+1} - Error')
+                        axes[i].axis('off')
             
             # Ocultar ejes sobrantes
             for i in range(n_crops, len(axes)):
                 axes[i].axis('off')
             
-            plt.suptitle(f'Recortes de Cartas: {os.path.basename(self.last_image_path)}')
+            plt.suptitle(f'Recortes de Cartas: {os.path.basename(self.last_image_path)}\n'
+                        f'{len(crops)} cartas detectadas', fontsize=14, fontweight='bold')
             plt.tight_layout()
             plt.show()
             
+            # Mostrar estadísticas de los recortes
+            print(f"\n Estadísticas de recortes:")
+            for i, crop_info in enumerate(crops):
+                metadata = crop_info['metadata']
+                print(f"  Carta {i+1}: {metadata['width']}x{metadata['height']} píxeles, "
+                      f"área={metadata.get('area', 'N/A')}")
+            
         except Exception as e:
             print(f"Error mostrando recortes: {e}")
+            import traceback
+            traceback.print_exc()
     
     def compare_settings(self, image_path):
         """
@@ -344,7 +403,7 @@ class CardDetectorVisualizer:
     
     def show_detection_steps(self, image_path):
         """
-        Muestra los pasos individuales del proceso de detección.
+        5 - Muestra los pasos individuales del proceso de detección.
         
         Args:
             image_path: Ruta de la imagen
@@ -477,14 +536,13 @@ class CardDetectorVisualizer:
                 self.configure_detector()
             
             elif choice == '7':
-                print("¡Hasta luego!")
                 break
             
             else:
                 print("Opción no válida. Intenta de nuevo.")
     
     def configure_detector(self):
-        """Permite configurar los parámetros del detector."""
+        """6 - Permite configurar los parámetros del detector."""
         print(f"\nConfiguración actual:")
         print(f"  Área mínima: {self.detector.min_area}")
         print(f"  Área máxima: {self.detector.max_area}")

@@ -75,6 +75,7 @@ class CardDetector:
         Returns:
             list: Lista de diccionarios con imágenes recortadas y metadatos
         """
+        from PIL import Image
         crops = []
         
         for i, (x, y, w, h) in enumerate(card_regions):
@@ -85,15 +86,23 @@ class CardDetector:
             h = min(h, image.shape[0] - y)
             
             # Extraer el recorte
-            crop = image[y:y+h, x:x+w]
+            crop_array = image[y:y+h, x:x+w]
             
-            if crop.size > 0:  # Verificar que el recorte no está vacío
+            if crop_array.size > 0:  # Verificar que el recorte no está vacío
+                # Convertir a PIL Image para compatibilidad con matplotlib
+                crop_pil = Image.fromarray(crop_array)
+                
                 crops.append({
-                    'image': crop,
-                    'bbox': (x, y, w, h),
-                    'id': i,
-                    'area': w * h,
-                    'aspect_ratio': w / h if h > 0 else 0
+                    'crop': crop_pil,  # Cambiar 'image' por 'crop'
+                    'metadata': {      # Agregar metadatos estructurados
+                        'position': (x, y),
+                        'width': w,
+                        'height': h,
+                        'area': w * h,
+                        'aspect_ratio': w / h if h > 0 else 0,
+                        'bbox': (x, y, w, h),
+                        'id': i
+                    }
                 })
         
         return crops

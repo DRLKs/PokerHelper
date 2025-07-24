@@ -13,7 +13,7 @@ import tkinter as tk
 # Añadir el directorio padre al path para importar los módulos
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from image_preprocessor import ImagePreprocessor
+from core.image_preprocessor import ImagePreprocessor
 
 class ImagePreprocessorVisualizer:
     """
