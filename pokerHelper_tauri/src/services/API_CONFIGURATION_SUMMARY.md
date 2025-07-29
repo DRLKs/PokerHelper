@@ -5,39 +5,35 @@
 ### 1. Interfaces Actualizadas
 
 #### `PokerHandAnalysis`
-- Cambiado de estructura simple a estructura compleja que coincide con `PokerCalculationResponse.java`
-- Ahora incluye:
+- Incluye:
   - `playerProbabilities`: Probabilidades del jugador (pair, threeOfAKind, straight, flush, fullHouse, fourOfAKind, straightFlush, royalFlush)
   - `opponentProbabilities`: Probabilidades de los oponentes (misma estructura)
   - `decision`: Objeto con acción recomendada, cantidad de apuesta y descripción
   - `timestamp`: Para tracking
 
 #### `PokerCalculationRequest`
-- Reemplazó `PokerRequest`
-- Cambiado `playerHand` por `pocketCards` (coincide con backend)
-- Agregados campos requeridos:
+- Campos requeridos:
   - `numberOfOpponents`: número de oponentes (0-8)
   - `smallBlind`: apuesta ciega pequeña (mínimo 1)
   - `accumulatedBet`: apuesta acumulada (mínimo 0)
 
 #### `BackendCard`
-- Nueva interfaz para cartas en formato backend:
+- Interfaz para cartas en formato backend:
   - `suit`: string ("S", "H", "D", "C")
   - `rank`: number (1-14, donde 1=Ace bajo, 11=Jack, 12=Queen, 13=King, 14=Ace alto)
 
-### 2. Endpoints Corregidos
+### 2. Endpoints
 
-- **Antes**: `/analyze`
-- **Después**: `/calculate` (coincide con backend Java)
+- `/calculate` 
 
-### 3. Nuevos Métodos
+### 3. Métodos
 
 #### `analyzeHand()`
-- Parámetros adicionales con valores por defecto:
+- Parámetros con valores por defecto:
   - `numberOfOpponents = 3`
   - `smallBlind = 5`
   - `accumulatedBet = 0`
-- Validación mejorada: requiere al menos 2 cartas en la mano del jugador
+- Validació: requiere al menos 2 cartas en la mano del jugador
 
 #### `makeDecision()`
 - Nuevo método para obtener decisiones de poker
@@ -50,7 +46,7 @@
 
 ### 4. Conversión de Formatos
 
-#### Métodos de Conversión Agregados:
+#### Métodos de Conversión:
 - `convertSuit()`: Convierte suits del frontend ("hearts") al backend ("H")
 - `convertRank()`: Convierte ranks del frontend ("A") al backend (14)
 - `convertCard()`: Convierte carta individual

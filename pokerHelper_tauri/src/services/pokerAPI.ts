@@ -357,7 +357,7 @@ class PokerAPIService {
     
     try {
       // Primero probar el health endpoint
-      const healthResponse = await fetch('http://localhost:8080/health', {
+      const healthResponse = await fetch(`${BACKEND_URL}/health`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
       });
