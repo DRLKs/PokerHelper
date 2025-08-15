@@ -4,7 +4,6 @@ import com.pokerhelper.application.ports.input.PokerCalculatorUseCases;
 import com.pokerhelper.domain.model.Card;
 import com.pokerhelper.domain.model.Decision;
 import com.pokerhelper.domain.model.PokerProbabilities;
-import com.pokerhelper.infrastructure.adapters.legacy.LegacyPokerCalculatorAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,12 +15,7 @@ import java.util.List;
 public class PokerCalculatorService implements PokerCalculatorUseCases {
 
     private static final Logger logger = LoggerFactory.getLogger(PokerCalculatorService.class);
-    
-    private final LegacyPokerCalculatorAdapter legacyCalculator;
-
-    public PokerCalculatorService(LegacyPokerCalculatorAdapter legacyCalculator) {
-        this.legacyCalculator = legacyCalculator;
-    }
+    private static final CalculoDeProbabilidades calculoDeProbabilidades = new CalculoDeProbabilidades();
 
     @Override
     public PokerProbabilities calculateProbabilities(
@@ -39,7 +33,7 @@ public class PokerCalculatorService implements PokerCalculatorUseCases {
             List<Card> allCards = combineCards(pocketCards, communityCards);
             
             // Use legacy calculator to compute probabilities
-            var result = legacyCalculator.calculateProbabilities(
+            calculoDeProbabilidades.reiniciarDatos (
                     allCards, numberOfOpponents, smallBlind, accumulatedBet);
             
             logger.info("Poker probabilities calculated successfully");

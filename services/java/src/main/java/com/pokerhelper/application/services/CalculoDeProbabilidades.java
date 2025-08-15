@@ -6,7 +6,6 @@ package com.pokerhelper.application.services;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.app.service.domain.model.Carta;
 import com.pokerhelper.domain.model.Card;
 import com.pokerhelper.domain.model.Decision;
 
@@ -60,7 +59,7 @@ public class CalculoDeProbabilidades {
 	 * @param ciegaPequenya Valor de la ciega pequenya de la mano
 	 * @param apuestaAcumulada Valor de la apuesta acumulada en la mano
 	 */
-	public void reiniciarDatos( List<Carta> cartas, int numContrincantes, int ciegaPequenya, int apuestaAcumulada) {
+	public void reiniciarDatos( List<Card> cartas, int numContrincantes, int ciegaPequenya, int apuestaAcumulada) {
 		probPareja = completarPareja(cartas);
 		probTrio = completarTrio(cartas);
 		probEscalera = completarEscalera(cartas);
@@ -69,51 +68,17 @@ public class CalculoDeProbabilidades {
 		probPoker = completarPoker(cartas);
 		probEscaleraColor = completarEscaleraColor(cartas);
 		probEscaleraReal = completarEscaleraReal(cartas);
-		
+
 		completarParejaTrioPokerCont(cartas, numContrincantes);
 		probEscaleraCont = completarEscaleraCont(cartas, numContrincantes);
-		probColorCont = completarColorCont( cartas, numContrincantes );
+		probColorCont = completarColorCont(cartas, numContrincantes);
 		probFullHouseCont = completarFullHouseCont(cartas, numContrincantes);
 		probEscaleraColorCont = completarEscaleraColorCont(cartas, numContrincantes);
 		probEscaleraRealCont = completarEscaleraRealCont(cartas, numContrincantes);
-		
+
 		decision = calcularDecision(ciegaPequenya, apuestaAcumulada);
 
-		/*
-		try (ServerSocket serverSocket = new ServerSocket(5000)) {
-            System.out.println("Esperando conexión de Python...");
-            Socket clientSocket = serverSocket.accept();
-            System.out.println("Conexión establecida con Python");
-
-
-            // Enviar los datos a Python
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-            // MIAS
-            out.println(probEscalera);
-            out.println(probColor);
-            out.println(probFullHouse);
-            out.println(probPoker);
-            out.println(probEscaleraColor);
-            out.println(probEscaleraReal);
-            // DE LOS CONTRINCANTES
-            out.println(probEscaleraCont);
-            out.println(probColorCont);
-            out.println(probFullHouseCont);
-            out.println(probPokerCont);
-            out.println(probEscaleraColorCont);
-            out.println(probEscaleraRealCont);
-
-            System.out.println("Datos enviados a Python");
-
-            // Cerrar la conexión
-            out.close();
-            clientSocket.close();
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        */
-    }
+	}
 
 	/*
 	 * ##############################################################################################################
@@ -235,7 +200,7 @@ public class CalculoDeProbabilidades {
 	 * @param cartas Lista que contiene las cartas conocidas
 	 * @return Probabilidad de obtener una pareja con las cartas de nuestra mano (double)
 	 * */
-	private double completarPareja( List<Carta> cartas ) {
+	private double completarPareja( List<Card> cartas ) {
 		
 		double prob;
 
@@ -243,17 +208,17 @@ public class CalculoDeProbabilidades {
 		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
 		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
 
-		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	/* Nuestras cartas hacen pareja */
+		if( cartas.get(IDX_CARTA_MANO_1).sameRankAs(cartas.get(IDX_CARTA_MANO_2)) ) {	/* Nuestras cartas hacen pareja */
 			prob = 1.0;
 		}else {					/* Nuestras cartas no hacen pareja */
 			int num;
 			prob = 0.0;
 			
 			for( int idxCartaMano = 0 ; idxCartaMano < 2 ; ++idxCartaMano ) {
-				num = cartas.get(idxCartaMano).getNumero(); 	/* Número de nuestra carta */
+				num = cartas.get(idxCartaMano).getRank(); 	/* Número de nuestra carta */
 				
 				for( int idx = 2 ; idx < numCartas ; idx++ ) {
-					if( cartas.get(idx).getNumero() == num ) {	/* Encontramos carta en la mesa con el mismo número */
+					if( cartas.get(idx).getRank() == num ) {	/* Encontramos carta en la mesa con el mismo número */
 						prob = 1.0;
 					}
 				}
@@ -273,7 +238,7 @@ public class CalculoDeProbabilidades {
 	 * @param cartas Lista que contiene las cartas conocidas
 	 * @return Probabilidad de obtener un trio con las cartas de nuestra mano (double)
 	 * */
-	private double completarTrio( List<Carta> cartas ) {
+	private double completarTrio( List<Card> cartas ) {
 		
 		double prob;
 		int numCartasTrio;
@@ -282,12 +247,12 @@ public class CalculoDeProbabilidades {
 		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
 		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
 
-		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	/* Nuestras cartas hacen pareja */
+		if( cartas.get(IDX_CARTA_MANO_1).sameRankAs(cartas.get(IDX_CARTA_MANO_2)) ) {	/* Nuestras cartas hacen pareja */
 			numCartasTrio = 2;
-			int num = cartas.get(IDX_CARTA_MANO_1).getNumero(); /* Número de nuestras cartas */
+			int num = cartas.get(IDX_CARTA_MANO_1).getRank(); /* Número de nuestras cartas */
 			for( int idx = 2 ; idx < numCartas ; ++idx ) {
 				
-				if( cartas.get(idx).getNumero() == num ) {	/* Ya tenemos un trio */
+				if( cartas.get(idx).getRank() == num ) {	/* Ya tenemos un trio */
 					numCartasTrio = 3;
 					break;
 				}
@@ -300,10 +265,10 @@ public class CalculoDeProbabilidades {
 			
 			for( int idxCartaMano = 0 ; idxCartaMano < 2 ; ++idxCartaMano ) {
 				numCartasTrio = 1;
-				num = cartas.get(idxCartaMano).getNumero(); 	/* Número de nuestra carta */
+				num = cartas.get(idxCartaMano).getRank(); 	/* Número de nuestra carta */
 				
 				for( int idx = 2 ; idx < numCartas ; idx++ ) {
-					if( cartas.get(idx).getNumero() == num ) {	/* Encontramos carta en la mesa con el mismo número */
+					if( cartas.get(idx).getRank() == num ) {	/* Encontramos carta en la mesa con el mismo número */
 						++numCartasTrio;
 					}
 				}
@@ -322,7 +287,7 @@ public class CalculoDeProbabilidades {
 	 * @param cartas Lista que contiene las cartas conocidas
 	 * @return Probabilidad de obtener color con las cartas de nuestra mano (double)
 	 * */
-	private double completarColor( List<Carta> cartas ){
+	private double completarColor( List<Card> cartas ){
 		
 		double prob;
 		int numCartasColor = 1;
@@ -330,11 +295,11 @@ public class CalculoDeProbabilidades {
 		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
 		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
 		int numCartasNecesarias;
-		if( cartas.get(0).mismoPaloQue( cartas.get(1) ) ) {
+		if( cartas.get(0).sameSuitAs( cartas.get(1) ) ) {
 			++numCartasColor;
 			
 			for( int i = 2; i < numCartas ; ++i ) {
-				if( cartas.get(i).mismoPaloQue(cartas.get(0)) ) {
+				if( cartas.get(i).sameSuitAs(cartas.get(0)) ) {
 					++numCartasColor;
 				}
 			}
@@ -345,7 +310,7 @@ public class CalculoDeProbabilidades {
 			prob = 0.0;
 			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	
 					for( int i = 2; i < numCartas ; ++i ) {
-						if( cartas.get(i).mismoPaloQue(cartas.get(idxCMano)) ) {
+						if( cartas.get(i).sameSuitAs(cartas.get(idxCMano)) ) {
 							++numCartasColor;
 					}
 				}
@@ -363,13 +328,13 @@ public class CalculoDeProbabilidades {
 	 * @param cartas Lista que contiene las cartas conocidas
 	 * @return Probabilidad de obtener escalera con las cartas de nuestra mano (double)
 	 */
-	private double completarEscalera( List<Carta> cartas ){
+	private double completarEscalera( List<Card> cartas ){
 			
 		double prob;
 		int numCartas = cartas.size();
 		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
-		int numCartaMano1 = cartas.get(IDX_CARTA_MANO_1).getNumero();
-		int numCartaMano2 = cartas.get(IDX_CARTA_MANO_2).getNumero();
+		int numCartaMano1 = cartas.get(IDX_CARTA_MANO_1).getRank();
+		int numCartaMano2 = cartas.get(IDX_CARTA_MANO_2).getRank();
 		int arrayInicio;
 		int arrayFinal;
 		
@@ -387,7 +352,7 @@ public class CalculoDeProbabilidades {
 		int[] arrayFronterasEscalera;
 		
 		/* Nuestras 2 cartas pueden hacer escalera */
-		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) )) {	
+		if( cartas.get(0).canFormStraightWith( cartas.get(1) )) {
 			numerosEscalera = new int[15];
 			
 			numerosEscalera[ numCartaMano1 ] = 1;
@@ -398,7 +363,7 @@ public class CalculoDeProbabilidades {
 			arrayFinal  = arrayFronterasEscalera[1];
 			
 			for( int idx = 2; idx < numCartas ; ++idx ) {
-				numerosEscalera[ cartas.get(idx).getNumero() ] = 1;
+				numerosEscalera[ cartas.get(idx).getRank() ] = 1;
 			}
 			if( numerosEscalera[14] == 1 ) {	// Está el AS, 14-1=13
 				numerosEscalera[1] = 1;
@@ -409,15 +374,15 @@ public class CalculoDeProbabilidades {
 			prob = 0.0;
 			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	
 				numerosEscalera = new int[15];
-				numerosEscalera[ cartas.get(idxCMano).getNumero() ] = 1;	// Añadimos la carta de la mano
-				arrayFronterasEscalera = encontrarFronterasEscaleras(cartas.get(idxCMano).getNumero(), -1);
+				numerosEscalera[ cartas.get(idxCMano).getRank() ] = 1;	// Añadimos la carta de la mano
+				arrayFronterasEscalera = encontrarFronterasEscaleras(cartas.get(idxCMano).getRank(), -1);
 				arrayInicio = arrayFronterasEscalera[0];
 				arrayFinal  = arrayFronterasEscalera[1];
 				for( int idx = 2; idx < numCartas ; ++idx ) {
 					if( 
-						cartas.get(idxCMano).mismoPaloQue(cartas.get(idx))
+						cartas.get(idxCMano).sameSuitAs(cartas.get(idx))
 						) {
-						numerosEscalera[ cartas.get(idx).getNumero() ] = 1;
+						numerosEscalera[ cartas.get(idx).getRank() ] = 1;
 					}
 					if( numerosEscalera[14] == 1 ) {
 						numerosEscalera[1] = 1;
@@ -465,19 +430,19 @@ public class CalculoDeProbabilidades {
 	 * @param cartas Lista que contiene las cartas conocidas
 	 * @return Probabilidad de obtener un Full con las cartas de nuestra mano (double)
 	 */
-	private double completarFullHouse( List<Carta> cartas ) {	// Falta por completar
+	private double completarFullHouse( List<Card> cartas ) {	// Falta por completar
 		
 		int numCartas = cartas.size();
 		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
 		int numParejas = 0;	// Parejas que hacen las cartas de nuestra mano
 		int numTrios   = 0;	// Trios   que hacen las cartas de nuestra mano
 		
-		int ctt;
+		int ctt = 0;
 		
 		// Esta parte de la función calculamos el número de parejas o trios que tenemos con nuestras cartas
 		// En el caso de que nuestras cartas sean iguales
-		if( cartas.get(IDX_CARTA_MANO_1).mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {	
-			ctt = Carta.vecesQueSeSaleEsteNumero(cartas, cartas.get(IDX_CARTA_MANO_1).getNumero());
+		if( cartas.get(IDX_CARTA_MANO_1).sameRankAs(cartas.get(IDX_CARTA_MANO_2)) ) {
+			for( Card carta : cartas ) { if ( carta.sameRankAs(cartas.get(IDX_CARTA_MANO_1) ) ) { ++ctt;} }
 			if( ctt > 2 ) {
 				++numTrios;
 			}else {
@@ -487,7 +452,8 @@ public class CalculoDeProbabilidades {
 		// En el caso de que nuestas cartas no sean iguales
 		}else {
 			for( int idx = 0 ; idx < 2 ; ++idx ) {
-				ctt = Carta.vecesQueSeSaleEsteNumero(cartas, cartas.get(idx).getNumero());
+
+				for( Card carta : cartas ) { if ( carta.sameRankAs(cartas.get(idx) ) ) { ++ctt;} }
 					
 				if( ctt > 2 ) {
 					++numTrios;
@@ -505,13 +471,13 @@ public class CalculoDeProbabilidades {
 		}else {
 			int numParejasMesa = 0;
 			int numTriosMesa = 0;
-			Carta cartaAux;
+			Card cartaAux;
 			for( int idx1 = 2 ; idx1 < numCartas ; ++idx1 ) {
 				cartaAux = cartas.get(idx1);
-				if( !cartaAux.mismoNumeroQue(cartas.get(IDX_CARTA_MANO_1)) && !cartaAux.mismoNumeroQue(cartas.get(IDX_CARTA_MANO_2)) ) {
+				if( !cartaAux.sameRankAs(cartas.get(IDX_CARTA_MANO_1)) && !cartaAux.sameRankAs(cartas.get(IDX_CARTA_MANO_2)) ) {
 					ctt = 0;
 					for( int idx = idx1 + 1 ; idx < numCartas ; ++idx ) {
-						if( cartaAux.mismoNumeroQue(cartas.get(idx)) ) {
+						if( cartaAux.sameRankAs(cartas.get(idx)) ) {
 							++ctt;
 						}
 					}
@@ -579,7 +545,7 @@ public class CalculoDeProbabilidades {
 	 * @param cartas Lista que contiene las cartas conocidas
 	 * @return Probabilidad de obtener Poker con las cartas de nuestra mano (double)
 	 */
-	private double completarPoker( List<Carta> cartas ) {
+	private double completarPoker( List<Card> cartas ) {
 		
 		double prob;
 		
@@ -588,11 +554,11 @@ public class CalculoDeProbabilidades {
 		int cartasTotales = NUM_CARTAS_NUNCA_VES + cartasPorMostrar;
 		int cttCartasPoker;
 		int numCartasNecesarias;
-		if( cartas.get(0).mismoNumeroQue( cartas.get(1) ) ) {
+		if( cartas.get(0).sameRankAs( cartas.get(1) ) ) {
 			cttCartasPoker = 2;
 			
 			for(  int idx = 2 ; idx < numCartas ; ++idx ) {
-				if(cartas.get(0).mismoNumeroQue(cartas.get(idx))) {
+				if(cartas.get(0).sameRankAs(cartas.get(idx))) {
 					++cttCartasPoker;
 				}
 			}
@@ -603,7 +569,7 @@ public class CalculoDeProbabilidades {
 			for(  int idxCarta = 0 ; idxCarta < 2 ; ++idxCarta ) {
 				cttCartasPoker = 1;
 				for( int idx = 2 ; idx < numCartas ; ++idx ) {
-					if(cartas.get(idxCarta).mismoNumeroQue(cartas.get(idx))) {
+					if(cartas.get(idxCarta).sameRankAs(cartas.get(idx))) {
 						++cttCartasPoker;
 					}
 				}
@@ -622,13 +588,13 @@ public class CalculoDeProbabilidades {
 	 * @param cartas Lista que contiene las cartas conocidas
 	 * @return Probabilidad de obtener una escalera de color con las cartas de nuestra mano (double)
 	 */
-	private double completarEscaleraColor( List<Carta> cartas ){
+	private double completarEscaleraColor( List<Card> cartas ){
 		
 		double prob = 0.0;
 		int numCartas = cartas.size();
 		int cartasPorMostrar = MAX_CARTAS_VISIBLES - numCartas;
-		int numCartaMano1 = cartas.get(IDX_CARTA_MANO_1).getNumero();
-		int numCartaMano2 = cartas.get(IDX_CARTA_MANO_2).getNumero();
+		int numCartaMano1 = cartas.get(IDX_CARTA_MANO_1).getRank();
+		int numCartaMano2 = cartas.get(IDX_CARTA_MANO_2).getRank();
 		int arrayInicio;
 		int arrayFinal;
 		
@@ -646,7 +612,7 @@ public class CalculoDeProbabilidades {
 		int[] arrayFronterasEscalera;
 		
 		// Nuestras 2 pueden hacer escalera color
-		if( cartas.get(0).puedenHacerEscalera( cartas.get(1) ) &&  cartas.get(0).mismoPaloQue( cartas.get(1))) {	
+		if( cartas.get(0).canFormStraightWith( cartas.get(1) ) &&  cartas.get(0).sameSuitAs( cartas.get(1))) {
 			numerosEscaleraColor = new int[15];
 			
 			numerosEscaleraColor[ numCartaMano1 ] = 1;
@@ -657,8 +623,8 @@ public class CalculoDeProbabilidades {
 			arrayFinal  = arrayFronterasEscalera[1];
 			
 			for( int idx = 2; idx < numCartas ; ++idx ) {
-				if( cartas.get(0).mismoPaloQue(cartas.get(idx)) ) {		// Que no puedan hacer escalera no importa, se filtra luego
-					numerosEscaleraColor[ cartas.get(idx).getNumero() ] = 1;
+				if( cartas.get(0).sameSuitAs(cartas.get(idx)) ) {		// Que no puedan hacer escalera no importa, se filtra luego
+					numerosEscaleraColor[ cartas.get(idx).getRank() ] = 1;
 				}
 			}
 			if( numerosEscaleraColor[14] == 1 ) {	// Está el AS, 14-1=13
@@ -669,15 +635,15 @@ public class CalculoDeProbabilidades {
 		}else {	// Nuestras 2 cartas no pueden hacer escalera de color entre ellas
 			for( int idxCMano = 0 ; idxCMano < 2 ; ++idxCMano ) {	
 				numerosEscaleraColor = new int[15];
-				numerosEscaleraColor[ cartas.get(idxCMano).getNumero() ] = 1;	// Añadimos la carta de la mano
-				arrayFronterasEscalera = encontrarFronterasEscaleras(cartas.get(idxCMano).getNumero(), -1);
+				numerosEscaleraColor[ cartas.get(idxCMano).getRank() ] = 1;	// Añadimos la carta de la mano
+				arrayFronterasEscalera = encontrarFronterasEscaleras(cartas.get(idxCMano).getRank(), -1);
 				arrayInicio = arrayFronterasEscalera[0];
 				arrayFinal  = arrayFronterasEscalera[1];
 				for( int idx = 2; idx < numCartas ; ++idx ) {
 					if( 
-						cartas.get(idxCMano).mismoPaloQue(cartas.get(idx))
+						cartas.get(idxCMano).sameSuitAs(cartas.get(idx))
 						) {
-						numerosEscaleraColor[ cartas.get(idx).getNumero() ] = 1;
+						numerosEscaleraColor[ cartas.get(idx).getRank() ] = 1;
 					}
 					if( numerosEscaleraColor[14] == 1 ) {	// Está el AS, 14-1=13
 						numerosEscaleraColor[1]  =  1;
@@ -762,7 +728,7 @@ public class CalculoDeProbabilidades {
 	 * @param cartas Lista que contiene las cartas conocidas
 	 * @return Probabilidad de obtener escalera real con las cartas de nuestra mano (double)
 	 */
-	private double completarEscaleraReal( List<Carta> cartas ){
+	private double completarEscaleraReal( List<Card> cartas ){
 		
 		double prob = 0.0;
 		int numCartas = cartas.size();
@@ -777,16 +743,16 @@ public class CalculoDeProbabilidades {
 		int topeBucle = 0;
 		
 		/* Comprobamos las cartas de nuestra mano sean aptas para la escalera real*/
-		if( cartas.get(0).getNumero() >= 10 ) {
+		if( cartas.get(0).getRank() >= 10 ) {
 			cartaMano1Posible = true;
 			inicioBucle = 0;
 		}
-		if( cartas.get(1).getNumero() >= 10 ) {
+		if( cartas.get(1).getRank() >= 10 ) {
 			cartaMano2Posible = true;
 			topeBucle = 1;
 		}
 		
-		if( cartas.get(0).mismoPaloQue( cartas.get(1)) && cartaMano1Posible && cartaMano2Posible) {
+		if( cartas.get(0).sameSuitAs( cartas.get(1)) && cartaMano1Posible && cartaMano2Posible) {
 			numCartasEscalera = 2;
 			topeBucle = 0;
 		}
@@ -794,8 +760,8 @@ public class CalculoDeProbabilidades {
 		for( int idxCartaMano = inicioBucle ; idxCartaMano <= topeBucle ; ++idxCartaMano ) {
 			for( int idxCartaMesa = 2; idxCartaMesa < numCartas ; ++idxCartaMesa ) {
 				if( 
-					cartas.get(idxCartaMesa).getNumero() >= 10	&&
-					cartas.get(idxCartaMano).mismoPaloQue(cartas.get(idxCartaMesa))			
+					cartas.get(idxCartaMesa).getRank() >= 10	&&
+					cartas.get(idxCartaMano).sameSuitAs(cartas.get(idxCartaMesa))
 					) {
 					++numCartasEscalera;	
 				}
@@ -820,7 +786,7 @@ public class CalculoDeProbabilidades {
 	 * @param cartas Lista que contiene las cartas conocidas
 	 * @param numContrincantes número de contrincantes activos
 	 * */
-	private void completarParejaTrioPokerCont( List<Carta> cartas, int numContrincantes ) {
+	private void completarParejaTrioPokerCont( List<Card> cartas, int numContrincantes ) {
 		
 		int numCartas = cartas.size();
 		/* Si solo tenemos nuestrar cartas no calculamos nada de los contrincantes*/
@@ -842,22 +808,22 @@ public class CalculoDeProbabilidades {
 			int numCartasValidasRestantes = 4;	/* Solo hay 4 cartas por número */
 			int numCartasQueYoTengo;
 	
-			Carta cartaAux;
+			Card cartaAux;
 			int cttCartasNumero;
 			
 			/* Rellenamos el Map */
 			Map< Integer , Integer> contarCartas = new HashMap<>();
 			for( int idx = 2 ; idx < numCartas ; ++idx ) {
 				cartaAux = cartas.get(idx);
-				cttCartasNumero = contarCartas.getOrDefault( cartaAux.getNumero(), 0) + 1;
-				contarCartas.put(cartaAux.getNumero(),cttCartasNumero);
+				cttCartasNumero = contarCartas.getOrDefault( cartaAux.getRank(), 0) + 1;
+				contarCartas.put(cartaAux.getRank(),cttCartasNumero);
 			}
 			
 			for( Map.Entry<Integer , Integer> tupla : contarCartas.entrySet() ) {
 				numCartasQueYoTengo = 0;
 				/* Contamos las cartas de este tipo que tenemos */
 				for( int idx = 0 ; idx < 2 ; ++idx ) {
-					if( cartas.get(idx).getNumero() == tupla.getKey() ) {
+					if( cartas.get(idx).getRank() == tupla.getKey() ) {
 						++numCartasQueYoTengo;
 					}
 				}
@@ -890,7 +856,7 @@ public class CalculoDeProbabilidades {
 	 * @param numContrincantes Número de contrincantes activos
 	 * @return Probabilidad de que un contrincante obtenga color con las cartas que conocemos (double)
 	 */
-	private double completarColorCont(List<Carta> cartas, int numContrincantes) {
+	private double completarColorCont(List<Card> cartas, int numContrincantes) {
 		
 		int numCartas = cartas.size();
 		/* Si solo tenemos nuestrar cartas no calculamos nada de los contrincantes*/
@@ -905,13 +871,13 @@ public class CalculoDeProbabilidades {
 		int numCartasQueYoTengo;
 		
 		int cttCartasColor;
-		Carta cartaAux;
+		Card cartaAux;
 		Map< Character , Integer> contarCartas = new HashMap<>();
 		
 		for( int idx = 2 ; idx < numCartas ; ++idx ) {
 			cartaAux = cartas.get(idx);
-            cttCartasColor = contarCartas.getOrDefault( cartaAux.getPalo(), 0) + 1;
-			contarCartas.put(cartaAux.getPalo(),cttCartasColor);
+            cttCartasColor = contarCartas.getOrDefault( cartaAux.getSuit(), 0) + 1;
+			contarCartas.put(cartaAux.getSuit(),cttCartasColor);
 		}
 		
 		for( Map.Entry<Character , Integer> tupla : contarCartas.entrySet() ) {
@@ -919,7 +885,7 @@ public class CalculoDeProbabilidades {
 			/* Cuento las cartas que tengo de este color */
 			numCartasQueYoTengo = 0;
 			for( int idx = 0 ; idx < 2 ; ++idx ) {
-				if( cartas.get(idx).getPalo() == tupla.getKey() ) {
+				if( cartas.get(idx).getSuit() == tupla.getKey() ) {
 					++numCartasQueYoTengo;
 				}
 			}
@@ -938,7 +904,7 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	private double completarEscaleraCont(List<Carta> cartas, int numContrincantes) {
+	private double completarEscaleraCont(List<Card> cartas, int numContrincantes) {
 		
 		int numCartas = cartas.size();
 		/* Si solo tenemos nuestrar cartas no calculamos nada de los contrincantes*/
@@ -956,7 +922,7 @@ public class CalculoDeProbabilidades {
 		int[] numerosEscaleraCont = new int[15];
 		
 		for( int idx = 2; idx < numCartas ; ++idx ) {
-			numerosEscaleraCont[ cartas.get(idx).getNumero() ] = 1;
+			numerosEscaleraCont[ cartas.get(idx).getRank() ] = 1;
 		}
 		if( numerosEscaleraCont[14] == 1 ) {	// Está el AS, 14-1=13
 			numerosEscaleraCont[1] = 1;
@@ -967,15 +933,15 @@ public class CalculoDeProbabilidades {
 		return prob;
 	}
 	
-	private double completarFullHouseCont(List<Carta> cartas, int numContrincantes) {
+	private double completarFullHouseCont(List<Card> cartas, int numContrincantes) {
 		return 0.0;
 	}
 	
-	private double completarEscaleraColorCont(List<Carta> cartas, int numContrincantes) {
+	private double completarEscaleraColorCont(List<Card> cartas, int numContrincantes) {
 		return 0.0;
 	}
 	
-	private double completarEscaleraRealCont(List<Carta> cartas, int numContrincantes) {
+	private double completarEscaleraRealCont(List<Card> cartas, int numContrincantes) {
 		return 0.0;
 	}
 	

@@ -1,6 +1,8 @@
 package com.pokerhelper.infrastructure.adapters.input.http;
 
 import com.pokerhelper.application.ports.input.PokerCalculatorUseCases;
+import com.pokerhelper.domain.model.Card;
+import com.pokerhelper.domain.model.PokerProbabilities;
 import com.pokerhelper.infrastructure.dto.PokerCalculationRequest;
 import com.pokerhelper.infrastructure.dto.PokerCalculationResponse;
 import com.pokerhelper.infrastructure.mappers.PokerDtoMapper;
@@ -12,6 +14,7 @@ import jakarta.validation.Validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,11 +66,11 @@ public class PokerHttpAdapter {
             logger.debug("Request validated successfully: {}", request);
             
             // Convert DTO to domain objects
-            var pocketCards = pokerDtoMapper.toDomainCards(request.getPocketCards());
-            var communityCards = pokerDtoMapper.toDomainCards(request.getCommunityCards());
-            
+            List<Card> pocketCards = pokerDtoMapper.toDomainCards(request.getPocketCards());
+            List<Card> communityCards = pokerDtoMapper.toDomainCards(request.getCommunityCards());
+
             // Calculate probabilities
-            var result = pokerCalculatorUseCases.calculateProbabilities(
+            PokerProbabilities result = pokerCalculatorUseCases.calculateProbabilities(
                     pocketCards, 
                     communityCards, 
                     request.getNumberOfOpponents(),

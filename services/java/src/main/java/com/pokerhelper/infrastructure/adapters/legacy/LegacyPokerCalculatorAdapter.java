@@ -1,7 +1,6 @@
 package com.pokerhelper.infrastructure.adapters.legacy;
 
-import com.app.service.applications.service.CalculoDeProbabilidades;
-import com.app.service.domain.model.Carta;
+import com.pokerhelper.application.services.CalculoDeProbabilidades;
 import com.pokerhelper.domain.model.Card;
 import com.pokerhelper.domain.model.Decision;
 import com.pokerhelper.domain.model.PokerProbabilities;
@@ -36,7 +35,7 @@ public class LegacyPokerCalculatorAdapter {
         logger.debug("Converting cards to legacy format");
         
         // Convert domain cards to legacy cards
-        List<Carta> legacyCards = cards.stream()
+        List<Card> legacyCards = cards.stream()
                 .map(this::convertToLegacyCard)
                 .collect(Collectors.toList());
         
@@ -95,7 +94,7 @@ public class LegacyPokerCalculatorAdapter {
     /**
      * Convert domain Card to legacy Carta
      */
-    private Carta convertToLegacyCard(Card card) {
+    private Card convertToLegacyCard(Card card) {
         return new Carta(card.getSuit(), card.getRank());
     }
 

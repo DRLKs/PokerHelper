@@ -1,5 +1,5 @@
 package com.app.service;
-import com.app.service.applications.service.CalculoDeProbabilidades;
+import com.pokerhelper.application.services.CalculoDeProbabilidades;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
