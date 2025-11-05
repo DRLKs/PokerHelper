@@ -1,0 +1,118 @@
+# Rust/Cargo
+/target/
+/src-tauri/target/
+**/*.rs.bk
+Cargo.lock
+
+# Node/NPM
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+package-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+*.pyc
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PyInstaller
+/src-tauri/binaries/build/
+/src-tauri/binaries/dist/
+*.spec
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Tauri
+/src-tauri/WixTools
+/src-tauri/target/
+
+# Test outputs
+/tests/output/
+/tests/.pytest_cache/
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+*.app
+*.dmg
+*.deb
+*.rpm
+*.AppImage
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Documentation builds
+/docs/_build/
+/docs/.doctrees/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Models & Training data (si añades ML models grandes)
+/services/python/models/*.h5
+/services/python/models/*.pkl
+/services/python/models/*.pth
+!/services/python/models/README.MD
+
+# RoboFlow Dataset (archivos grandes de imágenes)
+/services/python/RoboFlowDataset/train/*.jpg
+/services/python/RoboFlowDataset/test/*.jpg
+/services/python/RoboFlowDataset/valid/*.jpg
+!/services/python/RoboFlowDataset/README.roboflow.txt
+!/services/python/RoboFlowDataset/README.dataset.txt
