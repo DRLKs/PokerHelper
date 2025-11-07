@@ -19,3 +19,17 @@ pub enum PokerAction {
     Bet(f64),
     Raise(f64),
 }
+
+
+#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SetOfHands {
+    Pair,
+    TwoPair,
+    ThreeOfAKind,
+    Straight,
+    Flush,
+    FullHouse,
+    FourOfAKind,
+    StraightFLush,
+    RoyalStraight
+}
