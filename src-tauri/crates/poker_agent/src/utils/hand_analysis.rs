@@ -123,6 +123,7 @@ fn analyse_straight(rank: u8, community_cards: &CommunityCards) -> u8 {
 
     return 0
 }
+
 fn analyse_flush(suit: char, community_cards: &CommunityCards) -> u8 {
 
     // TODO
