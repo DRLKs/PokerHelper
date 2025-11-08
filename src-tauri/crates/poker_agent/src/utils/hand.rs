@@ -4,7 +4,7 @@ use super::card::{Card, CardTrait};
 
 
 pub trait HandTrait {
-    fn is_pair(&self) -> bool;
+    fn are_pair(&self) -> bool;
     fn is_same_suit(&self) -> bool;
 
     fn get_cards(&self) -> [Card; 2];
@@ -34,7 +34,7 @@ impl Hand {
 }
 
 impl HandTrait for Hand {
-    fn is_pair(&self) -> bool {
+    fn are_pair(&self) -> bool {
         self.cards[0].get_rank() == self.cards[1].get_rank()
     }
 

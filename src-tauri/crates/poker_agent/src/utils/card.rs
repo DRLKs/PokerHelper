@@ -1,4 +1,4 @@
-use super::cards_group::ALL_CARDS;
+use crate::cons::r#const::ALL_CARDS;
 use rand::Rng;
 use serde::Deserialize;
 
@@ -58,5 +58,35 @@ impl CardTrait for Card {
 
     fn same_suit_by_char(&self, suit: char) -> bool {
         self.suit == suit
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::cons::r#const::{ALL_RANKS, ALL_SUITS};
+    use super::*;
+
+    #[test]
+    fn test_create_card(){
+        let rank = 2;
+        let card = Card::new(DIAMONDS, rank);
+        assert_eq!(card.suit, DIAMONDS);
+        assert_eq!(card.rank, rank);
+    }
+
+    /// Nunca debería ocurrir, pero prefiero no manejar el error y que no explote el programa si no ocurre
+    /// Es una mala práctica
+    #[test]
+    fn test_create_card_with_wrong_values(){
+        let card = Card::new(DIAMONDS, 0);
+        assert_eq!(card.suit, DIAMONDS);
+        assert_eq!(card.rank, 0);
+    }
+
+    #[test]
+    fn test_create_random_card(){
+        let random_card = Card::new_random();
+        assert!( ALL_SUITS.contains(&random_card.suit) );
+        assert!( ALL_RANKS.contains(&random_card.rank) );
     }
 }

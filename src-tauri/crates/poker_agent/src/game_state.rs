@@ -5,10 +5,16 @@ use crate::utils::community_cards::CommunityCards;
 #[derive(Deserialize, Debug)]
 pub struct CvState {
     pub status: String,
+    pub small_blind: f64,
     pub pot: f64,
-    pub opponent_bet: f64,
+    pub opponents: Vec<OpponentState>,
     pub hand: Hand,
     pub community_cards: CommunityCards,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct OpponentState {
+    pub opponent_bet: f64,
 }
 
 #[derive(Serialize, Debug)]
@@ -21,15 +27,3 @@ pub enum PokerAction {
 }
 
 
-#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum SetOfHands {
-    Pair,
-    TwoPair,
-    ThreeOfAKind,
-    Straight,
-    Flush,
-    FullHouse,
-    FourOfAKind,
-    StraightFLush,
-    RoyalStraight
-}
