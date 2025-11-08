@@ -15,6 +15,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  TAURI_DEPENDENCIES: libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
 jobs:
   test:
@@ -52,7 +53,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+        sudo apt-get install -y ${{ env.TAURI_DEPENDENCIES }}
     
     - name: Run tests
       working-directory: ./src-tauri
@@ -80,7 +81,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+        sudo apt-get install -y ${{ env.TAURI_DEPENDENCIES }}
     
     - name: Run clippy
       working-directory: ./src-tauri
