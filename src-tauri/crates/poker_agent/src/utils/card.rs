@@ -2,7 +2,6 @@ use crate::cons::r#const::ALL_CARDS;
 use rand::Rng;
 use serde::Deserialize;
 
-
 pub const DIAMONDS: char = 'd';
 pub const CLUBS: char = 'c';
 pub const HEARTS: char = 'h';
@@ -21,8 +20,8 @@ pub trait CardTrait {
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Card {
-    suit: char,  // 'h', 'd', 'c', 's'
-    rank: u8     // 2-14 ( 11=J, 12=Q, 13=K, 14=A )
+    suit: char, // 'h', 'd', 'c', 's'
+    rank: u8,   // 2-14 ( 11=J, 12=Q, 13=K, 14=A )
 }
 
 impl Card {
@@ -63,11 +62,11 @@ impl CardTrait for Card {
 
 #[cfg(test)]
 mod tests {
-    use crate::cons::r#const::{ALL_RANKS, ALL_SUITS};
     use super::*;
+    use crate::cons::r#const::{ALL_RANKS, ALL_SUITS};
 
     #[test]
-    fn test_create_card(){
+    fn test_create_card() {
         let rank = 2;
         let card = Card::new(DIAMONDS, rank);
         assert_eq!(card.suit, DIAMONDS);
@@ -77,16 +76,16 @@ mod tests {
     /// Nunca debería ocurrir, pero prefiero no manejar el error y que no explote el programa si no ocurre
     /// Es una mala práctica
     #[test]
-    fn test_create_card_with_wrong_values(){
+    fn test_create_card_with_wrong_values() {
         let card = Card::new(DIAMONDS, 0);
         assert_eq!(card.suit, DIAMONDS);
         assert_eq!(card.rank, 0);
     }
 
     #[test]
-    fn test_create_random_card(){
+    fn test_create_random_card() {
         let random_card = Card::new_random();
-        assert!( ALL_SUITS.contains(&random_card.suit) );
-        assert!( ALL_RANKS.contains(&random_card.rank) );
+        assert!(ALL_SUITS.contains(&random_card.suit));
+        assert!(ALL_RANKS.contains(&random_card.rank));
     }
 }

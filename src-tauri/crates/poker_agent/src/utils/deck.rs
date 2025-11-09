@@ -1,8 +1,8 @@
 use super::card::Card;
 use crate::cons::r#const::ALL_CARDS;
+use crate::utils::hand::Hand;
 use rand::Rng;
 use std::collections::HashSet;
-use crate::utils::hand::Hand;
 
 /// Mazo de cartas eficiente con eliminación rápida
 #[derive(Debug, Clone)]
@@ -26,13 +26,13 @@ impl Deck {
     /// Crea un mazo excluyendo las cartas especificadas
     pub fn new_excluding(excluded: &[Card]) -> Self {
         let excluded_set: HashSet<Card> = excluded.iter().copied().collect();
-        
+
         let cards: Vec<Card> = ALL_CARDS
             .iter()
             .copied()
             .filter(|card| !excluded_set.contains(card))
             .collect();
-        
+
         Self { cards }
     }
 
@@ -40,7 +40,7 @@ impl Deck {
     pub fn shuffle(&mut self) {
         let mut rng = rand::thread_rng();
         let len = self.cards.len();
-        
+
         for i in 0..len {
             let j = rng.gen_range(i..len);
             self.cards.swap(i, j);
@@ -53,10 +53,10 @@ impl Deck {
         if self.cards.is_empty() {
             return None;
         }
-        
+
         let mut rng = rand::thread_rng();
         let index = rng.gen_range(0..self.cards.len());
-        
+
         // swap_remove: intercambia con el último y hace pop (O(1))
         Some(self.cards.swap_remove(index))
     }
@@ -66,7 +66,7 @@ impl Deck {
         if index >= self.cards.len() {
             return None;
         }
-        
+
         Some(self.cards.swap_remove(index))
     }
 
@@ -78,9 +78,7 @@ impl Deck {
     /// Saca N cartas aleatorias
     pub fn draw_n(&mut self, n: usize) -> Vec<Card> {
         let count = n.min(self.cards.len());
-        (0..count)
-            .filter_map(|_| self.draw_random())
-            .collect()
+        (0..count).filter_map(|_| self.draw_random()).collect()
     }
 
     /// Devuelve una carta al mazo
@@ -112,16 +110,15 @@ impl Deck {
     pub fn reset_full(&mut self) {
         *self = Self::new_full();
     }
-    
+
     pub fn give_n_hands(&mut self, n: u8) -> Vec<Hand> {
-        
         let mut hands: Vec<Hand> = vec![];
 
         for _ in 0..n {
             let cards: Vec<Card> = self.draw_n(2);
-            hands.push( Hand::new( [cards[0].clone(), cards[1].clone()] ) );
+            hands.push(Hand::new([cards[0].clone(), cards[1].clone()]));
         }
-        
+
         hands
     }
 }
@@ -140,7 +137,7 @@ mod tests {
     fn test_draw_random() {
         let mut deck = Deck::new_full();
         let initial_len = deck.len();
-        
+
         let card = deck.draw_random();
         assert!(card.is_some());
         assert_eq!(deck.len(), initial_len - 1);
@@ -149,11 +146,11 @@ mod tests {
     #[test]
     fn test_draw_all_cards() {
         let mut deck = Deck::new_full();
-        
+
         for _ in 0..52 {
             assert!(deck.draw_random().is_some());
         }
-        
+
         assert!(deck.is_empty());
         assert!(deck.draw_random().is_none());
     }
@@ -164,10 +161,10 @@ mod tests {
             Card::new('h', 14), // Ah
             Card::new('d', 14), // Ad
         ];
-        
+
         let deck = Deck::new_excluding(&excluded);
         assert_eq!(deck.len(), 50);
-        
+
         for card in &excluded {
             assert!(!deck.contains(card));
         }
@@ -177,7 +174,7 @@ mod tests {
     fn test_draw_n() {
         let mut deck = Deck::new_full();
         let cards = deck.draw_n(5);
-        
+
         assert_eq!(cards.len(), 5);
         assert_eq!(deck.len(), 47);
     }
@@ -186,9 +183,9 @@ mod tests {
     fn test_shuffle_changes_order() {
         let deck1 = Deck::new_full();
         let mut deck2 = deck1.clone();
-        
+
         deck2.shuffle();
-        
+
         // Es extremadamente improbable que sean iguales después de mezclar
         // pero no podemos garantizarlo al 100%, así que solo verificamos que compile
         assert_eq!(deck1.len(), deck2.len());

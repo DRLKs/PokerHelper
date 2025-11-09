@@ -4,9 +4,8 @@
 // - Cálculo de equity
 // - Toma de decisiones
 
-pub mod probability;
+mod cons;
 pub mod decision;
 pub mod game_state;
+pub mod probability;
 pub mod utils;
-mod cons;
-

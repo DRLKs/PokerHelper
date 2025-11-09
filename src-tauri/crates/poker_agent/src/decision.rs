@@ -7,7 +7,12 @@ use crate::probability::calculate_equity;
 pub fn make_decision(state: CvState, iterations: u16) -> Result<PokerAction, String> {
     // TODO: Tu implementación aquí
 
-    let result = calculate_equity(state.hand,state.community_cards,state.opponents.len() as u8, iterations);
+    let result = calculate_equity(
+        state.hand,
+        state.community_cards,
+        state.opponents.len() as u8,
+        iterations,
+    );
 
     if result.is_err() {
         return Err(result.err().unwrap());
@@ -17,8 +22,7 @@ pub fn make_decision(state: CvState, iterations: u16) -> Result<PokerAction, Str
 
     if value_result > 0.5 {
         Ok(PokerAction::Bet(200.0))
-    }else{
+    } else {
         Ok(PokerAction::Fold)
     }
-
 }

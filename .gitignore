@@ -116,3 +116,6 @@ Desktop.ini
 /services/python/RoboFlowDataset/valid/*.jpg
 !/services/python/RoboFlowDataset/README.roboflow.txt
 !/services/python/RoboFlowDataset/README.dataset.txt
+
+# Act 
+.actrc

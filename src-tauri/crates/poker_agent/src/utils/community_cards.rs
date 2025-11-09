@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use serde::Deserialize;
 use super::card::{Card, CardTrait};
+use serde::Deserialize;
+use std::collections::HashMap;
 
 pub trait CommunityCardsTrait {
     fn get_cards(&self) -> &[Card];
@@ -17,11 +17,10 @@ pub struct CommunityCards {
     /// Map with the card number that appears and a vector with his suits
     cards_map: HashMap<u8, Vec<char>>,
     /// Cached vector of cards for efficient access
-    cards: Vec<Card>
+    cards: Vec<Card>,
 }
 
 impl CommunityCards {
-
     pub fn new(cards: Vec<Card>) -> Self {
         let mut community = Self::empty();
 
@@ -33,12 +32,12 @@ impl CommunityCards {
     }
 
     pub fn empty() -> Self {
-        Self { 
+        Self {
             cards_map: HashMap::new(),
             cards: Vec::new(),
         }
     }
-    
+
     pub fn is_empty(&self) -> bool {
         self.cards_map.is_empty()
     }
@@ -75,11 +74,10 @@ impl CommunityCardsTrait for CommunityCards {
     }
 
     fn get_by_rank(&self, rank: u8) -> u8 {
-
         let value: Option<&Vec<char>> = self.cards_map.get(&rank);
         if value.is_some() {
-               value.unwrap().len() as u8
-        }else {
+            value.unwrap().len() as u8
+        } else {
             0
         }
     }
@@ -100,45 +98,45 @@ impl CommunityCardsTrait for CommunityCards {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::card::{DIAMONDS, HEARTS};
     use super::*;
+    use crate::utils::card::{DIAMONDS, HEARTS};
 
     #[test]
-    pub fn test_empty_constructor(){
+    pub fn test_empty_constructor() {
         let community_cards = CommunityCards::empty();
         assert_eq!(community_cards.number_of_cards(), 0);
         assert_eq!(community_cards.is_empty(), true);
     }
 
     #[test]
-    pub fn test_add_card(){
+    pub fn test_add_card() {
         let mut community_cards = CommunityCards::empty();
         let rank_card = 10;
-        community_cards.add_card( Card::new(DIAMONDS,rank_card) );
+        community_cards.add_card(Card::new(DIAMONDS, rank_card));
         assert_eq!(community_cards.number_of_cards(), 1);
         assert_eq!(community_cards.is_empty(), false);
 
-        assert_eq!(community_cards.get_by_suit(HEARTS),0);
-        assert_eq!(community_cards.get_by_suit(DIAMONDS), 1 );
+        assert_eq!(community_cards.get_by_suit(HEARTS), 0);
+        assert_eq!(community_cards.get_by_suit(DIAMONDS), 1);
         assert_eq!(community_cards.get_by_rank(rank_card), 1);
     }
 
     #[test]
-    pub fn test_add_some_card_same_rank(){
+    pub fn test_add_some_card_same_rank() {
         let mut community_cards = CommunityCards::empty();
         let rank_card = 10;
-        community_cards.add_card( Card::new(DIAMONDS,rank_card) );
-        community_cards.add_card( Card::new(HEARTS,rank_card) );
+        community_cards.add_card(Card::new(DIAMONDS, rank_card));
+        community_cards.add_card(Card::new(HEARTS, rank_card));
         assert_eq!(community_cards.number_of_cards(), 2);
         assert_eq!(community_cards.is_empty(), false);
 
-        assert_eq!(community_cards.get_by_suit(HEARTS),1);
-        assert_eq!(community_cards.get_by_suit(DIAMONDS), 1 );
+        assert_eq!(community_cards.get_by_suit(HEARTS), 1);
+        assert_eq!(community_cards.get_by_suit(DIAMONDS), 1);
         assert_eq!(community_cards.get_by_rank(rank_card), 2);
     }
 
     #[test]
-    pub fn test_get_cards_but_no_cards(){
+    pub fn test_get_cards_but_no_cards() {
         let community_cards: CommunityCards = CommunityCards::empty();
         let rank_card: u8 = 10;
 

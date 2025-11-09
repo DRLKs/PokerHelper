@@ -1,7 +1,5 @@
-use serde::Deserialize;
 use super::card::{Card, CardTrait};
-
-
+use serde::Deserialize;
 
 pub trait HandTrait {
     fn are_pair(&self) -> bool;
@@ -12,7 +10,7 @@ pub trait HandTrait {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Hand {
-    cards: [Card; 2]
+    cards: [Card; 2],
 }
 
 impl Hand {
@@ -20,8 +18,7 @@ impl Hand {
         Self { cards }
     }
 
-    pub fn random_hand() -> Self{
-
+    pub fn random_hand() -> Self {
         let card1: Card = Card::new_random();
         let card2: Card = Card::new_random();
 

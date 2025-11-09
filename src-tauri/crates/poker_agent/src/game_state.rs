@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use crate::utils::hand::Hand;
 use crate::utils::community_cards::CommunityCards;
+use crate::utils::hand::Hand;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
 pub struct CvState {
@@ -25,5 +25,3 @@ pub enum PokerAction {
     Bet(f64),
     Raise(f64),
 }
-
-

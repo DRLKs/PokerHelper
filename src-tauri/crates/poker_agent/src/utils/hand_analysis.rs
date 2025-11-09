@@ -1,20 +1,20 @@
-use std::collections::HashMap;
-use serde::Serialize;
 use crate::utils::card::CardTrait;
 use crate::utils::community_cards::{CommunityCards, CommunityCardsTrait};
 use crate::utils::hand::{Hand, HandTrait};
+use serde::Serialize;
+use std::collections::HashMap;
 
 #[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SetOfHands {
-    Pair,           // Pareja
-    TwoPair,        // 2 Parejas
-    ThreeOfAKind,   // Trio
+    Pair,         // Pareja
+    TwoPair,      // 2 Parejas
+    ThreeOfAKind, // Trio
     Straight,
-    Flush,          // Color
+    Flush, // Color
     FullHouse,
     FourOfAKind,
     StraightFLush,
-    RoyalStraight
+    RoyalStraight,
 }
 
 #[derive(Debug, Clone)]
@@ -36,9 +36,7 @@ impl HandAnalysis {
 
         if hand.are_pair() {
             analyse_pair_hand(hand, community_cards, &mut analysis);
-
-        }else if hand.is_same_suit() {
-
+        } else if hand.is_same_suit() {
         }
 
         analysis
@@ -65,7 +63,6 @@ impl HandAnalysis {
     }
 
     pub fn is_better(&self, other: &HandAnalysis) -> bool {
-
         if other.high_card > self.high_card {
             return false;
         }
@@ -80,52 +77,49 @@ impl Default for HandAnalysis {
 }
 
 fn analyse_pair_hand(hand: &Hand, community_cards: &CommunityCards, analysis: &mut HandAnalysis) {
-
-
     let mut ctt_same_rank_cards = 2;
     let rank = hand.get_cards()[0].get_rank();
 
     analysis.high_card = rank;
     analysis.sets.insert(SetOfHands::Pair, analysis.high_card);
 
-    ctt_same_rank_cards +=  community_cards.get_by_rank(rank);
+    ctt_same_rank_cards += community_cards.get_by_rank(rank);
 
     // Same of a kind
     if ctt_same_rank_cards == 3 {
         analysis.sets.insert(SetOfHands::ThreeOfAKind, rank);
-    }else if ctt_same_rank_cards == 4 {
+    } else if ctt_same_rank_cards == 4 {
         analysis.sets.insert(SetOfHands::FourOfAKind, rank);
     }
 
     // Straight
-    let straight_high_card = analyse_straight(rank,community_cards);
+    let straight_high_card = analyse_straight(rank, community_cards);
 
-    if straight_high_card != 0{     // Exists straight
-        analysis.sets.insert(SetOfHands::Straight, straight_high_card);
+    if straight_high_card != 0 {
+        // Exists straight
+        analysis
+            .sets
+            .insert(SetOfHands::Straight, straight_high_card);
     }
 
     // Flush
-
 }
 
 fn analyse_straight(rank: u8, community_cards: &CommunityCards) -> u8 {
-
     // TODO
 
     let mut possible_straight_cards = Vec::new();
-    for rank_of_the_card in community_cards.get_cards_ranks(){
-
-        if rank_of_the_card != rank && rank_of_the_card <= rank + 4 && rank_of_the_card >= rank - 4   {
+    for rank_of_the_card in community_cards.get_cards_ranks() {
+        if rank_of_the_card != rank && rank_of_the_card <= rank + 4 && rank_of_the_card >= rank - 4
+        {
             possible_straight_cards.push(rank_of_the_card);
         }
-
     }
 
-    return 0
+    return 0;
 }
 
 fn analyse_flush(suit: char, community_cards: &CommunityCards) -> u8 {
-
     // TODO
 
     if community_cards.get_by_suit(suit) == 4 {
