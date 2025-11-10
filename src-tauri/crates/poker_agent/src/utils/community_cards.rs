@@ -10,6 +10,7 @@ pub trait CommunityCardsTrait {
     fn get_by_rank(&self, rank: u8) -> u8;
 
     fn get_by_suit(&self, suit: char) -> u8;
+    fn get_by_suit_and_highest(&self, suit: char) -> (u8, u8);
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -82,6 +83,7 @@ impl CommunityCardsTrait for CommunityCards {
         }
     }
 
+
     fn get_by_suit(&self, suit: char) -> u8 {
         let mut ctt: u8 = 0;
         for values in self.cards_map.iter() {
@@ -93,6 +95,25 @@ impl CommunityCardsTrait for CommunityCards {
             }
         }
         ctt
+    }
+
+    /// Returns: Number of cards with that suit and the highest rank of that cards
+    fn get_by_suit_and_highest(&self, suit: char) -> (u8, u8) {
+        let mut highest: u8 = 0;
+        let mut ctt: u8 = 0;
+        for values in self.cards_map.iter() {
+            for s in values.1.iter().copied() {
+                if s == suit {
+                    ctt += 1;
+                    if values.0 > &highest {
+                        highest = *values.0;
+                    }
+
+                    break;
+                }
+            }
+        }
+        (ctt,highest)
     }
 }
 
@@ -141,5 +162,20 @@ mod tests {
         let rank_card: u8 = 10;
 
         assert_eq!(community_cards.get_by_rank(rank_card), 0);
+    }
+
+    #[test]
+    pub fn test_get_cards_of_one_suit() {
+        let mut community_cards: CommunityCards = CommunityCards::empty();
+        community_cards.add_card(Card::new(DIAMONDS, 10));
+        community_cards.add_card(Card::new(DIAMONDS, 9));
+        community_cards.add_card(Card::new(DIAMONDS, 8));
+
+        let number_of_cards;
+        let highest;
+        (number_of_cards, highest) =  community_cards.get_by_suit_and_highest(DIAMONDS);
+
+        assert_eq!(number_of_cards, 3);
+        assert_eq!(highest, 10);
     }
 }
