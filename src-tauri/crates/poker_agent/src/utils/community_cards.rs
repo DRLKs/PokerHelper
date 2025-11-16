@@ -7,10 +7,12 @@ pub trait CommunityCardsTrait {
 
     fn number_of_cards(&self) -> usize;
 
-    fn get_by_rank(&self, rank: u8) -> u8;
+    fn number_of_cards_by_rank(&self, rank: u8) -> u8;
 
-    fn get_by_suit(&self, suit: char) -> u8;
+    fn number_of_cards_by_suit(&self, suit: char) -> u8;
     fn get_by_suit_and_highest(&self, suit: char) -> (u8, u8);
+
+    fn contains(&self, rank: u8, suit: char) -> bool;
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -74,7 +76,7 @@ impl CommunityCardsTrait for CommunityCards {
         size
     }
 
-    fn get_by_rank(&self, rank: u8) -> u8 {
+    fn number_of_cards_by_rank(&self, rank: u8) -> u8 {
         let value: Option<&Vec<char>> = self.cards_map.get(&rank);
         if value.is_some() {
             value.unwrap().len() as u8
@@ -84,7 +86,7 @@ impl CommunityCardsTrait for CommunityCards {
     }
 
 
-    fn get_by_suit(&self, suit: char) -> u8 {
+    fn number_of_cards_by_suit(&self, suit: char) -> u8 {
         let mut ctt: u8 = 0;
         for values in self.cards_map.iter() {
             for s in values.1.iter().copied() {
@@ -115,6 +117,10 @@ impl CommunityCardsTrait for CommunityCards {
         }
         (ctt,highest)
     }
+
+    fn contains(&self, rank: u8, suit: char) -> bool {
+        self.cards_map.contains_key(&rank) && self.cards_map.get(&rank).unwrap().contains(&suit)
+    }
 }
 
 #[cfg(test)]
@@ -137,9 +143,9 @@ mod tests {
         assert_eq!(community_cards.number_of_cards(), 1);
         assert_eq!(community_cards.is_empty(), false);
 
-        assert_eq!(community_cards.get_by_suit(HEARTS), 0);
-        assert_eq!(community_cards.get_by_suit(DIAMONDS), 1);
-        assert_eq!(community_cards.get_by_rank(rank_card), 1);
+        assert_eq!(community_cards.number_of_cards_by_suit(HEARTS), 0);
+        assert_eq!(community_cards.number_of_cards_by_suit(DIAMONDS), 1);
+        assert_eq!(community_cards.number_of_cards_by_rank(rank_card), 1);
     }
 
     #[test]
@@ -151,9 +157,9 @@ mod tests {
         assert_eq!(community_cards.number_of_cards(), 2);
         assert_eq!(community_cards.is_empty(), false);
 
-        assert_eq!(community_cards.get_by_suit(HEARTS), 1);
-        assert_eq!(community_cards.get_by_suit(DIAMONDS), 1);
-        assert_eq!(community_cards.get_by_rank(rank_card), 2);
+        assert_eq!(community_cards.number_of_cards_by_suit(HEARTS), 1);
+        assert_eq!(community_cards.number_of_cards_by_suit(DIAMONDS), 1);
+        assert_eq!(community_cards.number_of_cards_by_rank(rank_card), 2);
     }
 
     #[test]
@@ -161,7 +167,7 @@ mod tests {
         let community_cards: CommunityCards = CommunityCards::empty();
         let rank_card: u8 = 10;
 
-        assert_eq!(community_cards.get_by_rank(rank_card), 0);
+        assert_eq!(community_cards.number_of_cards_by_rank(rank_card), 0);
     }
 
     #[test]

@@ -1,5 +1,5 @@
 use super::card::Card;
-use crate::cons::r#const::ALL_CARDS;
+use crate::r#const::r#const::ALL_CARDS;
 use crate::utils::hand::Hand;
 use rand::Rng;
 use std::collections::HashSet;

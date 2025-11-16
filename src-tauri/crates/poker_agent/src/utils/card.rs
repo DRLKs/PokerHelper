@@ -1,4 +1,4 @@
-use crate::cons::r#const::ALL_CARDS;
+use crate::r#const::r#const::ALL_CARDS;
 use rand::Rng;
 use serde::Deserialize;
 
@@ -6,6 +6,7 @@ pub const DIAMONDS: char = 'd';
 pub const CLUBS: char = 'c';
 pub const HEARTS: char = 'h';
 pub const SPADES: char = 's';
+pub const HIGHEST_RANK: u8 = 14;
 
 pub trait CardTrait {
     fn get_suit(&self) -> char;
@@ -63,7 +64,7 @@ impl CardTrait for Card {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cons::r#const::{ALL_RANKS, ALL_SUITS};
+    use crate::r#const::r#const::{ALL_RANKS, ALL_SUITS};
 
     #[test]
     fn test_create_card() {
