@@ -1,3 +1,4 @@
+use std::cmp::max;
 use crate::utils::card::{Card, CardTrait, HIGHEST_RANK};
 use crate::utils::community_cards::{CommunityCards, CommunityCardsTrait};
 use crate::utils::hand::{Hand, HandTrait, };
@@ -39,6 +40,7 @@ impl HandAnalysis {
         if hand.are_pair() {
             analyse_pair_hand(hand, community_cards, &mut analysis);
         } else if hand.is_same_suit() {
+            analyse_same_suit_hand(hand, community_cards, &mut analysis);
         }
 
         analysis
@@ -154,6 +156,75 @@ fn analyse_pair_hand(hand: &Hand, community_cards: &CommunityCards, analysis: &m
 }
 
 
+fn analyse_same_suit_hand(hand: &Hand, community_cards: &CommunityCards, analysis: &mut HandAnalysis) {
+
+    let rank_card_1: u8 = hand.get_cards()[0].get_rank();
+    let rank_card_2: u8 = hand.get_cards()[1].get_rank();
+
+    // Set High Card
+    analysis.set_high_card( max(rank_card_1, rank_card_2) );
+
+    let ctt_same_suit = analyse_flush(hand.get_cards()[0].get_suit(), 2, community_cards);
+    if ctt_same_suit != 0 {
+        analysis.add(SetOfHands::Flush, ctt_same_suit);
+    }
+
+    let mut ctt_same_rank_card: u8;
+    // Pair, Double Pair, Three of a kind, Four of a kind
+    for rank_card in [rank_card_1, rank_card_2].iter().cloned() {
+        ctt_same_rank_card = 1 + community_cards.number_of_cards_by_rank(rank_card);
+
+        if ctt_same_rank_card >= 2 {
+            if !analysis.has_set(&SetOfHands::Pair) {
+                analysis.add(SetOfHands::Pair, ctt_same_rank_card);
+            }else{
+                let card_pair = analysis.get_highest_card_set(&SetOfHands::Pair);
+                if card_pair < rank_card {
+                    analysis.add(SetOfHands::Pair, rank_card);
+                    analysis.add(SetOfHands::TwoPair, card_pair);
+                }else{
+                    analysis.add(SetOfHands::Pair, rank_card);
+                }
+            }
+        }
+
+        if ctt_same_rank_card >= 3 {
+            if !analysis.has_set(&SetOfHands::ThreeOfAKind) {
+                analysis.add(SetOfHands::ThreeOfAKind, ctt_same_rank_card);
+            }else if analysis.get_highest_card_set(&SetOfHands::ThreeOfAKind) < rank_card {
+                analysis.add(SetOfHands::ThreeOfAKind, rank_card);
+            }
+        }
+
+        // POKER - FourOfAKind
+        if ctt_same_rank_card == 4 {
+            analysis.add(SetOfHands::FourOfAKind, ctt_same_rank_card);
+        }
+
+        // Straight
+        let straight_high_card = analyse_straight(rank_card, community_cards);
+        if straight_high_card != 0 {
+            if analysis.get_highest_card_set(&SetOfHands::StraightFLush) > straight_high_card { // The straight is weaker or don`t exists
+                analysis.add(SetOfHands::Straight, straight_high_card);
+            }
+        }
+    }
+
+    // Straight Flush
+    if analysis.has_set(&SetOfHands::Straight) && analysis.has_set(&SetOfHands::Flush) {
+        let straight_flush_high_card = analyse_straight_flush(hand, community_cards);
+        if straight_flush_high_card != 0 {
+            analysis.add(SetOfHands::Straight, straight_flush_high_card);
+        }
+    }
+
+    // RoyalStraight
+    if analysis.get_highest_card_set(&SetOfHands::StraightFLush) == HIGHEST_RANK {
+        analysis.add(SetOfHands::RoyalStraight, HIGHEST_RANK);
+    }
+}
+
+
 
 /// Determines if there is a straight in the hand.
 ///
@@ -191,7 +262,12 @@ fn bounded_range(pivot: u8) -> Vec<u8> {
     (start..=end).collect()
 }
 
-
+/// Determines if there is a straight flush in the hand.
+///
+/// # Returns
+///
+/// * `0` - If there is no straight flush.
+/// * `n` - If there is a straight flush; returns the rank of the highest card in the straight.
 fn analyse_straight_flush(hand: &Hand, community_cards: &CommunityCards) -> u8 {
 
     let mut high_card_of_the_set :u8 = 0;
@@ -268,7 +344,7 @@ fn analyse_full_house(analysis: &HandAnalysis, community_cards: &CommunityCards)
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::card::{Card, DIAMONDS, HEARTS};
+    use crate::utils::card::{Card, CLUBS, DIAMONDS, HEARTS, SPADES};
     use super::*;
     #[test]
     fn hand_pair_and_flush(){
@@ -326,5 +402,50 @@ mod tests {
         assert!(analysis.has_set(&SetOfHands::StraightFLush));
         assert_eq!(analysis.get_highest_card_set(&SetOfHands::Flush), 8);
         assert_eq!(analysis.get_highest_card_set(&SetOfHands::StraightFLush), 8);
+    }
+
+    #[test]
+    fn same_suit_hand_flush(){
+        // Hand Cards
+        let hand_card_0 = Card::new(HEARTS,4);
+        let hand_card_1 = Card::new(HEARTS, 6);
+
+        // Community Cards
+        let community_card_0 = Card::new(DIAMONDS, 3);
+        let community_card_1 = Card::new(DIAMONDS, 4);
+        let community_card_2 = Card::new(HEARTS, 2);
+        let community_card_3 = Card::new(HEARTS, 7);
+        let community_card_4 = Card::new(HEARTS, 8);
+
+        let hand = Hand::new([hand_card_0,hand_card_1]);
+        let community_cards = CommunityCards::new(vec![community_card_0,community_card_1,community_card_2,community_card_3,community_card_4]);
+
+        let analysis = HandAnalysis::analyse(&hand, &community_cards);
+
+        assert!(analysis.has_set(&SetOfHands::Flush));
+        assert_eq!(analysis.get_highest_card_set(&SetOfHands::Flush), 8);
+    }
+
+    #[test]
+    fn same_suit_hand_poker(){
+        // Hand Cards
+        let hand_card_0 = Card::new(HEARTS,4);
+        let hand_card_1 = Card::new(HEARTS, 6);
+
+        // Community Cards
+        let community_card_0 = Card::new(DIAMONDS, 9);
+        let community_card_1 = Card::new(DIAMONDS, 4);
+        let community_card_2 = Card::new(SPADES, 4);
+        let community_card_3 = Card::new(CLUBS, 4);
+        let community_card_4 = Card::new(HEARTS, 8);
+
+        let hand = Hand::new([hand_card_0,hand_card_1]);
+        let community_cards = CommunityCards::new(vec![community_card_0,community_card_1,community_card_2,community_card_3,community_card_4]);
+
+        let analysis = HandAnalysis::analyse(&hand, &community_cards);
+        assert!(analysis.has_set(&SetOfHands::Pair));
+        assert!(analysis.has_set(&SetOfHands::ThreeOfAKind));
+        assert!(analysis.has_set(&SetOfHands::FourOfAKind));
+        assert_eq!(analysis.get_highest_card_set(&SetOfHands::FourOfAKind), 4);
     }
 }
