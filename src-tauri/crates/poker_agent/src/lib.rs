@@ -5,7 +5,6 @@
 // - Toma de decisiones
 
 mod r#const;
-pub mod decision;
-pub mod game_state;
 pub mod probability;
-pub mod utils;
+pub mod core;
+mod evaluator;

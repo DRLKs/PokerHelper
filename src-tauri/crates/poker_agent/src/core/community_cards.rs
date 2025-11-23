@@ -126,7 +126,7 @@ impl CommunityCardsTrait for CommunityCards {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::card::{DIAMONDS, HEARTS};
+    use crate::core::card::{DIAMONDS, HEARTS};
 
     #[test]
     pub fn test_empty_constructor() {

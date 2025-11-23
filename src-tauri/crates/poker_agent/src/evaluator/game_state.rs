@@ -1,5 +1,5 @@
-use crate::utils::community_cards::CommunityCards;
-use crate::utils::hand::Hand;
+use crate::core::community_cards::CommunityCards;
+use crate::core::hand::Hand;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]

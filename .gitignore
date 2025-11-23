@@ -16,6 +16,9 @@ pnpm-debug.log*
 lerna-debug.log*
 package-lock.json
 
+# Pnpm
+.pnpm-store/
+
 # Python
 __pycache__/
 *.py[cod]

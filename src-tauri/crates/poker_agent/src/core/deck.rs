@@ -1,6 +1,6 @@
 use super::card::Card;
 use crate::r#const::r#const::ALL_CARDS;
-use crate::utils::hand::Hand;
+use crate::core::hand::Hand;
 use rand::Rng;
 use std::collections::HashSet;
 

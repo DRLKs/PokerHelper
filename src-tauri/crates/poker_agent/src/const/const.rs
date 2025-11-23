@@ -1,4 +1,4 @@
-use crate::utils::card::Card;
+use crate::core::card::Card;
 
 /// Where 11 = J, 12 = Q, 13 = K, 14 = A
 pub const ALL_RANKS: [u8; 13] = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];

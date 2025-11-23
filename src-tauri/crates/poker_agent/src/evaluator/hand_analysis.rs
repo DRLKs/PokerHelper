@@ -1,7 +1,7 @@
 use std::cmp::max;
-use crate::utils::card::{Card, CardTrait, HIGHEST_RANK};
-use crate::utils::community_cards::{CommunityCards, CommunityCardsTrait};
-use crate::utils::hand::{Hand, HandTrait, };
+use crate::core::card::{Card, CardTrait, HIGHEST_RANK};
+use crate::core::community_cards::{CommunityCards, CommunityCardsTrait};
+use crate::core::hand::{Hand, HandTrait, };
 use serde::Serialize;
 use std::collections::HashMap;
 
@@ -256,7 +256,7 @@ fn bounded_range(pivot: u8) -> Vec<u8> {
     let min = 2;
     let max = 14;
 
-    let start = (pivot - 4).max(min);
+    let start = pivot.saturating_sub(4).max(min);
     let end = (pivot + 4).min(max);
 
     (start..=end).collect()
@@ -344,7 +344,7 @@ fn analyse_full_house(analysis: &HandAnalysis, community_cards: &CommunityCards)
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::card::{Card, CLUBS, DIAMONDS, HEARTS, SPADES};
+    use crate::core::card::{Card, CLUBS, DIAMONDS, HEARTS, SPADES};
     use super::*;
     #[test]
     fn hand_pair_and_flush(){

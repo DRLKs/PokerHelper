@@ -1,6 +1,6 @@
 // TODO: Implementar lógica de toma de decisiones
 
-use crate::game_state::{CvState, PokerAction};
+use crate::evaluator::game_state::{CvState, PokerAction};
 use crate::probability::calculate_equity;
 
 /// Max iterations 2¹⁶ = 65536

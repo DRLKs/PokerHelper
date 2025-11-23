@@ -1,8 +1,8 @@
-use crate::utils::card::Card;
-use crate::utils::community_cards::{CommunityCards, CommunityCardsTrait};
-use crate::utils::deck::Deck;
-use crate::utils::hand::Hand;
-use crate::utils::hand_analysis::HandAnalysis;
+use crate::core::card::Card;
+use crate::core::community_cards::{CommunityCards, CommunityCardsTrait};
+use crate::core::deck::Deck;
+use crate::core::hand::Hand;
+use crate::evaluator::hand_analysis::HandAnalysis;
 
 pub fn calculate_equity(hand: Hand, community_cards: CommunityCards, num_opponents: u8, iterations: u16) -> Result<f64, String> {
     if num_opponents <= 0 {
@@ -12,18 +12,19 @@ pub fn calculate_equity(hand: Hand, community_cards: CommunityCards, num_opponen
     (&mut cards_excluded).extend_from_slice(hand.get_cards());
     (&mut cards_excluded).extend_from_slice(community_cards.get_cards());
 
-    let mut deck: Deck = Deck::new_excluding(&cards_excluded);
+    let base_deck: Deck = Deck::new_excluding(&cards_excluded);
 
     let mut games_won: u32 = 0;
     for _ in 0..iterations {
-        (&mut deck).shuffle();
+        let mut deck = base_deck.clone();
+        deck.shuffle();
 
         if am_i_the_winner(&hand, &community_cards, deck.give_n_hands(num_opponents)) {
             games_won += 1;
         }
     }
 
-    let ptg_victory: f64 = iterations as f64 / games_won as f64;
+    let ptg_victory: f64 = games_won as f64 / iterations as f64;
 
     Ok(ptg_victory)
 }
