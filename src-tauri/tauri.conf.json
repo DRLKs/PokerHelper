@@ -1,9 +1,9 @@
 {
   "build": {
-    "beforeDevCommand": "pnpm run dev",
-    "beforeBuildCommand": "pnpm run build",
+    "beforeDevCommand": "cd ../frontend && pnpm run dev",
+    "beforeBuildCommand": "cd ../frontend && pnpm run build",
     "devPath": "http://localhost:1420",
-    "distDir": "../dist"
+    "distDir": "../frontend/dist"
   },
   "package": {
     "productName": "PokerHelper",
