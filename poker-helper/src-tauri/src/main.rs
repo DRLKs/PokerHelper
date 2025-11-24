@@ -86,7 +86,15 @@ async fn start_sidecar(state: State<'_, SidecarState>) -> Result<String, String>
     // Note: In a real production build, you'd use tauri::api::process::Command
     // But for dev with a python script, we'll spawn python directly
     // Adjust path as needed relative to CWD
-    let child = Command::new("python3")
+    // src-tauri is in poker-helper/src-tauri, and computer_vision is in ../computer_vision
+    // Also use the venv python if available
+    let python_cmd = if std::path::Path::new("../../.venv/bin/python").exists() {
+        "../../.venv/bin/python"
+    } else {
+        "python3"
+    };
+
+    let child = Command::new(python_cmd)
         .arg("../computer_vision/cv_sidecar.py")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

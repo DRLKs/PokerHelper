@@ -4,12 +4,12 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'src-tauri/crates/poker_agent/**'
+      - 'poker-helper/src-tauri/crates/poker_agent/**'
       - '.github/workflows/rust.yml'
   pull_request:
     branches: [ "main" ]
     paths:
-      - 'src-tauri/crates/poker_agent/**'
+      - 'poker-helper/src-tauri/crates/poker_agent/**'
       - '.github/workflows/rust.yml'
   workflow_dispatch:  # Permite ejecutar manualmente desde GitHub
 
@@ -46,9 +46,9 @@ jobs:
     - name: Cache cargo build
       uses: actions/cache@v3
       with:
-        path: src-tauri/crates/poker_agent/target
+        path: poker-helper/src-tauri/target
         key: ${{ runner.os }}-poker-agent-${{ hashFiles('**/Cargo.lock') }}
     
     - name: Run tests (poker_agent crate)
-      working-directory: ./src-tauri/crates/poker_agent
-      run: cargo test --verbose
+      working-directory: ./poker-helper/src-tauri
+      run: cargo test -p poker_agent --verbose

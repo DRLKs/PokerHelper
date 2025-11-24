@@ -15,3 +15,11 @@ export const calculateEquity = async (
     numOpponents,
   });
 };
+
+export const startSidecar = async (): Promise<string> => {
+  return await invoke('start_sidecar');
+};
+
+export const listWindows = async (): Promise<string[]> => {
+  return await invoke('list_windows');
+};

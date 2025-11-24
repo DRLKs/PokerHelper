@@ -1,6 +1,8 @@
 # Rust/Cargo
 /target/
 /src-tauri/target/
+poker-helper/src-tauri/target/
+**/target/
 **/*.rs.bk
 Cargo.lock
 

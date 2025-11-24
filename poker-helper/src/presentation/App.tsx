@@ -9,7 +9,8 @@ const App = () => {
     myCards, addMyCard, removeMyCard, 
     communityCards, addCommunityCard, removeCommunityCard,
     numOpponents, setNumOpponents,
-    equity, calculate, loading, error 
+    equity, calculate, loading, error,
+    visionEnabled, toggleVision, availableWindows, selectedWindow, setSelectedWindow
   } = usePoker();
 
   const [target, setTarget] = useState<'hand' | 'community' | null>('hand');
@@ -24,7 +25,29 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8 flex flex-col items-center font-sans">
-      <h1 className="text-3xl font-bold mb-8 text-poker-accent tracking-widest">POKER HELPER</h1>
+      <div className="w-full max-w-5xl flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-poker-accent tracking-widest">POKER HELPER</h1>
+        
+        {/* Vision Toggle */}
+        <div className="flex items-center gap-4">
+            {visionEnabled && (
+                <select 
+                    value={selectedWindow} 
+                    onChange={(e) => setSelectedWindow(e.target.value)}
+                    className="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1 text-sm"
+                >
+                    <option value="">Select Window...</option>
+                    {availableWindows.map(w => <option key={w} value={w}>{w}</option>)}
+                </select>
+            )}
+            <button 
+                onClick={toggleVision}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${visionEnabled ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`}
+            >
+                {visionEnabled ? 'VISION ON' : 'ENABLE VISION'}
+            </button>
+        </div>
+      </div>
 
       <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8">
         
