@@ -29,9 +29,10 @@ pub fn calculate_equity(hand: Hand, community_cards: CommunityCards, num_opponen
     Ok(ptg_victory)
 }
 
-pub fn calculate_pot_odds(pot_size: f64, call_amount: f64) -> f64 {
-    // TODO: Implementar evaluación de manos
-    0.0
+
+pub fn calculate_pot_odds(pot_size: f64, call_amount: f64, ptg_win: f64) -> f64 {
+    // TODO: Implementar evaluación de manos, es dudosa la actual
+    (ptg_win * (pot_size + call_amount)) / 100.0
 }
 
 fn am_i_the_winner(my_hand: &Hand, community_cards: &CommunityCards, opponents: Vec<Hand>) -> bool {
@@ -46,4 +47,26 @@ fn am_i_the_winner(my_hand: &Hand, community_cards: &CommunityCards, opponents: 
     }
 
     true
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pot_odd_zero_probability(){
+        let pot_size= 100.0;
+        let call_amount= 10.0;
+        let ptg_win = 0.0;
+        assert_eq!( calculate_pot_odds(pot_size,call_amount,ptg_win), 0.0 );
+    }
+
+    #[test]
+    fn pot_odd_100_probability(){
+        let pot_size= 100.0;
+        let call_amount= 30.0;
+        let ptg_win = 100.0;
+        assert!( calculate_pot_odds(pot_size,call_amount,ptg_win) > call_amount );
+    }
 }
