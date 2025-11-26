@@ -6,6 +6,8 @@ export const usePoker = () => {
   const [myCards, setMyCards] = useState<Card[]>([]);
   const [communityCards, setCommunityCards] = useState<Card[]>([]);
   const [numOpponents, setNumOpponents] = useState<number>(1);
+  const [potSize, setPotSize] = useState<number>(0);
+  const [callAmount, setCallAmount] = useState<number>(0);
   const [equity, setEquity] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +86,10 @@ export const usePoker = () => {
     removeCommunityCard,
     numOpponents,
     setNumOpponents,
+    potSize,
+    setPotSize,
+    callAmount,
+    setCallAmount,
     equity,
     loading,
     error,

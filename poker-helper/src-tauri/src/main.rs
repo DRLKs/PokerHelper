@@ -6,6 +6,8 @@ use poker_agent::core::community_cards::CommunityCards;
 use poker_agent::core::hand::Hand;
 use poker_agent::probability::calculate_equity;
 
+const ITERATIONS: u16 = 10000;
+
 fn parse_card(card_str: &str) -> Result<Card, String> {
     if card_str.len() < 2 || card_str.len() > 3 {
         return Err(format!("Invalid card string length: {}", card_str));
@@ -62,8 +64,7 @@ async fn calculate_equity_command(
     }
     let community = CommunityCards::new(community_cards_vec);
 
-    // Default iterations to 10000 for now, could be a parameter
-    calculate_equity(hand, community, num_opponents, 10000)
+    calculate_equity(hand, community, num_opponents, ITERATIONS)
 }
 
 use std::process::{Command, Stdio};

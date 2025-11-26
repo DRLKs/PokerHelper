@@ -96,7 +96,15 @@ impl HandAnalysis {
         }
 
         if self.has_set(&SetOfHands::FullHouse){
-            return other.has_set(&SetOfHands::FullHouse) && self.get_highest_card_set(&SetOfHands::FullHouse) < other.get_highest_card_set(&SetOfHands::FullHouse);
+
+            if other.has_set(&SetOfHands::FullHouse) {
+
+                if self.get_highest_card_set(&SetOfHands::FullHouse) < other.get_highest_card_set(&SetOfHands::FullHouse) {
+                    return false;
+                } else if self.get_highest_card_set(&SetOfHands::FullHouse) < other.get_highest_card_set(&SetOfHands::FullHouse) {
+                    return true;
+                }
+            }
         }else if other.has_set(&SetOfHands::FullHouse){
             return false;
         }
@@ -108,7 +116,15 @@ impl HandAnalysis {
         }
 
         if self.has_set(&SetOfHands::Straight){
-            return other.has_set(&SetOfHands::Straight) && self.get_highest_card_set(&SetOfHands::Straight) < other.get_highest_card_set(&SetOfHands::Straight);
+
+            if other.has_set(&SetOfHands::Straight){
+                if self.get_highest_card_set(&SetOfHands::Straight) > other.get_highest_card_set(&SetOfHands::Straight){
+                    return true;
+                }else if self.get_highest_card_set(&SetOfHands::Straight) < other.get_highest_card_set(&SetOfHands::Straight){
+                    return false;
+                }
+            }
+
         }else if other.has_set(&SetOfHands::Straight){
             return false;
         }
@@ -139,7 +155,14 @@ impl HandAnalysis {
                 return false;
             }
 
-            return other.has_set(&SetOfHands::Pair) && self.get_highest_card_set(&SetOfHands::Pair) < other.get_highest_card_set(&SetOfHands::Pair);
+            if other.has_set(&SetOfHands::Pair) {
+
+                if self.get_highest_card_set(&SetOfHands::Pair) < other.get_highest_card_set(&SetOfHands::Pair) {
+                    return false;
+                }else if self.get_highest_card_set(&SetOfHands::Pair) > other.get_highest_card_set(&SetOfHands::Pair){
+                    return true;
+                }
+            }
         }else if other.has_set(&SetOfHands::Pair){
             return false;
         }
@@ -505,7 +528,7 @@ fn analyse_full_house(analysis: &HandAnalysis, community_cards: &CommunityCards)
 #[cfg(test)]
 mod tests {
     use crate::core::card::{Card, CLUBS, DIAMONDS, HEARTS, SPADES};
-    use crate::evaluator::hand_analysis::SetOfHands::{Pair, TwoPair};
+    use crate::evaluator::hand_analysis::SetOfHands::{FullHouse, Pair, Straight, TwoPair};
     use super::*;
     #[test]
     fn hand_pair_and_flush(){
@@ -612,7 +635,6 @@ mod tests {
 
     #[test]
     fn better_hand_two_pairs(){
-
         // Self analysis
         let mut self_hand_analysis = HandAnalysis::new();
         self_hand_analysis.add(Pair, 14);
@@ -624,6 +646,65 @@ mod tests {
         other_hand_analysis.add(TwoPair, 9);
 
         assert!(self_hand_analysis.is_better(&other_hand_analysis));
+    }
 
+    #[test]
+    fn better_hand_same_pair_high_card(){
+        // Self analysis
+        let mut self_hand_analysis = HandAnalysis::new();
+        self_hand_analysis.add(Pair, 12);
+        self_hand_analysis.set_high_card(14);
+
+        // Other analysis
+        let mut other_hand_analysis = HandAnalysis::new();
+        other_hand_analysis.add(Pair, 12);
+        other_hand_analysis.set_high_card(12);
+
+        assert!(self_hand_analysis.is_better(&other_hand_analysis));
+    }
+
+    #[test]
+    fn better_hand_same_straight_high_card(){
+        // Self analysis
+        let mut self_hand_analysis = HandAnalysis::new();
+        self_hand_analysis.add(Straight, 12);
+        self_hand_analysis.set_high_card(14);
+
+        // Other analysis
+        let mut other_hand_analysis = HandAnalysis::new();
+        other_hand_analysis.add(Straight, 12);
+        other_hand_analysis.set_high_card(12);
+
+        assert!(self_hand_analysis.is_better(&other_hand_analysis));
+    }
+
+    #[test]
+    fn better_hand_same_full_high_card(){
+        // Self analysis
+        let mut self_hand_analysis = HandAnalysis::new();
+        self_hand_analysis.add(FullHouse, 12);
+        self_hand_analysis.set_high_card(14);
+
+        // Other analysis
+        let mut other_hand_analysis = HandAnalysis::new();
+        other_hand_analysis.add(FullHouse, 12);
+        other_hand_analysis.set_high_card(12);
+
+        assert!(self_hand_analysis.is_better(&other_hand_analysis));
+    }
+
+    #[test]
+    fn better_hand_same_full_high_card_other(){
+        // Self analysis
+        let mut self_hand_analysis = HandAnalysis::new();
+        self_hand_analysis.add(FullHouse, 12);
+        self_hand_analysis.set_high_card(12);
+
+        // Other analysis
+        let mut other_hand_analysis = HandAnalysis::new();
+        other_hand_analysis.add(FullHouse, 12);
+        other_hand_analysis.set_high_card(14);
+
+        assert!(!self_hand_analysis.is_better(&other_hand_analysis));
     }
 }

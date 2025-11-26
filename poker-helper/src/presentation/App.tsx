@@ -9,6 +9,7 @@ const App = () => {
     myCards, addMyCard, removeMyCard, 
     communityCards, addCommunityCard, removeCommunityCard,
     numOpponents, setNumOpponents,
+    potSize, setPotSize, callAmount, setCallAmount,
     equity, calculate, loading, error,
     visionEnabled, toggleVision, availableWindows, selectedWindow, setSelectedWindow
   } = usePoker();
@@ -125,6 +126,28 @@ const App = () => {
              <CardSelector onSelect={handleCardSelect} />
           </div>
 
+          {/* Betting Info */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-gray-800 border border-gray-700">
+                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2">Pot Size</label>
+                <input 
+                    type="number" 
+                    value={potSize}
+                    onChange={(e) => setPotSize(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-poker-accent outline-none"
+                />
+            </div>
+            <div className="p-4 rounded-xl bg-gray-800 border border-gray-700">
+                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2">To Call</label>
+                <input 
+                    type="number" 
+                    value={callAmount}
+                    onChange={(e) => setCallAmount(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:border-poker-accent outline-none"
+                />
+            </div>
+          </div>
+
           {/* Action */}
           <button
             onClick={calculate}
@@ -141,11 +164,29 @@ const App = () => {
 
           {/* Result */}
           {equity !== null && (
-            <div className="p-6 rounded-xl bg-gray-800 border border-gray-700 text-center animate-fade-in shadow-2xl">
-              <h3 className="text-gray-400 mb-2 uppercase text-sm tracking-widest">Win Probability</h3>
-              <div className="text-6xl font-bold text-poker-accent drop-shadow-lg">
-                {(equity * 100).toFixed(2)}%
-              </div>
+            <div className="space-y-4">
+                <div className="p-6 rounded-xl bg-gray-800 border border-gray-700 text-center animate-fade-in shadow-2xl">
+                <h3 className="text-gray-400 mb-2 uppercase text-sm tracking-widest">Win Probability</h3>
+                <div className="text-6xl font-bold text-poker-accent drop-shadow-lg">
+                    {equity.toFixed(2)}%
+                </div>
+                </div>
+
+                {/* Recommendation */}
+                {(potSize + callAmount > 0) && (
+                    <div className={`p-4 rounded-xl border text-center ${equity > (callAmount / (potSize + callAmount) * 100) ? 'bg-green-900/20 border-green-500 text-green-400' : 'bg-red-900/20 border-red-500 text-red-400'}`}>
+                        <div className="text-sm uppercase tracking-widest mb-1">Recommendation</div>
+                        <div className="text-2xl font-bold">
+                            {equity > (callAmount / (potSize + callAmount) * 100) ? 'CALL' : 'FOLD'}
+                        </div>
+                        <div className="text-xs opacity-75 mt-1">
+                            Required Equity: {((callAmount / (potSize + callAmount)) * 100).toFixed(2)}%
+                        </div>
+                        <div className="text-xs opacity-75 mt-1">
+                            Max Call: {((equity / 100 * potSize) / (1 - equity / 100)).toFixed(2)}
+                        </div>
+                    </div>
+                )}
             </div>
           )}
 

@@ -34,6 +34,16 @@ impl CommunityCards {
         community
     }
 
+    pub fn new_array(cards: [Card;5]) -> Self {
+        let mut community = Self::empty();
+
+        for card in cards {
+            community.add_card(card);
+        }
+
+        community
+    }
+
     pub fn empty() -> Self {
         Self {
             cards_map: HashMap::new(),
