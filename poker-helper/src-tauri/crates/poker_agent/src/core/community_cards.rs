@@ -136,34 +136,40 @@ impl CommunityCardsTrait for CommunityCards {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::card::{DIAMONDS, HEARTS};
+    use crate::core::card::{CLUBS, DIAMONDS, HEARTS, SPADES};
 
     #[test]
     pub fn test_empty_constructor() {
         let community_cards = CommunityCards::empty();
         assert_eq!(community_cards.number_of_cards(), 0);
         assert_eq!(community_cards.is_empty(), true);
+        let carta = Card::new_random();
+        assert!(!community_cards.contains(carta.get_rank(), carta.get_suit()));
     }
 
     #[test]
     pub fn test_add_card() {
-        let mut community_cards = CommunityCards::empty();
-        let rank_card = 10;
-        community_cards.add_card(Card::new(DIAMONDS, rank_card));
+        let mut community_cards: CommunityCards = CommunityCards::empty();
+        let carta = Card::new_random();
+        (&mut community_cards).add_card(Card::new(carta.get_suit(), carta.get_rank()));
+
         assert_eq!(community_cards.number_of_cards(), 1);
         assert_eq!(community_cards.is_empty(), false);
 
-        assert_eq!(community_cards.number_of_cards_by_suit(HEARTS), 0);
-        assert_eq!(community_cards.number_of_cards_by_suit(DIAMONDS), 1);
-        assert_eq!(community_cards.number_of_cards_by_rank(rank_card), 1);
+        assert_eq!(community_cards.number_of_cards_by_suit(carta.get_suit()), 1);
+        assert_eq!(community_cards.number_of_cards_by_rank(carta.get_rank()), 1);
+        assert!(community_cards.contains(carta.get_rank(), carta.get_suit()));
     }
 
     #[test]
     pub fn test_add_some_card_same_rank() {
-        let mut community_cards = CommunityCards::empty();
+        let mut community_cards: CommunityCards = CommunityCards::empty();
         let rank_card = 10;
-        community_cards.add_card(Card::new(DIAMONDS, rank_card));
-        community_cards.add_card(Card::new(HEARTS, rank_card));
+        let card1 = Card::new(DIAMONDS, rank_card);
+        let card2 = Card::new(HEARTS, rank_card);
+
+        (&mut community_cards).add_card( card1 );
+        (&mut community_cards).add_card(card2);
         assert_eq!(community_cards.number_of_cards(), 2);
         assert_eq!(community_cards.is_empty(), false);
 
@@ -178,6 +184,10 @@ mod tests {
         let rank_card: u8 = 10;
 
         assert_eq!(community_cards.number_of_cards_by_rank(rank_card), 0);
+        assert_eq!(community_cards.number_of_cards_by_suit(DIAMONDS), 0);
+        assert_eq!(community_cards.number_of_cards_by_suit(SPADES), 0);
+        assert_eq!(community_cards.number_of_cards_by_suit(HEARTS), 0);
+        assert_eq!(community_cards.number_of_cards_by_suit(CLUBS), 0);
     }
 
     #[test]

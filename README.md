@@ -1,19 +1,18 @@
-# Aplicación Para Futura IA Poker
+# PokerHelper
 
 ## Funcionalidad
-Poker Helper pretende ser un software que juegue al Poker Texas Holdem de una forma lo más perfecta posible.
+Poker Helper pretende ser un software que juegue al Poker Texas Holdem automáticamente.
 Esto lo hará devolviendo al jugador la decisión que más le convenga en cada mano. Para ello, Poker Helper necesita:
 - Las cartas de tu mano.
 - Las cartas que haya en la mesa.
 - El número de jugadores que estén jugando en ese momento.
+- El bote de la mesa
+- La apuesta actual
 
-Toda esta información la obtendremos mediante el análisis por visión por computador de una partida de Poker Online (PokerStars), en el caso de que el jugador lo decida también podrá introducir los datos a mano.
+Actualmente toda esta información la pondrá el usuario a mano, pero como la aplicación pretende ser autónoma, requerirá de un apartado de Visión por Computador la cual está en desarrollo.
+Toda esta información se obtendrá mediante el análisis por visión por computador de una partida de Poker Online (PokerStars).
 El dataSet utilizado para el apredizaje del modelo ha sido obtenido de [roboflow](https://universe.roboflow.com/), exactamente [dataSet](https://universe.roboflow.com/poker-nnnrc/poker-cards-nesyh/dataset/6), también lo podreis ver en el servicio Python de la app.
 
-## Tecnologías
-- Tauri
-- Javalin
-- Fast-Api
 
 ## Posibles Usos
 - Aprender a jugar a este famoso juego de cartas, memorizando cuales son las manos con las que será más probable ganar rondas.

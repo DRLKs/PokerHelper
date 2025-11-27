@@ -68,6 +68,12 @@ impl HandAnalysis {
         &self.sets
     }
 
+    /// Checks if the set is present and returns the highest card from that set.
+    /// 
+    /// # Returns
+    ///
+    /// * `0` - If there is no set.
+    /// * `highest_card_set` - If there is a set.
     pub fn get_highest_card_set(&self, set: &SetOfHands) -> u8 {
         if self.has_set(set) {
             return self.sets[set]
@@ -84,13 +90,13 @@ impl HandAnalysis {
         }
 
         if self.has_set(&SetOfHands::StraightFLush){
-            return other.has_set(&SetOfHands::StraightFLush) && self.get_highest_card_set(&SetOfHands::StraightFLush) < other.get_highest_card_set(&SetOfHands::Straight);
+            return self.get_highest_card_set(&SetOfHands::StraightFLush) < other.get_highest_card_set(&SetOfHands::Straight);
         }else if other.has_set(&SetOfHands::StraightFLush){
             return false;
         }
 
         if self.has_set(&SetOfHands::FourOfAKind){
-            return other.has_set(&SetOfHands::FourOfAKind) && self.get_highest_card_set(&SetOfHands::FourOfAKind) < other.get_highest_card_set(&SetOfHands::FourOfAKind);
+            return self.get_highest_card_set(&SetOfHands::FourOfAKind) < other.get_highest_card_set(&SetOfHands::FourOfAKind);
         }else if other.has_set(&SetOfHands::FourOfAKind){
             return false;
         }
@@ -99,11 +105,18 @@ impl HandAnalysis {
 
             if other.has_set(&SetOfHands::FullHouse) {
 
-                if self.get_highest_card_set(&SetOfHands::FullHouse) < other.get_highest_card_set(&SetOfHands::FullHouse) {
-                    return false;
-                } else if self.get_highest_card_set(&SetOfHands::FullHouse) < other.get_highest_card_set(&SetOfHands::FullHouse) {
+                if self.get_highest_card_set(&SetOfHands::ThreeOfAKind) > other.get_highest_card_set(&SetOfHands::ThreeOfAKind){
+                    return true;
+                }else if self.get_highest_card_set(&SetOfHands::ThreeOfAKind) > other.get_highest_card_set(&SetOfHands::ThreeOfAKind) {
                     return true;
                 }
+
+                if self.get_highest_card_set(&SetOfHands::FullHouse) > other.get_highest_card_set(&SetOfHands::FullHouse){
+                    return true;
+                }else if self.get_highest_card_set(&SetOfHands::FullHouse) > other.get_highest_card_set(&SetOfHands::FullHouse) {
+                    return true;
+                }
+
             }
         }else if other.has_set(&SetOfHands::FullHouse){
             return false;
@@ -167,7 +180,7 @@ impl HandAnalysis {
             return false;
         }
 
-        if other.high_card > self.high_card {
+        if other.get_high_card() > self.get_high_card() {
             return false;
         }
         true
@@ -181,14 +194,6 @@ impl HandAnalysis {
             false
         }
 
-    }
-}
-
-
-
-impl Default for HandAnalysis {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -528,7 +533,7 @@ fn analyse_full_house(analysis: &HandAnalysis, community_cards: &CommunityCards)
 #[cfg(test)]
 mod tests {
     use crate::core::card::{Card, CLUBS, DIAMONDS, HEARTS, SPADES};
-    use crate::evaluator::hand_analysis::SetOfHands::{FullHouse, Pair, Straight, TwoPair};
+    use crate::evaluator::hand_analysis::SetOfHands::{FullHouse, Pair, Straight, ThreeOfAKind, TwoPair};
     use super::*;
     #[test]
     fn hand_pair_and_flush(){
@@ -682,13 +687,49 @@ mod tests {
     fn better_hand_same_full_high_card(){
         // Self analysis
         let mut self_hand_analysis = HandAnalysis::new();
+        self_hand_analysis.add(Pair, 11);
         self_hand_analysis.add(FullHouse, 12);
         self_hand_analysis.set_high_card(14);
 
         // Other analysis
         let mut other_hand_analysis = HandAnalysis::new();
+        other_hand_analysis.add(Pair, 11);
         other_hand_analysis.add(FullHouse, 12);
         other_hand_analysis.set_high_card(12);
+
+        assert!(self_hand_analysis.is_better(&other_hand_analysis));
+    }
+
+    #[test]
+    fn worse_hand_same_full_high_card_in_pair(){
+        // Self analysis
+        let mut self_hand_analysis = HandAnalysis::new();
+        self_hand_analysis.add(ThreeOfAKind, 12);
+        self_hand_analysis.add(FullHouse, 13);
+        self_hand_analysis.set_high_card(13);
+
+        // Other analysis
+        let mut other_hand_analysis = HandAnalysis::new();
+        other_hand_analysis.add(ThreeOfAKind, 12);
+        other_hand_analysis.add(FullHouse, 14);
+        other_hand_analysis.set_high_card(14);
+
+        assert!(!self_hand_analysis.is_better(&other_hand_analysis));
+    }
+
+    #[test]
+    fn better_hand_same_full_high_card_in_three_of_a_kind(){
+        // Self analysis
+        let mut self_hand_analysis = HandAnalysis::new();
+        self_hand_analysis.add(ThreeOfAKind, 12);
+        self_hand_analysis.add(FullHouse, 14);
+        self_hand_analysis.set_high_card(14);
+
+        // Other analysis
+        let mut other_hand_analysis = HandAnalysis::new();
+        other_hand_analysis.add(ThreeOfAKind, 10);
+        other_hand_analysis.add(FullHouse, 14);
+        other_hand_analysis.set_high_card(14);
 
         assert!(self_hand_analysis.is_better(&other_hand_analysis));
     }
