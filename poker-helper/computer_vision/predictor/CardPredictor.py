@@ -1,243 +1,302 @@
 """
-Predictor principal que combina detección, preprocesamiento y predicción.
+Predictor de cartas usando YOLO v8 y EasyOCR.
+Optimizado para CPU.
 """
+import time
 import numpy as np
 from PIL import Image
-import os
+from typing import Dict, Any, List, Optional, Tuple, Union
+from dataclasses import dataclass, field
 
-from core.card_detector import CardDetector
-from core.image_preprocessor import ImagePreprocessor
-from core.model_loader import ModelLoader
-from core.visualizer import ResultVisualizer
+# Importar detectores
+try:
+    from .core.yolo_detector import YOLOCardDetector, get_detector as get_yolo_detector
+    YOLO_AVAILABLE = True
+except ImportError:
+    YOLO_AVAILABLE = False
+    YOLOCardDetector = None
+    get_yolo_detector = None
 
+try:
+    from .core.number_extractor import NumberExtractor, get_extractor as get_number_extractor
+    OCR_AVAILABLE = True
+except ImportError:
+    OCR_AVAILABLE = False
+    NumberExtractor = None
+    get_number_extractor = None
+
+
+# =============================================================================
+# Data Classes
+# =============================================================================
+
+@dataclass
+class CardResult:
+    """Carta detectada."""
+    rank: str  # A, 2-10, J, Q, K
+    suit: str  # hearts, diamonds, clubs, spades
+    confidence: float
+    bbox: Tuple[int, int, int, int]  # x, y, width, height
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'rank': self.rank,
+            'suit': self.suit,
+            'confidence': self.confidence,
+            'bbox': list(self.bbox)
+        }
+    
+    def __str__(self) -> str:
+        symbols = {'hearts': '♥', 'diamonds': '♦', 'clubs': '♣', 'spades': '♠'}
+        return f"{self.rank}{symbols.get(self.suit, '?')}"
+
+
+@dataclass
+class NumberResult:
+    """Número extraído (pot, bet, stack)."""
+    value: float
+    text_raw: str
+    confidence: float
+    region: str
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'value': self.value,
+            'text_raw': self.text_raw,
+            'confidence': self.confidence,
+            'region': self.region
+        }
+
+
+@dataclass
+class AnalysisResult:
+    """Resultado del análisis de imagen."""
+    cards: List[CardResult] = field(default_factory=list)
+    numbers: List[NumberResult] = field(default_factory=list)
+    pot_size: Optional[float] = None
+    player_stack: Optional[float] = None
+    opponent_bets: List[float] = field(default_factory=list)
+    image_shape: Optional[Tuple[int, int, int]] = None
+    yolo_available: bool = False
+    ocr_available: bool = False
+    processing_time_ms: float = 0.0
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'cards': [c.to_dict() for c in self.cards],
+            'numbers': [n.to_dict() for n in self.numbers],
+            'pot_size': self.pot_size,
+            'player_stack': self.player_stack,
+            'opponent_bets': self.opponent_bets,
+            'image_shape': list(self.image_shape) if self.image_shape else None,
+            'yolo_available': self.yolo_available,
+            'ocr_available': self.ocr_available,
+            'processing_time_ms': self.processing_time_ms
+        }
+
+
+# =============================================================================
+# CardPredictor
+# =============================================================================
 
 class CardPredictor:
     """
-    Predictor principal de cartas que integra todos los componentes.
+    Predictor de cartas de poker usando YOLO v8 y EasyOCR.
+    
+    Ejemplo:
+        predictor = CardPredictor()
+        result = predictor.analyze_image("screenshot.png")
+        for card in result.cards:
+            print(card)
     """
     
-    def __init__(self, model_path=None, img_height=1200, img_width=1920):
-        """
-        Inicializa el predictor de cartas.
+    def __init__(
+        self,
+        yolo_model_path: Optional[str] = None,
+        confidence_threshold: float = 0.5,
+        verbose: bool = False
+    ):
+        self.confidence_threshold = confidence_threshold
+        self.verbose = verbose
+        self.yolo_detector: Optional[YOLOCardDetector] = None
+        self.number_extractor: Optional[NumberExtractor] = None
         
-        Args:
-            model_path: Ruta al modelo entrenado (.h5). Si es None, busca el último modelo
-            img_height: Altura de imagen para el modelo
-            img_width: Ancho de imagen para el modelo
-        """
-        # Inicializar componentes
-        self.detector = CardDetector()
-        self.preprocessor = ImagePreprocessor(img_height, img_width)
-        self.model_loader = ModelLoader()
-        self.visualizer = ResultVisualizer()
+        # Inicializar YOLO
+        if YOLO_AVAILABLE and get_yolo_detector:
+            try:
+                self.yolo_detector = get_yolo_detector()
+                if yolo_model_path:
+                    self.yolo_detector.load_model(yolo_model_path)
+                self._log("YOLO inicializado")
+            except Exception as e:
+                self._log(f"Error YOLO: {e}")
         
-        # Cargar modelo
-        self.load_model(model_path)
+        # Inicializar OCR
+        if OCR_AVAILABLE and get_number_extractor:
+            try:
+                self.number_extractor = get_number_extractor()
+                self._log("OCR inicializado")
+            except Exception as e:
+                self._log(f"Error OCR: {e}")
     
-    def load_model(self, model_path=None):
-        """
-        Carga el modelo predictivo.
-        
-        Args:
-            model_path: Ruta específica del modelo (opcional)
-        """
-        success = self.model_loader.load_model(model_path)
-        if not success:
-            print("Advertencia: No se pudo cargar el modelo.")
-            print("El predictor funcionará solo para detección sin predicción.")
+    def _log(self, msg: str):
+        if self.verbose:
+            print(f"[CardPredictor] {msg}")
     
-    def predict_single_card(self, card_crop):
+    def is_ready(self) -> bool:
+        """Verifica si el predictor puede analizar imágenes."""
+        return self.yolo_detector is not None
+    
+    def load_yolo_model(self, model_path: str) -> bool:
+        """Carga un modelo YOLO entrenado."""
+        if not YOLO_AVAILABLE:
+            return False
+        try:
+            if self.yolo_detector is None and get_yolo_detector:
+                self.yolo_detector = get_yolo_detector()
+            if self.yolo_detector:
+                self.yolo_detector.load_model(model_path)
+                return True
+        except Exception as e:
+            self._log(f"Error cargando modelo: {e}")
+        return False
+    
+    def analyze_image(
+        self,
+        image: Union[str, np.ndarray, Image.Image],
+        detect_cards: bool = True,
+        extract_numbers: bool = True,
+        number_regions: Optional[List[Dict]] = None
+    ) -> AnalysisResult:
         """
-        Predice el valor y palo de una carta individual.
+        Analiza una imagen para detectar cartas y números.
         
         Args:
-            card_crop: Imagen recortada de la carta
-            
-        Returns:
-            dict: Diccionario con la predicción y confianza
+            image: Ruta, numpy array, o PIL Image
+            detect_cards: Detectar cartas
+            extract_numbers: Extraer números (pot, bets)
+            number_regions: Regiones específicas para OCR
         """
-        if not self.model_loader.is_loaded():
-            return {'error': 'Modelo no cargado'}
+        start = time.time()
+        img = self._to_numpy(image)
+        
+        result = AnalysisResult(
+            image_shape=img.shape,
+            yolo_available=self.yolo_detector is not None,
+            ocr_available=self.number_extractor is not None
+        )
+        
+        if detect_cards:
+            result.cards = self._detect_cards(img)
+        
+        if extract_numbers and self.number_extractor:
+            result.numbers = self._extract_numbers(img, number_regions)
+            for num in result.numbers:
+                if num.region == 'pot':
+                    result.pot_size = num.value
+                elif num.region == 'player_stack':
+                    result.player_stack = num.value
+                elif 'opponent' in num.region:
+                    result.opponent_bets.append(num.value)
+        
+        result.processing_time_ms = (time.time() - start) * 1000
+        return result
+    
+    def _to_numpy(self, image: Union[str, np.ndarray, Image.Image]) -> np.ndarray:
+        if isinstance(image, str):
+            return np.array(Image.open(image))
+        elif isinstance(image, Image.Image):
+            return np.array(image)
+        return image
+    
+    def _detect_cards(self, img: np.ndarray) -> List[CardResult]:
+        if self.yolo_detector is None:
+            return []
         
         try:
-            # Preprocesar el recorte
-            processed_crop = self.preprocessor.preprocess_image(card_crop)
-            
-            # Añadir dimensión de batch
-            batch_crop = np.expand_dims(processed_crop, axis=0)
-            
-            # Hacer predicción
-            prediction = self.model_loader.predict(batch_crop)
-            
-            # Obtener la clase con mayor probabilidad
-            predicted_class_idx = np.argmax(prediction[0])
-            confidence = prediction[0][predicted_class_idx]
-            
-            return {
-                'class_index': int(predicted_class_idx),
-                'confidence': float(confidence),
-                'raw_prediction': prediction[0].tolist()
-            }
-            
+            detections = self.yolo_detector.detect_and_classify(
+                img, conf_threshold=self.confidence_threshold
+            )
+            cards = []
+            for det in detections:
+                rank, suit = self._parse_label(det.get('class_name', ''))
+                cards.append(CardResult(
+                    rank=rank,
+                    suit=suit,
+                    confidence=det.get('confidence', 0.0),
+                    bbox=tuple(det.get('bbox', [0, 0, 0, 0]))
+                ))
+            return cards
         except Exception as e:
-            return {'error': f'Error en predicción: {str(e)}'}
+            self._log(f"Error detección: {e}")
+            return []
     
-    def analyze_image(self, image, show_results=True, save_results=False):
-        """
-        Función principal que analiza una imagen completa buscando cartas.
+    def _extract_numbers(
+        self, img: np.ndarray, regions: Optional[List[Dict]] = None
+    ) -> List[NumberResult]:
+        if self.number_extractor is None:
+            return []
         
-        Args:
-            image: Imagen a analizar (array numpy, PIL Image o ruta)
-            show_results: Si mostrar los resultados visualmente
-            save_results: Si guardar los resultados
-            
-        Returns:
-            dict: Resultados del análisis
-        """
-        # Convertir imagen a numpy array si es necesario
-        if isinstance(image, str):
-            pil_img = Image.open(image)
-            img_array = np.array(pil_img)
-        elif isinstance(image, Image.Image):
-            img_array = np.array(image)
-        else:
-            img_array = image
-        
-        print("Iniciando análisis de imagen...")
-        print(f"Dimensiones de la imagen: {img_array.shape}")
-        
-        # 1. Detectar regiones de cartas
-        print("Detectando regiones de cartas...")
-        card_regions = self.detector.detect_card_regions(img_array)
-        print(f"Se detectaron {len(card_regions)} posibles regiones de cartas")
-        
-        # 2. Extraer recortes
-        print("Extrayendo recortes de cartas...")
-        card_crops = self.detector.extract_card_crops(img_array, card_regions)
-        print(f"Se extrajeron {len(card_crops)} recortes válidos")
-        
-        # 3. Predecir cada carta (solo si el modelo está cargado)
-        results = []
-        
-        if self.model_loader.is_loaded():
-            print("Analizando cada carta con el modelo...")
-            
-            for i, crop_data in enumerate(card_crops):
-                print(f"Analizando carta {i+1}/{len(card_crops)}")
-                
-                prediction = self.predict_single_card(crop_data['image'])
-                
-                result = {
-                    'crop_id': crop_data['id'],
-                    'bbox': crop_data['bbox'],
-                    'area': crop_data['area'],
-                    'aspect_ratio': crop_data['aspect_ratio'],
-                    'prediction': prediction
-                }
-                results.append(result)
-        else:
-            print("Modelo no disponible. Solo se mostrarán las detecciones.")
-            
-            for crop_data in card_crops:
-                result = {
-                    'crop_id': crop_data['id'],
-                    'bbox': crop_data['bbox'],
-                    'area': crop_data['area'],
-                    'aspect_ratio': crop_data['aspect_ratio'],
-                    'prediction': {'error': 'Modelo no cargado'}
-                }
-                results.append(result)
-        
-        # 4. Mostrar resultados si se solicita
-        if show_results and results:
-            self.visualizer.visualize_results(img_array, results)
-        
-        # 5. Guardar resultados si se solicita
-        if save_results:
-            self.save_results(results)
-        
-        analysis_result = {
-            'total_cards_detected': len(results),
-            'results': results,
-            'image_shape': img_array.shape,
-            'model_loaded': self.model_loader.is_loaded()
+        try:
+            numbers = []
+            if regions:
+                for r in regions:
+                    roi = r.get('bbox')
+                    name = r.get('name', 'unknown')
+                    if roi:
+                        for val, text, conf in self.number_extractor.extract_from_region(img, roi):
+                            numbers.append(NumberResult(val, text, conf, name))
+            else:
+                for val, text, conf in self.number_extractor.extract_numbers(img):
+                    numbers.append(NumberResult(val, text, conf, 'unknown'))
+            return numbers
+        except Exception as e:
+            self._log(f"Error OCR: {e}")
+            return []
+    
+    def _parse_label(self, label: str) -> Tuple[str, str]:
+        """Parsea etiqueta YOLO: 'Ah' -> ('A', 'hearts')"""
+        suits = {'h': 'hearts', 'd': 'diamonds', 'c': 'clubs', 's': 'spades'}
+        if not label:
+            return ('?', 'unknown')
+        suit = suits.get(label[-1].lower(), 'unknown')
+        rank = label[:-1].upper()
+        valid = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+        return (rank if rank in valid else '?', suit)
+    
+    def get_status(self) -> Dict[str, Any]:
+        return {
+            'ready': self.is_ready(),
+            'yolo_available': YOLO_AVAILABLE,
+            'yolo_loaded': self.yolo_detector is not None,
+            'ocr_available': OCR_AVAILABLE,
+            'ocr_loaded': self.number_extractor is not None,
+            'confidence_threshold': self.confidence_threshold
         }
-        
-        return analysis_result
-    
-    def save_results(self, results, output_file='prediction_results.txt'):
-        """
-        Guarda los resultados en un archivo.
-        """
-        with open(output_file, 'w') as f:
-            f.write(f"Resultados de predicción de cartas\n")
-            f.write(f"=====================================\n\n")
-            
-            for i, result in enumerate(results):
-                f.write(f"Carta {i+1}:\n")
-                f.write(f"  ID: {result['crop_id']}\n")
-                f.write(f"  Bbox (x,y,w,h): {result['bbox']}\n")
-                f.write(f"  Área: {result['area']}\n")
-                f.write(f"  Ratio aspecto: {result['aspect_ratio']:.2f}\n")
-                f.write(f"  Predicción: {result['prediction']}\n")
-                f.write(f"\n")
-        
-        print(f"Resultados guardados en: {output_file}")
 
 
-# Funciones de utilidad
-def analyze_image_file(image_path, model_path=None, show_results=True):
-    """
-    Función de conveniencia para analizar una imagen desde archivo.
-    """
-    predictor = CardPredictor(model_path=model_path)
-    return predictor.analyze_image(image_path, show_results=show_results)
+# =============================================================================
+# Singleton
+# =============================================================================
+
+_instance: Optional[CardPredictor] = None
+
+def get_predictor(**kwargs) -> CardPredictor:
+    """Obtiene la instancia singleton del predictor."""
+    global _instance
+    if _instance is None:
+        _instance = CardPredictor(**kwargs)
+    return _instance
 
 
-def analyze_numpy_image(image_array, model_path=None, show_results=True):
-    """
-    Función de conveniencia para analizar una imagen como array numpy.
-    """
-    predictor = CardPredictor(model_path=model_path)
-    return predictor.analyze_image(image_array, show_results=show_results)
+def analyze_image_file(path: str, model_path: Optional[str] = None) -> AnalysisResult:
+    """Analiza una imagen desde archivo."""
+    p = get_predictor()
+    if model_path:
+        p.load_yolo_model(model_path)
+    return p.analyze_image(path)
 
 
-if __name__ == "__main__":
-    print("=== Test del Predictor Principal ===")
-    
-    # Crear instancia del predictor
-    predictor = CardPredictor()
-    
-    # Buscar imágenes de prueba
-    if os.path.exists('test'):
-        test_images = [os.path.join('test', f) for f in os.listdir('test') 
-                      if f.lower().endswith(('.jpg', '.jpeg', '.png'))][:3]
-        
-        if test_images:
-            print(f"\nAnalizando {len(test_images)} imágenes de prueba...")
-            
-            for image_path in test_images:
-                print(f"\n--- Analizando: {os.path.basename(image_path)} ---")
-                try:
-                    results = predictor.analyze_image(image_path, show_results=False, save_results=True)
-                    print(f"✓ Cartas detectadas: {results['total_cards_detected']}")
-                    print(f"✓ Modelo cargado: {results['model_loaded']}")
-                    
-                    # Mostrar detalles de cada carta
-                    for i, result in enumerate(results['results'][:5]):  # Solo primeras 5
-                        bbox = result['bbox']
-                        pred = result['prediction']
-                        print(f"  Carta {i+1}: Bbox{bbox}, Área: {result['area']}")
-                        
-                        if 'error' not in pred:
-                            print(f"    -> Predicción: Clase {pred['class_index']} (conf: {pred['confidence']:.3f})")
-                        else:
-                            print(f"    -> {pred['error']}")
-                            
-                except Exception as e:
-                    print(f"✗ Error procesando {image_path}: {e}")
-        else:
-            print("No se encontraron imágenes de prueba en la carpeta 'test'")
-    else:
-        print("Carpeta 'test' no existe")
-        print("Crea la carpeta 'test' y coloca algunas imágenes para probar")
+def analyze_screenshot(img: np.ndarray, regions: Optional[List[Dict]] = None) -> AnalysisResult:
+    """Analiza una captura de pantalla."""
+    return get_predictor().analyze_image(img, number_regions=regions)

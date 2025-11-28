@@ -1,7 +1,30 @@
-pygetwindow==0.0.9
+# === Captura de Pantalla ===
 Pillow>=10.3.0
-numpy>=1.21.0,<2.0.0
-tensorflow>=2.12.0,<2.16.0
-matplotlib>=3.5.0
-pandas>=1.5.0
+mss>=9.0.0
+
+# === Visión por Computador ===
 opencv-python>=4.8.0
+numpy>=1.24.0,<2.0.0
+
+# === Detección de Cartas (YOLO) - CPU Only ===
+ultralytics>=8.0.0
+torch>=2.0.0
+torchvision>=0.15.0
+
+# === OCR para Números (pot, bets) ===
+easyocr>=1.7.0
+
+# === API y Modelos de Datos ===
+pydantic>=2.0.0
+pandas>=1.5.0
+
+# === Linux Window Management ===
+ewmh>=0.1.6
+python-xlib>=0.33
+
+# === Utilidades ===
+matplotlib>=3.5.0
+
+# === Legacy (comentar si no se usa el modelo TensorFlow anterior) ===
+# tensorflow>=2.12.0,<2.16.0
+# pygetwindow==0.0.9  # Solo Windows

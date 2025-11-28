@@ -109,18 +109,14 @@ Desktop.ini
 *.sqlite
 *.sqlite3
 
-# Models & Training data (si añades ML models grandes)
-/services/python/models/*.h5
-/services/python/models/*.pkl
-/services/python/models/*.pth
-!/services/python/models/README.MD
+# YOLO Models
+**/models/*.pt
+**/models/*.onnx
 
-# RoboFlow Dataset (archivos grandes de imágenes)
-/services/python/RoboFlowDataset/train/*.jpg
-/services/python/RoboFlowDataset/test/*.jpg
-/services/python/RoboFlowDataset/valid/*.jpg
-!/services/python/RoboFlowDataset/README.roboflow.txt
-!/services/python/RoboFlowDataset/README.dataset.txt
+# EasyOCR cache
+.EasyOCR/
+
+
 
 # Act 
 .actrc
