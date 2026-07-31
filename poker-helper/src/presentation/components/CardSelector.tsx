@@ -1,77 +1,76 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card } from '../../domain/types';
 
 interface Props {
   onSelect: (card: Card) => void;
+  unavailableCards?: Card[];
+  destinationLabel: string;
 }
 
-const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A'];
+const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 const suits = [
-  { value: 'h', symbol: '♥', color: 'text-red-500' },
-  { value: 'd', symbol: '♦', color: 'text-blue-500' },
-  { value: 'c', symbol: '♣', color: 'text-green-500' },
-  { value: 's', symbol: '♠', color: 'text-gray-300' },
+  { value: 'h', symbol: '♥', name: 'Hearts', className: 'suit-hearts' },
+  { value: 'd', symbol: '♦', name: 'Diamonds', className: 'suit-diamonds' },
+  { value: 'c', symbol: '♣', name: 'Clubs', className: 'suit-clubs' },
+  { value: 's', symbol: '♠', name: 'Spades', className: 'suit-spades' },
 ];
 
-export const CardSelector: React.FC<Props> = ({ onSelect }) => {
-  const [selectedRank, setSelectedRank] = useState<string | null>(null);
-
-  const handleRankClick = (rank: string) => {
-    setSelectedRank(rank);
-  };
-
-  const handleSuitClick = (suit: string) => {
-    if (selectedRank) {
-      onSelect({ rank: selectedRank, suit });
-      setSelectedRank(null); // Reset after selection
-    }
-  };
+export const CardSelector: React.FC<Props> = ({
+  onSelect,
+  unavailableCards = [],
+  destinationLabel,
+}) => {
+  const [selectedRank, setSelectedRank] = useState('A');
+  const unavailable = useMemo(
+    () => new Set(unavailableCards.map((card) => `${card.rank}${card.suit}`)),
+    [unavailableCards],
+  );
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-      <h3 className="text-gray-400 mb-2 text-sm uppercase tracking-wider">Select Card</h3>
-      
-      {/* Ranks */}
-      <div className="grid grid-cols-7 gap-2 mb-4">
-        {ranks.map(rank => (
+    <section className="panel p-5 sm:p-6" aria-labelledby="card-picker-title">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <p className="eyebrow">Card picker</p>
+          <h2 id="card-picker-title" className="mt-1 text-lg font-semibold text-white">
+            Add to {destinationLabel}
+          </h2>
+        </div>
+        <span className="selection-chip">{selectedRank} selected</span>
+      </div>
+
+      <div className="rank-grid" aria-label="Select a rank">
+        {ranks.map((rank) => (
           <button
+            type="button"
             key={rank}
-            onClick={() => handleRankClick(rank)}
-            className={`
-              p-2 rounded text-center font-bold transition-colors
-              ${selectedRank === rank 
-                ? 'bg-poker-accent text-black' 
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}
-            `}
+            onClick={() => setSelectedRank(rank)}
+            className={`rank-button ${selectedRank === rank ? 'rank-button-active' : ''}`}
+            aria-pressed={selectedRank === rank}
           >
             {rank}
           </button>
         ))}
       </div>
 
-      {/* Suits (only show if rank selected) */}
-      {selectedRank && (
-        <div className="flex justify-center gap-4 animate-fade-in">
-          {suits.map(suit => (
+      <div className="mt-4 grid grid-cols-4 gap-2" aria-label="Select a suit">
+        {suits.map((suit) => {
+          const disabled = unavailable.has(`${selectedRank}${suit.value}`);
+          return (
             <button
+              type="button"
               key={suit.value}
-              onClick={() => handleSuitClick(suit.value)}
-              className={`
-                w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-2xl
-                hover:bg-gray-600 transition-transform hover:scale-110
-                ${suit.color}
-              `}
+              onClick={() => onSelect({ rank: selectedRank, suit: suit.value })}
+              disabled={disabled}
+              className={`suit-button ${suit.className}`}
+              aria-label={`${selectedRank} of ${suit.name}`}
             >
-              {suit.symbol}
+              <span className="text-2xl leading-none" aria-hidden="true">{suit.symbol}</span>
+              <span className="hidden text-xs font-medium sm:block">{suit.name}</span>
             </button>
-          ))}
-        </div>
-      )}
-      {!selectedRank && (
-        <div className="text-center text-gray-500 text-sm italic h-12 flex items-center justify-center">
-          Pick a rank first...
-        </div>
-      )}
-    </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-xs text-slate-500">Cards already in play are disabled.</p>
+    </section>
   );
 };

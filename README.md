@@ -1,26 +1,69 @@
 # PokerHelper
 
-## Funcionalidad
-Poker Helper pretende ser un software que juegue al Poker Texas Holdem automáticamente.
-Esto lo hará devolviendo al jugador la decisión que más le convenga en cada mano. Para ello, Poker Helper necesita:
-- Las cartas de tu mano.
-- Las cartas que haya en la mesa.
-- El número de jugadores que estén jugando en ese momento.
-- El bote de la mesa
-- La apuesta actual
+PokerHelper is an in-development Texas Hold'em decision-support desktop application. It estimates hand equity from the current table state and compares that equity with the price of a call.
 
-Actualmente toda esta información la pondrá el usuario a mano, pero como la aplicación pretende ser autónoma, requerirá de un apartado de Visión por Computador la cual está en desarrollo.
-Toda esta información se obtendrá mediante el análisis por visión por computador de una partida de Poker Online (PokerStars).
-El dataSet utilizado para el apredizaje del modelo ha sido obtenido de [roboflow](https://universe.roboflow.com/), exactamente [dataSet](https://universe.roboflow.com/poker-nnnrc/poker-cards-nesyh/dataset/6), también lo podreis ver en el servicio Python de la app.
+> Development status: the project is not ready for production use and no installer is currently provided.
 
+## Current capabilities
 
-## Posibles Usos
-- Aprender a jugar a este famoso juego de cartas, memorizando cuales son las manos con las que será más probable ganar rondas.
-- Introducirlo a una máquina de auto-aprendizaje para que reconozca cuando posse buenas cartas y mejore su calidad de juego.
+The user can enter:
 
-## Motivación
-Soy un apasionado del Poker, de la programación y de las matemáticas, por tanto mezclarlo todo en un aplicación de escritorio es algo que me ilusiona.
+- Two hole cards.
+- Up to five community cards.
+- The number of opponents remaining in the hand.
+- The current pot size.
+- The amount required to call.
 
-## Como usarlo
-Actualmente se encuentra en fase de desarollo, por tanto, no he creado todavía un instalador, ni un archivo ejecutable que inicie la app.
+The application calculates estimated equity and, when betting information is available, presents the required equity and a simple call-or-fold indication.
 
+Manual input is the primary workflow today. Computer vision support is under active development and is intended to read the same state from an online poker window without moving decision logic into the vision service.
+
+## Architecture
+
+PokerHelper uses a hybrid architecture:
+
+- **Tauri / Rust host:** orchestrates the application and exposes commands to the frontend.
+- **Rust poker agent:** owns poker rules, probability, equity, and decision logic.
+- **Python computer-vision sidecar:** reads the screen and returns structured game state only.
+- **React / TypeScript frontend:** provides a minimal interface organized with Clean Architecture boundaries.
+
+See [AGENTS.md](./AGENTS.md) for the full system architecture and [Frontend design context](./docs/FRONTEND_DESIGN.md) for the current UI direction.
+
+## Development
+
+Requirements:
+
+- Node.js
+- `pnpm`
+- Rust and the Tauri prerequisites for your operating system
+- Python 3 for computer-vision development
+
+Run the frontend locally:
+
+```bash
+cd poker-helper
+pnpm install
+pnpm dev
+```
+
+Create a production frontend build:
+
+```bash
+cd poker-helper
+pnpm build
+```
+
+Run the Tauri application:
+
+```bash
+cd poker-helper
+pnpm tauri dev
+```
+
+## Computer vision
+
+The vision service and its dataset notes live in [`poker-helper/computer_vision`](./poker-helper/computer_vision). The current training dataset was sourced from [Roboflow Universe](https://universe.roboflow.com/poker-nnnrc/poker-cards-nesyh/dataset/6).
+
+## Intended use
+
+This project is currently a learning and experimentation environment for poker mathematics, Rust, computer vision, and desktop application architecture. Calculated results are estimates and should not be treated as financial advice.
