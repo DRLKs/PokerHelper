@@ -6,7 +6,7 @@ use poker_agent::core::community_cards::CommunityCards;
 use poker_agent::core::hand::Hand;
 use poker_agent::probability::calculate_equity;
 
-const ITERATIONS: u32 = 10000;
+const ITERATIONS: u32 = 50_000;
 
 fn parse_card(card_str: &str) -> Result<Card, String> {
     if card_str.len() < 2 || card_str.len() > 3 {

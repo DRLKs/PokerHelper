@@ -11,11 +11,16 @@ use std::time::Instant;
 fn main() {
     let hand = Hand::new([Card::new(DIAMONDS, 14), Card::new(SPADES, 13)]);
     let flop = vec![Card::new(HEARTS, 2), Card::new(CLUBS, 9), Card::new(DIAMONDS, 10)];
+    let mut turn = flop.clone();
+    turn.push(Card::new(SPADES, 4));
+    let mut river = turn.clone();
+    river.push(Card::new(HEARTS, 13));
     let runs = 50;
 
-    for (street, board) in [("preflop", vec![]), ("flop", flop)] {
+    // Turn/river vs 1 opponent are small enough to be computed exactly.
+    for (street, board) in [("preflop", vec![]), ("flop", flop), ("turn", turn), ("river", river)] {
         for opponents in [1u8, 5] {
-            for iterations in [10_000u32, 100_000] {
+            for iterations in [50_000u32] {
                 let board = CommunityCards::new(board.clone());
                 // Warm-up (spins up the rayon thread pool)
                 calculate_equity(hand.clone(), board.clone(), opponents, iterations).unwrap();
