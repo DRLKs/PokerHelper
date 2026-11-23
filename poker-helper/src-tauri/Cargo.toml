@@ -23,3 +23,9 @@ custom-protocol = ["tauri/custom-protocol"]
 
 [workspace]
 members = ["crates/poker_agent"]
+
+[profile.release]
+# Whole-program optimisation: inlines the hand evaluator across crates and
+# produces smaller binaries (relevant for the future mobile builds).
+lto = true
+codegen-units = 1

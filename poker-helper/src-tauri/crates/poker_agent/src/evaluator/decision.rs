@@ -3,8 +3,8 @@
 use crate::evaluator::game_state::{CvState, PokerAction};
 use crate::probability::calculate_equity;
 
-/// Max iterations 2¹⁶ = 65536
-pub fn make_decision(state: CvState, iterations: u16) -> Result<PokerAction, String> {
+/// `iterations`: number of Monte Carlo deals used to estimate equity.
+pub fn make_decision(state: CvState, iterations: u32) -> Result<PokerAction, String> {
     // TODO: Tu implementación aquí
 
     let result = calculate_equity(
