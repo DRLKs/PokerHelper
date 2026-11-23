@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { usePoker } from '../application/usePoker';
 import { Card } from '../domain/types';
 import { AmountInput } from './components/AmountInput';
 import { CardSelector } from './components/CardSelector';
 import { CardView } from './components/CardView';
+import { EquityChart } from './components/EquityChart';
 
 type CardTarget = 'hand' | 'community';
 
@@ -24,19 +25,19 @@ const App = () => {
   } = usePoker();
   const [target, setTarget] = useState<CardTarget>('hand');
 
-  const allCards = [...myCards, ...communityCards];
+  const allCards = useMemo(() => [...myCards, ...communityCards], [myCards, communityCards]);
   const potOdds = callAmount > 0 ? (callAmount / (potSize + callAmount)) * 100 : 0;
   const hasRecommendation = equity !== null && callAmount > 0;
   const isProfitableCall = equity !== null && equity >= potOdds;
 
-  const handleCardSelect = (card: Card) => {
+  const handleCardSelect = useCallback((card: Card) => {
     if (target === 'hand' && myCards.length < 2) {
       addMyCard(card);
       if (myCards.length === 1) setTarget('community');
       return;
     }
     if (target === 'community' && communityCards.length < 5) addCommunityCard(card);
-  };
+  }, [target, myCards.length, communityCards.length, addMyCard, addCommunityCard]);
 
   return (
     <div className="app-shell min-h-screen text-white">
@@ -182,12 +183,10 @@ const App = () => {
 
             {equity !== null && (
               <section className="result-panel" aria-live="polite">
-                <div className="flex items-end justify-between gap-4">
+                <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="eyebrow">Estimated equity</p>
-                    <p className="mt-2 text-5xl font-semibold tracking-[-0.04em] text-white">
-                      {equity.toFixed(1)}<span className="ml-1 text-2xl text-emerald-400">%</span>
-                    </p>
+                    <p className="eyebrow">Win probability</p>
+                    <h2 className="mt-1 text-lg font-semibold text-white">Equity analysis</h2>
                   </div>
                   {hasRecommendation && (
                     <span className={`recommendation ${isProfitableCall ? 'recommendation-call' : 'recommendation-fold'}`}>
@@ -195,12 +194,7 @@ const App = () => {
                     </span>
                   )}
                 </div>
-                {hasRecommendation && (
-                  <div className="mt-5 grid grid-cols-2 gap-3 border-t border-white/[0.06] pt-4 text-xs">
-                    <div><span className="block text-slate-500">Required</span><strong className="mt-1 block text-slate-200">{potOdds.toFixed(1)}%</strong></div>
-                    <div><span className="block text-slate-500">Equity edge</span><strong className={`mt-1 block ${isProfitableCall ? 'text-emerald-400' : 'text-rose-400'}`}>{(equity - potOdds).toFixed(1)}%</strong></div>
-                  </div>
-                )}
+                <EquityChart equity={equity} requiredEquity={potOdds} />
               </section>
             )}
 

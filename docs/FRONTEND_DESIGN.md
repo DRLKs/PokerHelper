@@ -44,7 +44,7 @@ The four-color convention is used for legibility:
 | Clubs | Green |
 | Spades | Charcoal |
 
-Cards already assigned to the hand or board are disabled in the picker. Hovering or focusing a card reveals its remove affordance.
+Cards already assigned to the hand or board remain disabled in the picker. Hovering or focusing a card reveals its remove affordance.
 
 ## Betting inputs
 
@@ -62,6 +62,10 @@ amount to call / (pot size + amount to call)
 ```
 
 The interface only presents a call-or-fold comparison when a positive call amount and an equity result are both available.
+
+## Equity visualization
+
+Calculated equity is shown as a radial win-probability chart with a direct win/not-win breakdown. A compact comparison scale places the player's equity against the required-equity threshold derived from the betting inputs. The chart uses native SVG and semantic text so the small data set does not require a charting runtime dependency.
 
 ## Background image
 

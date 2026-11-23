@@ -10,7 +10,7 @@ interface Props {
 
 const normalize = (value: number) => Math.max(0, Math.round(value * 100) / 100);
 
-export const AmountInput: React.FC<Props> = ({ id, label, hint, value, onChange }) => {
+export const AmountInput = React.memo<Props>(({ id, label, hint, value, onChange }) => {
   const step = value >= 100 ? 10 : value >= 10 ? 5 : 1;
 
   return (
@@ -52,4 +52,4 @@ export const AmountInput: React.FC<Props> = ({ id, label, hint, value, onChange 
       </div>
     </div>
   );
-};
+});

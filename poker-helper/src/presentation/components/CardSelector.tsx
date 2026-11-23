@@ -15,7 +15,7 @@ const suits = [
   { value: 's', symbol: '♠', name: 'Spades', className: 'suit-spades' },
 ];
 
-export const CardSelector: React.FC<Props> = ({
+export const CardSelector = React.memo<Props>(({
   onSelect,
   unavailableCards = [],
   destinationLabel,
@@ -70,7 +70,6 @@ export const CardSelector: React.FC<Props> = ({
           );
         })}
       </div>
-      <p className="mt-3 text-xs text-slate-500">Cards already in play are disabled.</p>
     </section>
   );
-};
+});
