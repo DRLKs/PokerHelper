@@ -34,20 +34,20 @@ class NumberExtractor:
         try:
             import easyocr
             
-            print("Inicializando EasyOCR (esto puede tardar la primera vez)...")
+            print("Initializing EasyOCR (this can take a while the first time)...")
             self.reader = easyocr.Reader(
                 self.languages,
                 gpu=self.gpu,
                 verbose=False
             )
-            print("EasyOCR inicializado correctamente")
+            print("EasyOCR initialized")
             return True
             
         except ImportError:
-            print("Error: easyocr no está instalado. Ejecuta: pip install easyocr")
+            print("Error: easyocr is not installed. Run: pip install easyocr")
             return False
         except Exception as e:
-            print(f"Error inicializando EasyOCR: {e}")
+            print(f"Error initializing EasyOCR: {e}")
             return False
     
     def is_loaded(self) -> bool:
@@ -90,7 +90,7 @@ class NumberExtractor:
             return 0.0, 0.0
             
         except Exception as e:
-            print(f"Error en OCR: {e}")
+            print(f"OCR error: {e}")
             return 0.0, 0.0
     
     def extract_all_numbers(self, image: np.ndarray) -> List[Tuple[float, float, Tuple]]:
@@ -124,7 +124,7 @@ class NumberExtractor:
             return numbers
             
         except Exception as e:
-            print(f"Error en OCR: {e}")
+            print(f"OCR error: {e}")
             return []
     
     def _preprocess_for_ocr(self, image: np.ndarray) -> np.ndarray:
@@ -245,12 +245,12 @@ if __name__ == "__main__":
     from PIL import Image
     import os
     
-    print("=== Test del Extractor de Números ===")
+    print("=== Number extractor test ===")
     
     extractor = NumberExtractor(gpu=False)
     
     if not extractor.is_loaded():
-        print("No se pudo inicializar EasyOCR")
+        print("Could not initialize EasyOCR")
         sys.exit(1)
     
     sample_amounts = [
@@ -263,7 +263,7 @@ if __name__ == "__main__":
         "1B",
     ]
     
-    print("\nTest de parsing de números:")
+    print("\nNumber parsing test:")
     for text in sample_amounts:
         value = extractor._parse_poker_number(text)
         print(f"  '{text}' -> {value}")

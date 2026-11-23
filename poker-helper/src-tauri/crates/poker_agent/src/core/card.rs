@@ -34,8 +34,8 @@ impl Card {
     /// use `Deck::draw_random()` to draw without repetition.
     pub fn new_random() -> Self {
         let mut rng = rand::thread_rng();
-        let rdm_idx = rng.gen_range(0..ALL_CARDS.len());
-        ALL_CARDS[rdm_idx]
+        let random_index = rng.gen_range(0..ALL_CARDS.len());
+        ALL_CARDS[random_index]
     }
 }
 

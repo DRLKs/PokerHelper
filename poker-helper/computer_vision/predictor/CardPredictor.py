@@ -118,14 +118,14 @@ class CardPredictor:
                 self.yolo_detector = get_yolo_detector()
                 if yolo_model_path:
                     self.yolo_detector.load_model(yolo_model_path)
-                self._log("YOLO inicializado")
+                self._log("YOLO initialized")
             except Exception as e:
                 self._log(f"Error YOLO: {e}")
         
         if OCR_AVAILABLE and get_number_extractor:
             try:
                 self.number_extractor = get_number_extractor()
-                self._log("OCR inicializado")
+                self._log("OCR initialized")
             except Exception as e:
                 self._log(f"Error OCR: {e}")
     
@@ -148,7 +148,7 @@ class CardPredictor:
                 self.yolo_detector.load_model(model_path)
                 return True
         except Exception as e:
-            self._log(f"Error cargando modelo: {e}")
+            self._log(f"Error loading model: {e}")
         return False
     
     def analyze_image(
@@ -218,7 +218,7 @@ class CardPredictor:
                 ))
             return cards
         except Exception as e:
-            self._log(f"Error detección: {e}")
+            self._log(f"Detection error: {e}")
             return []
     
     def _extract_numbers(

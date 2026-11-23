@@ -76,20 +76,20 @@ class YOLOCardDetector:
             model_path = self._find_model()
             
             if model_path:
-                print(f"Cargando modelo YOLO desde: {model_path}")
+                print(f"Loading YOLO model from: {model_path}")
                 self.model = YOLO(model_path)
                 self.model.to('cpu')
                 return True
             else:
-                print("Advertencia: No se encontró modelo YOLO entrenado.")
-                print("Para entrenar un modelo, usa: yolo train data=dataset.yaml model=yolov8n.pt")
+                print("Warning: no trained YOLO model found.")
+                print("To train a model, run: yolo train data=dataset.yaml model=yolov8n.pt")
                 return False
                 
         except ImportError:
-            print("Error: ultralytics no está instalado. Ejecuta: pip install ultralytics")
+            print("Error: ultralytics is not installed. Run: pip install ultralytics")
             return False
         except Exception as e:
-            print(f"Error cargando modelo YOLO: {e}")
+            print(f"Error loading YOLO model: {e}")
             return False
     
     def is_loaded(self) -> bool:
@@ -162,7 +162,7 @@ class YOLOCardDetector:
             return detections
             
         except Exception as e:
-            print(f"Error en detección YOLO: {e}")
+            print(f"YOLO detection error: {e}")
             return []
     
     def _parse_class_name(self, class_name: str) -> Tuple[Optional[str], Optional[int]]:
@@ -250,14 +250,14 @@ if __name__ == "__main__":
     import sys
     from PIL import Image
     
-    print("=== Test del Detector YOLO ===")
+    print("=== YOLO detector test ===")
     
     detector = YOLOCardDetector()
     
     if not detector.is_loaded():
-        print("\nNo hay modelo cargado. Para usar YOLO necesitas:")
-        print("1. Entrenar un modelo con tu dataset")
-        print("2. Colocar el archivo .pt en models/poker_cards.pt")
+        print("\nNo model loaded. To use YOLO you need to:")
+        print("1. Train a model on your dataset")
+        print("2. Place the .pt file at models/poker_cards.pt")
         sys.exit(1)
     
     test_dir = "../../../tests/images"
@@ -265,12 +265,12 @@ if __name__ == "__main__":
         images = [f for f in os.listdir(test_dir) if f.endswith(('.jpg', '.png'))]
         if images:
             img_path = os.path.join(test_dir, images[0])
-            print(f"\nProbando con: {img_path}")
+            print(f"\nTesting with: {img_path}")
             
             img = np.array(Image.open(img_path))
             detections = detector.detect(img)
             
-            print(f"Detectadas {len(detections)} cartas:")
+            print(f"Detected {len(detections)} cards:")
             for det in detections:
                 print(f"  - {det['class_name']}: {det['suit']}{det['rank']} "
                       f"(conf: {det['confidence']:.2f})")
