@@ -64,25 +64,32 @@ fn highest_bit(mask: u32) -> u32 {
 #[inline(always)]
 fn keep_top(mut mask: u32, n: u32) -> u32 {
     while mask.count_ones() > n {
-        mask &= mask - 1; // clear lowest set bit
+        mask = without_lowest_bit(mask);
     }
     mask
 }
 
-/// Returns a non-zero, monotonic value identifying the highest straight in
-/// `ranks` (13-bit rank mask), or 0 if there is none. The wheel (A-2-3-4-5)
-/// is the lowest straight.
+#[inline(always)]
+fn without_lowest_bit(mask: u32) -> u32 {
+    mask & (mask - 1)
+}
+
+/// Returns the index of the top card of the highest straight in `ranks`
+/// (13-bit rank mask), from 4 for the wheel (A-2-3-4-5) to 13 for broadway,
+/// or 0 if there is none. An index rather than a bit keeps the value inside
+/// the 13-bit primary field.
 #[inline(always)]
 fn straight_high(ranks: u32) -> u32 {
-    // Shift up one bit and copy the ace into bit 0 so it can play low.
-    let r = (ranks << 1) | (ranks >> 12);
-    let runs = r & (r << 1) & (r << 2) & (r << 3) & (r << 4);
-    if runs == 0 {
+    let ranks_with_low_ace = (ranks << 1) | (ranks >> 12);
+    let straight_tops = ranks_with_low_ace
+        & (ranks_with_low_ace << 1)
+        & (ranks_with_low_ace << 2)
+        & (ranks_with_low_ace << 3)
+        & (ranks_with_low_ace << 4);
+    if straight_tops == 0 {
         0
     } else {
-        // Index of the top card (4 = wheel .. 13 = broadway); kept as an index
-        // rather than a bit so it fits in the 13-bit primary field.
-        31 - runs.leading_zeros()
+        31 - straight_tops.leading_zeros()
     }
 }
 
@@ -92,55 +99,62 @@ fn make(category: u32, primary: u32, kickers: u32) -> u32 {
 }
 
 /// Evaluates the best 5-card hand contained in `cards` (5 to 7 cards).
+///
+/// Flushes are resolved first: with at most 7 cards, a flush leaves too few
+/// cards for four of a kind or a full house.
 #[inline]
 pub fn evaluate(cards: CardMask) -> u32 {
-    let h = (cards & RANK_LANE) as u32;
-    let d = ((cards >> 16) & RANK_LANE) as u32;
-    let c = ((cards >> 32) & RANK_LANE) as u32;
-    let s = ((cards >> 48) & RANK_LANE) as u32;
+    let hearts = (cards & RANK_LANE) as u32;
+    let diamonds = ((cards >> 16) & RANK_LANE) as u32;
+    let clubs = ((cards >> 32) & RANK_LANE) as u32;
+    let spades = ((cards >> 48) & RANK_LANE) as u32;
 
-    // With 7 cards a flush excludes quads and full house, so it can be
-    // resolved first.
-    for suited in [h, d, c, s] {
+    for suited in [hearts, diamonds, clubs, spades] {
         if suited.count_ones() >= 5 {
-            let sf = straight_high(suited);
-            return if sf != 0 {
-                make(STRAIGHT_FLUSH, sf, 0)
+            let straight_flush_top = straight_high(suited);
+            return if straight_flush_top != 0 {
+                make(STRAIGHT_FLUSH, straight_flush_top, 0)
             } else {
                 make(FLUSH, keep_top(suited, 5), 0)
             };
         }
     }
 
-    let ranks = h | d | c | s;
-    let quads = h & d & c & s;
-    let trips_plus = (h & d & c) | (h & d & s) | (h & c & s) | (d & c & s);
-    let pairs_plus = (h & d) | (h & c) | (h & s) | (d & c) | (d & s) | (c & s);
+    let ranks = hearts | diamonds | clubs | spades;
+    let quads = hearts & diamonds & clubs & spades;
+    let trips = (hearts & diamonds & clubs)
+        | (hearts & diamonds & spades)
+        | (hearts & clubs & spades)
+        | (diamonds & clubs & spades);
+    let pairs_or_better = (hearts & diamonds)
+        | (hearts & clubs)
+        | (hearts & spades)
+        | (diamonds & clubs)
+        | (diamonds & spades)
+        | (clubs & spades);
+    let pairs = pairs_or_better & !trips;
 
     if quads != 0 {
-        let q = highest_bit(quads);
-        return make(FOUR_OF_A_KIND, q, keep_top(ranks & !q, 1));
+        let quad_rank = highest_bit(quads);
+        return make(FOUR_OF_A_KIND, quad_rank, keep_top(ranks & !quad_rank, 1));
     }
 
-    let trips = trips_plus;
-    let pairs = pairs_plus & !trips_plus;
-
     if trips != 0 {
-        let t = highest_bit(trips);
-        let rest = (trips & !t) | pairs;
-        if rest != 0 {
-            return make(FULL_HOUSE, t, highest_bit(rest));
+        let trip_rank = highest_bit(trips);
+        let full_house_pair_candidates = (trips & !trip_rank) | pairs;
+        if full_house_pair_candidates != 0 {
+            return make(FULL_HOUSE, trip_rank, highest_bit(full_house_pair_candidates));
         }
     }
 
-    let st = straight_high(ranks);
-    if st != 0 {
-        return make(STRAIGHT, st, 0);
+    let straight_top = straight_high(ranks);
+    if straight_top != 0 {
+        return make(STRAIGHT, straight_top, 0);
     }
 
     if trips != 0 {
-        let t = highest_bit(trips);
-        return make(THREE_OF_A_KIND, t, keep_top(ranks & !t, 2));
+        let trip_rank = highest_bit(trips);
+        return make(THREE_OF_A_KIND, trip_rank, keep_top(ranks & !trip_rank, 2));
     }
 
     match pairs.count_ones() {
@@ -160,7 +174,7 @@ mod tests {
     use rand::SeedableRng;
 
     /// Parses "Ah Kd 10c ..." / "As Td" into a mask.
-    fn m(s: &str) -> CardMask {
+    fn parse_cards(s: &str) -> CardMask {
         s.split_whitespace()
             .map(|c| {
                 let (r, suit) = c.split_at(c.len() - 1);
@@ -180,51 +194,57 @@ mod tests {
             })
     }
 
-    fn cat(s: &str) -> u32 {
-        category(evaluate(m(s)))
+    fn category_of(s: &str) -> u32 {
+        category(evaluate(parse_cards(s)))
     }
 
     #[test]
     fn categories() {
-        assert_eq!(cat("Ah Kd 9c 7s 5h 3d 2c"), HIGH_CARD);
-        assert_eq!(cat("Ah Ad 9c 7s 5h 3d 2c"), PAIR);
-        assert_eq!(cat("Ah Ad 9c 9s 5h 3d 2c"), TWO_PAIR);
-        assert_eq!(cat("Ah Ad Ac 9s 5h 3d 2c"), THREE_OF_A_KIND);
-        assert_eq!(cat("Ah 2d 3c 4s 5h 9d Kc"), STRAIGHT);
-        assert_eq!(cat("Ah 2h 7h 4h 9h 9d Kc"), FLUSH);
-        assert_eq!(cat("Ah Ad Ac 9s 9h 3d 2c"), FULL_HOUSE);
-        assert_eq!(cat("Ah Ad Ac As 9h 3d 2c"), FOUR_OF_A_KIND);
-        assert_eq!(cat("5h 6h 7h 8h 9h 9d Kc"), STRAIGHT_FLUSH);
-        assert_eq!(cat("Th Jh Qh Kh Ah 9d Kc"), STRAIGHT_FLUSH);
+        assert_eq!(category_of("Ah Kd 9c 7s 5h 3d 2c"), HIGH_CARD);
+        assert_eq!(category_of("Ah Ad 9c 7s 5h 3d 2c"), PAIR);
+        assert_eq!(category_of("Ah Ad 9c 9s 5h 3d 2c"), TWO_PAIR);
+        assert_eq!(category_of("Ah Ad Ac 9s 5h 3d 2c"), THREE_OF_A_KIND);
+        assert_eq!(category_of("Ah 2d 3c 4s 5h 9d Kc"), STRAIGHT);
+        assert_eq!(category_of("Ah 2h 7h 4h 9h 9d Kc"), FLUSH);
+        assert_eq!(category_of("Ah Ad Ac 9s 9h 3d 2c"), FULL_HOUSE);
+        assert_eq!(category_of("Ah Ad Ac As 9h 3d 2c"), FOUR_OF_A_KIND);
+        assert_eq!(category_of("5h 6h 7h 8h 9h 9d Kc"), STRAIGHT_FLUSH);
+        assert_eq!(category_of("Th Jh Qh Kh Ah 9d Kc"), STRAIGHT_FLUSH);
     }
 
     #[test]
     fn wheel_is_lowest_straight() {
-        assert!(evaluate(m("Ah 2d 3c 4s 5h Kd Qc")) < evaluate(m("2d 3c 4s 5h 6d Kd Qc")));
-        assert!(evaluate(m("Ah 2h 3h 4h 5h Kd Qc")) < evaluate(m("2h 3h 4h 5h 6h Kd Qc")));
+        assert!(evaluate(parse_cards("Ah 2d 3c 4s 5h Kd Qc")) < evaluate(parse_cards("2d 3c 4s 5h 6d Kd Qc")));
+        assert!(evaluate(parse_cards("Ah 2h 3h 4h 5h Kd Qc")) < evaluate(parse_cards("2h 3h 4h 5h 6h Kd Qc")));
     }
 
     #[test]
     fn two_trips_make_full_house_with_highest_trips() {
-        assert!(evaluate(m("Ah Ad Ac Ks Kh Kd 2c")) > evaluate(m("Qh Qd Qc Ks Kh 3d 2c")));
-        assert_eq!(evaluate(m("Ah Ad Ac Ks Kh Kd 2c")), evaluate(m("Ah Ad Ac Ks Kh 7d 2c")));
+        assert!(evaluate(parse_cards("Ah Ad Ac Ks Kh Kd 2c")) > evaluate(parse_cards("Qh Qd Qc Ks Kh 3d 2c")));
+        assert_eq!(evaluate(parse_cards("Ah Ad Ac Ks Kh Kd 2c")), evaluate(parse_cards("Ah Ad Ac Ks Kh 7d 2c")));
     }
 
     #[test]
-    fn kickers_and_splits() {
-        // Same pair, kicker decides
-        assert!(evaluate(m("Ah Ad Kc 7s 5h 3d 2c")) > evaluate(m("Ah Ad Qc 7s 5h 3d 2c")));
-        // Only the best five cards count: the 6th/7th cards do not break ties
-        assert_eq!(evaluate(m("Ah Kd Qc Js 9h 3d 2c")), evaluate(m("Ah Kd Qc Js 9h 4d 3c")));
-        // Three pairs: third pair can be the kicker
-        assert!(evaluate(m("Ah Ad Kc Ks Qh Qd 2c")) > evaluate(m("Ah Ad Kc Ks Jh Jd 2c")));
-        // Better flush wins
-        assert!(evaluate(m("Ah 2h 7h 4h 9h")) > evaluate(m("Kh Qh Jh 9h 7h")));
+    fn kicker_decides_between_equal_pairs() {
+        assert!(evaluate(parse_cards("Ah Ad Kc 7s 5h 3d 2c")) > evaluate(parse_cards("Ah Ad Qc 7s 5h 3d 2c")));
     }
 
-    // ---- Reference (brute-force) evaluator used for cross-checking ----
+    #[test]
+    fn cards_outside_the_best_five_do_not_break_ties() {
+        assert_eq!(evaluate(parse_cards("Ah Kd Qc Js 9h 3d 2c")), evaluate(parse_cards("Ah Kd Qc Js 9h 4d 3c")));
+    }
 
-    fn naive_five(cards: &[(u8, u8)]) -> (u32, Vec<u8>) {
+    #[test]
+    fn third_pair_can_play_as_kicker() {
+        assert!(evaluate(parse_cards("Ah Ad Kc Ks Qh Qd 2c")) > evaluate(parse_cards("Ah Ad Kc Ks Jh Jd 2c")));
+    }
+
+    #[test]
+    fn higher_flush_wins() {
+        assert!(evaluate(parse_cards("Ah 2h 7h 4h 9h")) > evaluate(parse_cards("Kh Qh Jh 9h 7h")));
+    }
+
+    fn brute_force_five(cards: &[(u8, u8)]) -> (u32, Vec<u8>) {
         let mut ranks: Vec<u8> = cards.iter().map(|c| c.0).collect();
         ranks.sort_unstable_by(|a, b| b.cmp(a));
         let flush = cards.iter().all(|c| c.1 == cards[0].1);
@@ -237,7 +257,6 @@ mod tests {
         } else {
             None
         };
-        // groups sorted by (count desc, rank desc)
         let mut groups: Vec<(u8, u8)> = uniq
             .iter()
             .map(|&r| (ranks.iter().filter(|&&x| x == r).count() as u8, r))
@@ -262,7 +281,7 @@ mod tests {
         }
     }
 
-    fn naive_seven(cards: &[(u8, u8)]) -> (u32, Vec<u8>) {
+    fn brute_force_seven(cards: &[(u8, u8)]) -> (u32, Vec<u8>) {
         let mut best = (0, vec![]);
         for a in 0..7 {
             for b in (a + 1)..7 {
@@ -270,7 +289,7 @@ mod tests {
                     .filter(|&i| i != a && i != b)
                     .map(|i| cards[i])
                     .collect();
-                let v = naive_five(&five);
+                let v = brute_force_five(&five);
                 if v > best {
                     best = v;
                 }
@@ -294,7 +313,7 @@ mod tests {
             deck.shuffle(&mut rng);
             let (a, b) = (&deck[0..7], &deck[7..14]);
             let (fa, fb) = (evaluate(to_mask(a)), evaluate(to_mask(b)));
-            let (na, nb) = (naive_seven(a), naive_seven(b));
+            let (na, nb) = (brute_force_seven(a), brute_force_seven(b));
             assert_eq!(category(fa), na.0, "category mismatch for {:?}", a);
             assert_eq!(fa.cmp(&fb), na.cmp(&nb), "order mismatch {:?} vs {:?}", a, b);
         }

@@ -17,13 +17,11 @@ fn main() {
     river.push(Card::new(HEARTS, 13));
     let runs = 50;
 
-    // Turn/river vs 1 opponent are small enough to be computed exactly.
     for (street, board) in [("preflop", vec![]), ("flop", flop), ("turn", turn), ("river", river)] {
         for opponents in [1u8, 5] {
             for iterations in [50_000u32] {
                 let board = CommunityCards::new(board.clone());
-                // Warm-up (spins up the rayon thread pool)
-                calculate_equity(hand.clone(), board.clone(), opponents, iterations).unwrap();
+                let _warm_up_thread_pool = calculate_equity(hand.clone(), board.clone(), opponents, iterations).unwrap();
                 let start = Instant::now();
                 let mut equity = 0.0;
                 for _ in 0..runs {

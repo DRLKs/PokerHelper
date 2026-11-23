@@ -21,8 +21,8 @@ pub trait CardTrait {
 
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Card {
-    suit: char, // 'h', 'd', 'c', 's'
-    rank: u8,   // 2-14 ( 11=J, 12=Q, 13=K, 14=A )
+    suit: char,
+    rank: u8,
 }
 
 impl Card {
@@ -74,10 +74,8 @@ mod tests {
         assert_eq!(card.rank, rank);
     }
 
-    /// Nunca debería ocurrir, pero prefiero no manejar el error y que no explote el programa si no ocurre
-    /// Es una mala práctica
     #[test]
-    fn test_create_card_with_wrong_values() {
+    fn test_create_card_with_wrong_values_does_not_panic() {
         let card = Card::new(DIAMONDS, 0);
         assert_eq!(card.suit, DIAMONDS);
         assert_eq!(card.rank, 0);

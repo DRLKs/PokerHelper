@@ -57,7 +57,6 @@ impl Deck {
         let mut rng = rand::thread_rng();
         let index = rng.gen_range(0..self.cards.len());
 
-        // swap_remove: intercambia con el último y hace pop (O(1))
         Some(self.cards.swap_remove(index))
     }
 
@@ -157,10 +156,9 @@ mod tests {
 
     #[test]
     fn test_excluding_cards() {
-        let excluded = vec![
-            Card::new('h', 14), // Ah
-            Card::new('d', 14), // Ad
-        ];
+        let ace_of_hearts = Card::new('h', 14);
+        let ace_of_diamonds = Card::new('d', 14);
+        let excluded = vec![ace_of_hearts, ace_of_diamonds];
 
         let deck = Deck::new_excluding(&excluded);
         assert_eq!(deck.len(), 50);
@@ -180,14 +178,12 @@ mod tests {
     }
 
     #[test]
-    fn test_shuffle_changes_order() {
-        let deck1 = Deck::new_full();
-        let mut deck2 = deck1.clone();
+    fn test_shuffle_keeps_every_card() {
+        let ordered = Deck::new_full();
+        let mut shuffled = ordered.clone();
 
-        deck2.shuffle();
+        shuffled.shuffle();
 
-        // Es extremadamente improbable que sean iguales después de mezclar
-        // pero no podemos garantizarlo al 100%, así que solo verificamos que compile
-        assert_eq!(deck1.len(), deck2.len());
+        assert_eq!(ordered.len(), shuffled.len());
     }
 }

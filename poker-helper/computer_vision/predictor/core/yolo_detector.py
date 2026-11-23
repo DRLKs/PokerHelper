@@ -8,28 +8,32 @@ from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 
 
+DATASET_TREBOLES = 'T'
+DATASET_PICAS = 'P'
+DATASET_CORAZONES = 'C'
+DATASET_DIAMANTES = 'D'
+DATASET_ACE = '1'
+ACE_HIGH = 14
+
+
 class YOLOCardDetector:
     """
     Detector de cartas de poker usando YOLO v8.
     Diseñado para funcionar sin GPU.
     """
     
-    # Mapeo de clases del dataset a formato interno
-    # Formato dataset: "{PALO} {VALOR}" -> Formato interno: (suit, rank)
     SUIT_MAP = {
-        'T': 'c',  # Tréboles -> clubs
-        'P': 's',  # Picas -> spades
-        'C': 'h',  # Corazones -> hearts
-        'D': 'd',  # Diamantes -> diamonds
+        DATASET_TREBOLES: 'c',
+        DATASET_PICAS: 's',
+        DATASET_CORAZONES: 'h',
+        DATASET_DIAMANTES: 'd',
     }
-    
+
     VALUE_MAP = {
-        '1': 14,   # As
+        DATASET_ACE: ACE_HIGH,
         '2': 2, '3': 3, '4': 4, '5': 5, '6': 6,
         '7': 7, '8': 8, '9': 9, '10': 10,
-        '11': 11,  # J
-        '12': 12,  # Q
-        '13': 13,  # K
+        '11': 11, '12': 12, '13': 13,
     }
     
     def __init__(self, model_path: Optional[str] = None, confidence_threshold: float = 0.5):
@@ -44,7 +48,6 @@ class YOLOCardDetector:
         self.model = None
         self.model_path = model_path
         
-        # Intentar cargar el modelo
         self._load_model()
     
     def _find_model(self) -> Optional[str]:
@@ -75,7 +78,6 @@ class YOLOCardDetector:
             if model_path:
                 print(f"Cargando modelo YOLO desde: {model_path}")
                 self.model = YOLO(model_path)
-                # Forzar modo CPU
                 self.model.to('cpu')
                 return True
             else:
@@ -118,7 +120,6 @@ class YOLOCardDetector:
             return []
         
         try:
-            # Ejecutar detección
             results = self.model.predict(
                 source=image,
                 conf=self.confidence_threshold,
@@ -135,22 +136,16 @@ class YOLOCardDetector:
                     continue
                 
                 for i in range(len(boxes)):
-                    # Obtener bounding box
                     box = boxes.xyxy[i].cpu().numpy()
-                    x1, y1, x2, y2 = box
+                    left, top, right, bottom = box
+                    x, y = int(left), int(top)
+                    w, h = int(right - left), int(bottom - top)
                     
-                    # Convertir a formato (x, y, w, h)
-                    x, y = int(x1), int(y1)
-                    w, h = int(x2 - x1), int(y2 - y1)
-                    
-                    # Obtener clase y confianza
                     class_id = int(boxes.cls[i].cpu().numpy())
                     confidence = float(boxes.conf[i].cpu().numpy())
                     
-                    # Obtener nombre de clase (ej: "C 1", "P 13")
                     class_name = self.model.names.get(class_id, str(class_id))
                     
-                    # Parsear a formato interno
                     suit, rank = self._parse_class_name(class_name)
                     
                     if suit and rank:
@@ -162,7 +157,6 @@ class YOLOCardDetector:
                             'class_name': class_name
                         })
             
-            # Ordenar por confianza descendente
             detections.sort(key=lambda x: x['confidence'], reverse=True)
             
             return detections
@@ -217,24 +211,20 @@ class YOLOCardDetector:
         x2 = int(region[2] * width)
         y2 = int(region[3] * height)
         
-        # Extraer región
         region_image = image[y1:y2, x1:x2]
         
         if region_image.size == 0:
             return []
         
-        # Detectar en la región
         detections = self.detect(region_image)
         
-        # Ajustar coordenadas al sistema de la imagen completa
-        for det in detections:
-            bx, by, bw, bh = det['bbox']
-            det['bbox'] = (bx + x1, by + y1, bw, bh)
+        for detection in detections:
+            x_in_region, y_in_region, box_width, box_height = detection['bbox']
+            detection['bbox'] = (x_in_region + x1, y_in_region + y1, box_width, box_height)
         
         return detections
 
 
-# Singleton para reutilizar el detector
 _detector_instance: Optional[YOLOCardDetector] = None
 
 
@@ -270,7 +260,6 @@ if __name__ == "__main__":
         print("2. Colocar el archivo .pt en models/poker_cards.pt")
         sys.exit(1)
     
-    # Buscar imagen de prueba
     test_dir = "../../../tests/images"
     if os.path.exists(test_dir):
         images = [f for f in os.listdir(test_dir) if f.endswith(('.jpg', '.png'))]

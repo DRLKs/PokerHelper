@@ -8,7 +8,6 @@ from PIL import Image
 from typing import Dict, Any, List, Optional, Tuple, Union
 from dataclasses import dataclass, field
 
-# Importar detectores
 try:
     from .core.yolo_detector import YOLOCardDetector, get_detector as get_yolo_detector
     YOLO_AVAILABLE = True
@@ -26,17 +25,14 @@ except ImportError:
     get_number_extractor = None
 
 
-# =============================================================================
-# Data Classes
-# =============================================================================
-
 @dataclass
 class CardResult:
-    """Carta detectada."""
-    rank: str  # A, 2-10, J, Q, K
-    suit: str  # hearts, diamonds, clubs, spades
+    """Carta detectada. `rank` es A, 2-10, J, Q o K; `suit` es hearts, diamonds,
+    clubs o spades; `bbox` es (x, y, width, height)."""
+    rank: str
+    suit: str
     confidence: float
-    bbox: Tuple[int, int, int, int]  # x, y, width, height
+    bbox: Tuple[int, int, int, int]
     
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -95,10 +91,6 @@ class AnalysisResult:
         }
 
 
-# =============================================================================
-# CardPredictor
-# =============================================================================
-
 class CardPredictor:
     """
     Predictor de cartas de poker usando YOLO v8 y EasyOCR.
@@ -121,7 +113,6 @@ class CardPredictor:
         self.yolo_detector: Optional[YOLOCardDetector] = None
         self.number_extractor: Optional[NumberExtractor] = None
         
-        # Inicializar YOLO
         if YOLO_AVAILABLE and get_yolo_detector:
             try:
                 self.yolo_detector = get_yolo_detector()
@@ -131,7 +122,6 @@ class CardPredictor:
             except Exception as e:
                 self._log(f"Error YOLO: {e}")
         
-        # Inicializar OCR
         if OCR_AVAILABLE and get_number_extractor:
             try:
                 self.number_extractor = get_number_extractor()
@@ -274,10 +264,6 @@ class CardPredictor:
             'confidence_threshold': self.confidence_threshold
         }
 
-
-# =============================================================================
-# Singleton
-# =============================================================================
 
 _instance: Optional[CardPredictor] = None
 

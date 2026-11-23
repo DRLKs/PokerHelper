@@ -1,6 +1,9 @@
+export type Rank = "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "T" | "J" | "Q" | "K" | "A";
+export type Suit = "h" | "d" | "c" | "s";
+
 export interface Card {
-  rank: string; // "2", "3", ..., "T", "J", "Q", "K", "A"
-  suit: string; // "h", "d", "c", "s"
+  rank: Rank;
+  suit: Suit;
 }
 
 export interface GameState {

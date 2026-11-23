@@ -6,6 +6,9 @@ import numpy as np
 from typing import Optional, Tuple, List
 import re
 
+MIN_OCR_HEIGHT = 50
+AMOUNT_SUFFIX_MULTIPLIERS = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000}
+
 
 class NumberExtractor:
     """
@@ -67,11 +70,9 @@ class NumberExtractor:
             return 0.0, 0.0
         
         try:
-            # Preprocesar imagen si se solicita
             if preprocess:
                 image = self._preprocess_for_ocr(image)
             
-            # Ejecutar OCR
             results = self.reader.readtext(
                 image,
                 allowlist='0123456789.$,kKmMbB ',
@@ -81,7 +82,6 @@ class NumberExtractor:
             if not results:
                 return 0.0, 0.0
             
-            # Procesar resultados
             for bbox, text, confidence in results:
                 parsed_value = self._parse_poker_number(text)
                 if parsed_value > 0:
@@ -139,20 +139,17 @@ class NumberExtractor:
         """
         import cv2
         
-        # Convertir a escala de grises si es RGB
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         else:
             gray = image.copy()
         
-        # Redimensionar si es muy pequeña
         height, width = gray.shape[:2]
-        if height < 50:
-            scale = 50 / height
+        if height < MIN_OCR_HEIGHT:
+            scale = MIN_OCR_HEIGHT / height
             new_width = int(width * scale)
-            gray = cv2.resize(gray, (new_width, 50), interpolation=cv2.INTER_CUBIC)
+            gray = cv2.resize(gray, (new_width, MIN_OCR_HEIGHT), interpolation=cv2.INTER_CUBIC)
         
-        # Aplicar umbral adaptativo para binarizar
         binary = cv2.adaptiveThreshold(
             gray, 255,
             cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
@@ -160,8 +157,8 @@ class NumberExtractor:
             11, 2
         )
         
-        # Invertir si el fondo es oscuro
-        if np.mean(binary) < 127:
+        background_is_dark = np.mean(binary) < 127
+        if background_is_dark:
             binary = cv2.bitwise_not(binary)
         
         return binary
@@ -186,32 +183,21 @@ class NumberExtractor:
         if not text:
             return 0.0
         
-        # Limpiar texto
         text = text.strip().upper()
         text = text.replace('$', '').replace(' ', '').replace(',', '')
         
-        # Detectar multiplicadores
         multiplier = 1.0
-        
-        if text.endswith('K'):
-            multiplier = 1_000
-            text = text[:-1]
-        elif text.endswith('M'):
-            multiplier = 1_000_000
-            text = text[:-1]
-        elif text.endswith('B'):
-            multiplier = 1_000_000_000
+        suffix = text[-1:]
+        if suffix in AMOUNT_SUFFIX_MULTIPLIERS:
+            multiplier = AMOUNT_SUFFIX_MULTIPLIERS[suffix]
             text = text[:-1]
         
-        # Intentar parsear el número
         try:
-            # Manejar números con punto decimal
             value = float(text)
             return value * multiplier
         except ValueError:
             pass
         
-        # Intentar extraer solo dígitos
         digits = re.sub(r'[^\d.]', '', text)
         if digits:
             try:
@@ -222,7 +208,6 @@ class NumberExtractor:
         return 0.0
 
 
-# Singleton para reutilizar el extractor
 _extractor_instance: Optional[NumberExtractor] = None
 
 
@@ -268,8 +253,7 @@ if __name__ == "__main__":
         print("No se pudo inicializar EasyOCR")
         sys.exit(1)
     
-    # Tests con strings
-    test_cases = [
+    sample_amounts = [
         "1,234",
         "$1.5K",
         "2.5M",
@@ -280,6 +264,6 @@ if __name__ == "__main__":
     ]
     
     print("\nTest de parsing de números:")
-    for text in test_cases:
+    for text in sample_amounts:
         value = extractor._parse_poker_number(text)
         print(f"  '{text}' -> {value}")

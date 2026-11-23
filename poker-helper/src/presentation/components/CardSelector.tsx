@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Card } from '../../domain/types';
+import { Card, Rank, Suit } from '../../domain/types';
 
 interface Props {
   onSelect: (card: Card) => void;
@@ -7,8 +7,8 @@ interface Props {
   destinationLabel: string;
 }
 
-const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-const suits = [
+const ranks: Rank[] = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+const suits: { value: Suit; symbol: string; name: string; className: string }[] = [
   { value: 'h', symbol: '♥', name: 'Hearts', className: 'suit-hearts' },
   { value: 'd', symbol: '♦', name: 'Diamonds', className: 'suit-diamonds' },
   { value: 'c', symbol: '♣', name: 'Clubs', className: 'suit-clubs' },
@@ -20,7 +20,7 @@ export const CardSelector = React.memo<Props>(({
   unavailableCards = [],
   destinationLabel,
 }) => {
-  const [selectedRank, setSelectedRank] = useState('A');
+  const [selectedRank, setSelectedRank] = useState<Rank>('A');
   const unavailable = useMemo(
     () => new Set(unavailableCards.map((card) => `${card.rank}${card.suit}`)),
     [unavailableCards],

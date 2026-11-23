@@ -10,6 +10,8 @@ use rayon::prelude::*;
 /// that scheduling overhead is negligible.
 const CHUNK_SIZE: u32 = 2048;
 
+const HAND_SIZE: usize = 2;
+
 /// Equity (in %) of `hand` against `num_opponents` random hands. Split pots
 /// count as `1/k` of a win.
 ///
@@ -33,14 +35,15 @@ pub fn calculate_equity(hand: Hand, community_cards: CommunityCards, num_opponen
     let mut hero_mask: CardMask = 0;
     let mut board_mask: CardMask = 0;
     let mut used: CardMask = 0;
-    for (i, card) in hand.get_cards().iter().chain(board.iter()).enumerate() {
+    for (position, card) in hand.get_cards().iter().chain(board.iter()).enumerate() {
         let bit = card_bit(card).ok_or_else(|| format!("Invalid card: {:?}", card))?;
-        let b = 1u64 << bit;
-        if used & b != 0 {
+        let card_flag = 1u64 << bit;
+        if used & card_flag != 0 {
             return Err(format!("Duplicate card: {:?}", card));
         }
-        used |= b;
-        if i < 2 { hero_mask |= b } else { board_mask |= b }
+        used |= card_flag;
+        let is_hero_card = position < HAND_SIZE;
+        if is_hero_card { hero_mask |= card_flag } else { board_mask |= card_flag }
     }
 
     let deck: Vec<u8> = (0..64u8)
@@ -48,7 +51,7 @@ pub fn calculate_equity(hand: Hand, community_cards: CommunityCards, num_opponen
         .collect();
 
     let board_missing = 5 - board.len();
-    let needed = board_missing + 2 * num_opponents as usize;
+    let needed = board_missing + HAND_SIZE * num_opponents as usize;
     if needed > deck.len() {
         return Err(format!("Not enough cards left for {} opponents", num_opponents));
     }
@@ -65,9 +68,9 @@ pub fn calculate_equity(hand: Hand, community_cards: CommunityCards, num_opponen
     let won: f64 = (0..chunks)
         .into_par_iter()
         .map(|chunk| {
-            let n = CHUNK_SIZE.min(iterations - chunk * CHUNK_SIZE);
+            let chunk_iterations = CHUNK_SIZE.min(iterations - chunk * CHUNK_SIZE);
             let rng = SmallRng::seed_from_u64(base_seed.wrapping_add(chunk as u64));
-            sim.run(n, rng)
+            sim.run(chunk_iterations, rng)
         })
         .sum();
 
@@ -82,19 +85,19 @@ struct Simulation {
     opponents: usize,
 }
 
-/// Number of distinct deals: ways to complete the board from `n` cards times
-/// the ways to give `k` (indistinguishable) opponents two cards each.
-fn exact_deal_count(n: usize, board_missing: usize, k: usize) -> f64 {
+/// Number of distinct deals: ways to complete the board from `deck_len` cards
+/// times the ways to give `opponents` (indistinguishable) players two cards each.
+fn exact_deal_count(deck_len: usize, board_missing: usize, opponents: usize) -> f64 {
     fn choose(n: usize, r: usize) -> f64 {
         if r > n {
             return 0.0;
         }
         (0..r).fold(1.0, |acc, i| acc * (n - i) as f64 / (i + 1) as f64)
     }
-    // Unordered sets of k disjoint pairs out of m cards: C(m, 2k) * (2k - 1)!!
-    let m = n - board_missing;
-    let double_factorial: f64 = (1..=k).map(|i| (2 * i - 1) as f64).product();
-    (choose(n, board_missing) * choose(m, 2 * k) * double_factorial).round()
+    let cards_after_board = deck_len - board_missing;
+    let opponent_cards = HAND_SIZE * opponents;
+    let pairings_of_opponent_cards: f64 = (1..=opponents).map(|i| (2 * i - 1) as f64).product();
+    (choose(deck_len, board_missing) * choose(cards_after_board, opponent_cards) * pairings_of_opponent_cards).round()
 }
 
 /// All ways to pick `r` cards from `deck[start..]`, as masks.
@@ -108,20 +111,32 @@ fn combinations(deck: &[u8], start: usize, r: usize, acc: CardMask, out: &mut Ve
     }
 }
 
+/// Partial Fisher-Yates shuffle: moves `count` random cards to the front of
+/// `deck`. The slice stays a permutation of the same cards, so it can be
+/// reused across iterations without being reset.
+#[inline]
+fn shuffle_front(deck: &mut [u8], count: usize, rng: &mut SmallRng) {
+    let len = deck.len();
+    for i in 0..count {
+        let j = rng.gen_range(i..len);
+        deck.swap(i, j);
+    }
+}
+
 impl Simulation {
     /// Enumerates every deal and returns the (fractional) number of pots won.
     /// Divide by [`exact_deal_count`] to obtain the exact equity.
     fn exact(&self) -> f64 {
-        let mut boards = Vec::new();
-        combinations(&self.deck, 0, self.board_missing, 0, &mut boards);
+        let mut board_completions = Vec::new();
+        combinations(&self.deck, 0, self.board_missing, 0, &mut board_completions);
 
-        boards
+        board_completions
             .par_iter()
             .map(|&extra| {
                 let board = self.board_mask | extra;
-                let hero = evaluate(board | self.hero_mask);
+                let hero_strength = evaluate(board | self.hero_mask);
                 let available: Vec<u8> = self.deck.iter().copied().filter(|&bit| extra & (1u64 << bit) == 0).collect();
-                won_in_opponent_deals(&available, 0, 0, self.opponents, board, hero, 0)
+                won_in_opponent_deals(&available, 0, 0, self.opponents, board, hero_strength, 0)
             })
             .sum()
     }
@@ -129,34 +144,27 @@ impl Simulation {
     /// Runs `iterations` random deals and returns the (fractional) number of pots won.
     fn run(&self, iterations: u32, mut rng: SmallRng) -> f64 {
         let mut deck = self.deck.clone();
-        let len = deck.len();
-        let needed = self.board_missing + 2 * self.opponents;
+        let needed = self.board_missing + HAND_SIZE * self.opponents;
         let mut won = 0.0;
 
         for _ in 0..iterations {
-            // Partial Fisher-Yates: only the first `needed` positions are drawn.
-            // The array stays a permutation of the remaining cards, so it never
-            // needs to be reset between iterations.
-            for i in 0..needed {
-                let j = rng.gen_range(i..len);
-                deck.swap(i, j);
-            }
+            shuffle_front(&mut deck, needed, &mut rng);
 
             let mut board = self.board_mask;
             for &bit in &deck[..self.board_missing] {
                 board |= 1u64 << bit;
             }
 
-            let hero = evaluate(board | self.hero_mask);
+            let hero_strength = evaluate(board | self.hero_mask);
             let mut ties = 0u32;
             let mut lost = false;
-            for opp in deck[self.board_missing..needed].chunks_exact(2) {
-                let value = evaluate(board | (1u64 << opp[0]) | (1u64 << opp[1]));
-                if value > hero {
+            for opponent_cards in deck[self.board_missing..needed].chunks_exact(HAND_SIZE) {
+                let opponent_strength = evaluate(board | (1u64 << opponent_cards[0]) | (1u64 << opponent_cards[1]));
+                if opponent_strength > hero_strength {
                     lost = true;
                     break;
                 }
-                ties += (value == hero) as u32;
+                ties += (opponent_strength == hero_strength) as u32;
             }
 
             if !lost {
@@ -179,42 +187,41 @@ fn won_in_opponent_deals(
     used: u64,
     opponents_left: usize,
     board: CardMask,
-    hero: u32,
+    hero_strength: u32,
     ties: u32,
 ) -> f64 {
     if opponents_left == 0 {
         return 1.0 / (ties + 1) as f64;
     }
     let mut won = 0.0;
-    for a in start..available.len() {
-        if used & (1u64 << a) != 0 {
+    for first in start..available.len() {
+        if used & (1u64 << first) != 0 {
             continue;
         }
-        for b in (a + 1)..available.len() {
-            if used & (1u64 << b) != 0 {
+        for second in (first + 1)..available.len() {
+            if used & (1u64 << second) != 0 {
                 continue;
             }
-            let value = evaluate(board | (1u64 << available[a]) | (1u64 << available[b]));
-            if value > hero {
+            let opponent_strength = evaluate(board | (1u64 << available[first]) | (1u64 << available[second]));
+            if opponent_strength > hero_strength {
                 continue;
             }
             won += won_in_opponent_deals(
                 available,
-                a + 1,
-                used | (1u64 << a) | (1u64 << b),
+                first + 1,
+                used | (1u64 << first) | (1u64 << second),
                 opponents_left - 1,
                 board,
-                hero,
-                ties + (value == hero) as u32,
+                hero_strength,
+                ties + (opponent_strength == hero_strength) as u32,
             );
         }
     }
     won
 }
 
-pub fn calculate_pot_odds(pot_size: f64, call_amount: f64, ptg_win: f64) -> f64 {
-    // TODO: Implementar evaluación de manos, es dudosa la actual
-    (ptg_win * (pot_size + call_amount)) / 100.0
+pub fn calculate_pot_odds(pot_size: f64, call_amount: f64, win_percentage: f64) -> f64 {
+    (win_percentage * (pot_size + call_amount)) / 100.0
 }
 
 
@@ -223,78 +230,88 @@ mod tests {
     use crate::core::card::{Card, CLUBS, DIAMONDS, HEARTS, SPADES};
     use super::*;
 
+    const FULL_DECK: usize = 52;
+    const RIVER_DECK: usize = FULL_DECK - HAND_SIZE - 5;
+    const TURN_DECK: usize = RIVER_DECK + 1;
+
     fn equity(cards: [Card; 2], board: Vec<Card>, opponents: u8) -> f64 {
         calculate_equity(Hand::new(cards), CommunityCards::new(board), opponents, 200_000).unwrap()
     }
 
-    #[test]
-    fn preflop_equity_matches_known_values() {
-        // Reference heads-up equities vs a random hand: AA 85.2%, AKo 65.4%, 72o 34.6%
-        let aa = equity([Card::new(SPADES, 14), Card::new(HEARTS, 14)], vec![], 1);
-        assert!((aa - 85.2).abs() < 1.0, "AA = {aa}");
-        let ako = equity([Card::new(SPADES, 14), Card::new(HEARTS, 13)], vec![], 1);
-        assert!((ako - 65.4).abs() < 1.0, "AKo = {ako}");
-        let sevtwo = equity([Card::new(SPADES, 7), Card::new(HEARTS, 2)], vec![], 1);
-        assert!((sevtwo - 34.6).abs() < 1.0, "72o = {sevtwo}");
+    fn assert_close(actual: f64, expected: f64, tolerance: f64, label: &str) {
+        assert!((actual - expected).abs() < tolerance, "{label}: expected {expected}, got {actual}");
     }
 
     #[test]
-    fn board_plays_splits_the_pot() {
-        // Royal flush on the board: everybody splits, equity = 1/(opponents+1)
-        let board = vec![
+    fn preflop_equity_matches_known_values() {
+        let aces = equity([Card::new(SPADES, 14), Card::new(HEARTS, 14)], vec![], 1);
+        assert_close(aces, 85.2, 1.0, "AA");
+        let ace_king_offsuit = equity([Card::new(SPADES, 14), Card::new(HEARTS, 13)], vec![], 1);
+        assert_close(ace_king_offsuit, 65.4, 1.0, "AKo");
+        let seven_deuce_offsuit = equity([Card::new(SPADES, 7), Card::new(HEARTS, 2)], vec![], 1);
+        assert_close(seven_deuce_offsuit, 34.6, 1.0, "72o");
+    }
+
+    #[test]
+    fn royal_flush_on_board_splits_the_pot_between_everyone() {
+        let royal_flush_board = vec![
             Card::new(CLUBS, 10), Card::new(CLUBS, 11), Card::new(CLUBS, 12),
             Card::new(CLUBS, 13), Card::new(CLUBS, 14),
         ];
-        let e = equity([Card::new(SPADES, 2), Card::new(HEARTS, 3)], board, 3);
-        assert!((e - 25.0).abs() < 1e-9, "equity = {e}");
+        let opponents = 3;
+        let hero_equity = equity([Card::new(SPADES, 2), Card::new(HEARTS, 3)], royal_flush_board, opponents);
+        let even_split = 100.0 / (opponents as f64 + 1.0);
+        assert_close(hero_equity, even_split, 1e-9, "split equity");
     }
 
     #[test]
     fn deal_count() {
-        assert_eq!(exact_deal_count(45, 0, 1), 990.0); // river, 1 opponent
-        assert_eq!(exact_deal_count(46, 1, 1), 46.0 * 990.0); // turn, 1 opponent
-        assert_eq!(exact_deal_count(45, 0, 2), 990.0 * 903.0 / 2.0); // river, 2 opponents
-        assert_eq!(exact_deal_count(6, 0, 3), 15.0); // 6 cards into 3 pairs
+        let river_opponent_hands = 990.0;
+        assert_eq!(exact_deal_count(RIVER_DECK, 0, 1), river_opponent_hands);
+        assert_eq!(exact_deal_count(TURN_DECK, 1, 1), TURN_DECK as f64 * river_opponent_hands);
+        assert_eq!(exact_deal_count(RIVER_DECK, 0, 2), river_opponent_hands * 903.0 / 2.0);
+        let ways_to_split_six_cards_into_three_pairs = 15.0;
+        assert_eq!(exact_deal_count(6, 0, 3), ways_to_split_six_cards_into_three_pairs);
     }
 
-    /// Exact enumeration must match a naive ordered double loop.
     #[test]
     fn exact_matches_naive_enumeration() {
         let hero = [Card::new(SPADES, 14), Card::new(HEARTS, 13)];
         let board = vec![Card::new(HEARTS, 2), Card::new(CLUBS, 9), Card::new(DIAMONDS, 10), Card::new(SPADES, 13)];
         let exact = calculate_equity(Hand::new(hero), CommunityCards::new(board.clone()), 1, 50_000).unwrap();
 
-        let mask = |cs: &[Card]| cs.iter().fold(0u64, |m, c| m | 1u64 << card_bit(c).unwrap());
+        let mask = |cards: &[Card]| cards.iter().fold(0u64, |acc, card| acc | 1u64 << card_bit(card).unwrap());
         let used = mask(&hero) | mask(&board);
-        let deck: Vec<u64> = (0..64).filter(|b| b % 16 < 13 && used & (1 << b) == 0).map(|b| 1u64 << b).collect();
+        let deck: Vec<u64> = (0..64).filter(|bit| bit % 16 < 13 && used & (1 << bit) == 0).map(|bit| 1u64 << bit).collect();
         let (mut won, mut total) = (0.0, 0.0);
         for &river in &deck {
-            let full = mask(&board) | river;
-            let h = evaluate(full | mask(&hero));
-            for &x in &deck {
-                for &y in &deck {
-                    if x == river || y == river || x >= y {
+            let full_board = mask(&board) | river;
+            let hero_strength = evaluate(full_board | mask(&hero));
+            for &first in &deck {
+                for &second in &deck {
+                    if first == river || second == river || first >= second {
                         continue;
                     }
-                    let o = evaluate(full | x | y);
+                    let opponent_strength = evaluate(full_board | first | second);
                     total += 1.0;
-                    won += if h > o { 1.0 } else if h == o { 0.5 } else { 0.0 };
+                    won += if hero_strength > opponent_strength { 1.0 } else if hero_strength == opponent_strength { 0.5 } else { 0.0 };
                 }
             }
         }
-        assert!((exact - won / total * 100.0).abs() < 1e-9);
-        // Deterministic: no randomness involved
-        assert_eq!(exact, calculate_equity(Hand::new(hero), CommunityCards::new(board), 1, 50_000).unwrap());
+        assert_close(exact, won / total * 100.0, 1e-9, "exact vs naive");
+
+        let repeated = calculate_equity(Hand::new(hero), CommunityCards::new(board), 1, 50_000).unwrap();
+        assert_eq!(exact, repeated);
     }
 
     #[test]
     fn exact_with_several_opponents_matches_simulation() {
-        // River, 2 opponents: 446,985 deals -> exact with a large budget
         let hero = [Card::new(SPADES, 12), Card::new(HEARTS, 12)];
         let board = vec![Card::new(HEARTS, 2), Card::new(CLUBS, 9), Card::new(DIAMONDS, 10), Card::new(SPADES, 13), Card::new(CLUBS, 4)];
-        let exact = calculate_equity(Hand::new(hero), CommunityCards::new(board.clone()), 2, 500_000).unwrap();
-        let simulated = calculate_equity(Hand::new(hero), CommunityCards::new(board), 2, 446_984).unwrap();
-        assert!((exact - simulated).abs() < 0.5, "exact {exact} vs simulated {simulated}");
+        let river_deals_vs_two_opponents = exact_deal_count(RIVER_DECK, 0, 2) as u32;
+        let exact = calculate_equity(Hand::new(hero), CommunityCards::new(board.clone()), 2, river_deals_vs_two_opponents).unwrap();
+        let simulated = calculate_equity(Hand::new(hero), CommunityCards::new(board), 2, river_deals_vs_two_opponents - 1).unwrap();
+        assert_close(exact, simulated, 0.5, "exact vs simulated");
     }
 
     #[test]
@@ -307,36 +324,30 @@ mod tests {
         assert!(calculate_equity(hand.clone(), CommunityCards::empty(), 30, 100).is_err());
         let bad = Hand::new([Card::new('x', 14), Card::new(HEARTS, 1)]);
         assert!(calculate_equity(bad, CommunityCards::empty(), 1, 100).is_err());
-        // Maximum table size still works (2 + 5 + 22*2 = 51 cards)
-        assert!(calculate_equity(hand, CommunityCards::empty(), 22, 100).is_ok());
+
+        let max_opponents = ((FULL_DECK - HAND_SIZE - 5) / HAND_SIZE) as u8;
+        assert!(calculate_equity(hand, CommunityCards::empty(), max_opponents, 100).is_ok());
     }
 
     #[test]
     fn pot_odd_zero_probability(){
         let pot_size= 100.0;
         let call_amount= 10.0;
-        let ptg_win = 0.0;
-        assert_eq!( calculate_pot_odds(pot_size,call_amount,ptg_win), 0.0 );
+        let win_percentage = 0.0;
+        assert_eq!( calculate_pot_odds(pot_size,call_amount,win_percentage), 0.0 );
     }
 
     #[test]
     fn pot_odd_100_probability(){
         let pot_size= 100.0;
         let call_amount= 30.0;
-        let ptg_win = 100.0;
-        assert!( calculate_pot_odds(pot_size,call_amount,ptg_win) > call_amount );
+        let win_percentage = 100.0;
+        assert!( calculate_pot_odds(pot_size,call_amount,win_percentage) > call_amount );
     }
 
     #[test]
     fn calculate_equitity_always_in_the_range(){
-
-        // Hand cards
-        let card1:Card = Card::new(DIAMONDS, 7);
-        let card2: Card = Card::new(SPADES, 2);
-
-        // Hand
-        let hand: Hand = Hand::new([card1,card2]);
-
+        let hand: Hand = Hand::new([Card::new(DIAMONDS, 7), Card::new(SPADES, 2)]);
         let num_opponents = 3;
 
         let result = calculate_equity(hand, CommunityCards::empty(), num_opponents, 100 );
@@ -348,24 +359,17 @@ mod tests {
 
     #[test]
     fn calculate_equity_always_win(){
-        // Hand cards
-        let card1: Card = Card::new(DIAMONDS, 14);
-        let card2: Card = Card::new(SPADES, 14);
-
-        // Hand
-        let hand: Hand = Hand::new([card1,card2]);
-
-        // Community cards cards
-        let card3: Card = Card::new(CLUBS, 14);
-        let card4: Card = Card::new(HEARTS, 14);
-        let card5: Card = Card::new(HEARTS, 3);
-        let card6: Card = Card::new(DIAMONDS, 7);
-        let card7: Card = Card::new(SPADES, 5);
-
-        let community_cards = CommunityCards::new_array([card3,card4,card5,card6,card7]);
+        let pocket_aces: Hand = Hand::new([Card::new(DIAMONDS, 14), Card::new(SPADES, 14)]);
+        let board_with_other_aces = CommunityCards::new_array([
+            Card::new(CLUBS, 14),
+            Card::new(HEARTS, 14),
+            Card::new(HEARTS, 3),
+            Card::new(DIAMONDS, 7),
+            Card::new(SPADES, 5),
+        ]);
 
         let num_opponents = 3;
-        let result = calculate_equity(hand, community_cards, num_opponents, 100 );
+        let result = calculate_equity(pocket_aces, board_with_other_aces, num_opponents, 100 );
         assert!(result.is_ok());
 
         let prob_victory = result.unwrap();
