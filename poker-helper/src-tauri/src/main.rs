@@ -1,4 +1,3 @@
-// Prevents additional console window on Windows
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use poker_agent::core::card::Card;
@@ -7,6 +6,8 @@ use poker_agent::core::hand::Hand;
 use poker_agent::probability::calculate_equity;
 
 const ITERATIONS: u32 = 50_000;
+const VENV_PYTHON: &str = "../../.venv/bin/python";
+const SIDECAR_SCRIPT: &str = "../computer_vision/cv_sidecar.py";
 
 fn parse_card(card_str: &str) -> Result<Card, String> {
     if card_str.len() < 2 || card_str.len() > 3 {
@@ -84,19 +85,14 @@ async fn start_sidecar(state: State<'_, SidecarState>) -> Result<String, String>
         return Ok("Sidecar already running".to_string());
     }
 
-    // Note: In a real production build, you'd use tauri::api::process::Command
-    // But for dev with a python script, we'll spawn python directly
-    // Adjust path as needed relative to CWD
-    // src-tauri is in poker-helper/src-tauri, and computer_vision is in ../computer_vision
-    // Also use the venv python if available
-    let python_cmd = if std::path::Path::new("../../.venv/bin/python").exists() {
-        "../../.venv/bin/python"
+    let python_cmd = if std::path::Path::new(VENV_PYTHON).exists() {
+        VENV_PYTHON
     } else {
         "python3"
     };
 
     let child = Command::new(python_cmd)
-        .arg("../computer_vision/cv_sidecar.py")
+        .arg(SIDECAR_SCRIPT)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()

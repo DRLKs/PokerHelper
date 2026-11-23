@@ -6,7 +6,6 @@ Components:
 - NumberExtractor: Number extraction using EasyOCR
 """
 
-# YOLO-based detector
 try:
     from .yolo_detector import YOLOCardDetector, get_detector as get_yolo_detector
     YOLO_AVAILABLE = True
@@ -15,7 +14,6 @@ except ImportError:
     YOLOCardDetector = None
     get_yolo_detector = None
 
-# EasyOCR-based number extractor
 try:
     from .number_extractor import NumberExtractor, get_extractor as get_number_extractor
     OCR_AVAILABLE = True

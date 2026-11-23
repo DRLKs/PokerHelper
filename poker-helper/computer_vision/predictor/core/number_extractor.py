@@ -1,25 +1,28 @@
 """
-Extractor de texto numérico usando EasyOCR.
-Optimizado para leer valores de pot, bets y blinds en pantallas de poker.
+Numeric text extractor using EasyOCR.
+Tuned to read pot, bet and blind amounts on poker screens.
 """
 import numpy as np
 from typing import Optional, Tuple, List
 import re
 
+MIN_OCR_HEIGHT = 50
+AMOUNT_SUFFIX_MULTIPLIERS = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000}
+
 
 class NumberExtractor:
     """
-    Extractor de números de imágenes usando EasyOCR.
-    Optimizado para CPU y para el contexto de poker (números, $, K, M).
+    Extracts numbers from images using EasyOCR.
+    Optimized for CPU and for poker amounts (digits, $, K, M).
     """
     
     def __init__(self, languages: List[str] = ['en'], gpu: bool = False):
         """
-        Inicializa el extractor de números.
+        Initializes the number extractor.
         
         Args:
-            languages: Lista de idiomas para OCR
-            gpu: Si usar GPU (False por defecto para compatibilidad)
+            languages: Languages used by the OCR
+            gpu: Whether to use the GPU (False by default for compatibility)
         """
         self.reader = None
         self.gpu = gpu
@@ -27,51 +30,49 @@ class NumberExtractor:
         self._initialize_reader()
     
     def _initialize_reader(self) -> bool:
-        """Inicializa el lector EasyOCR."""
+        """Initializes the EasyOCR reader."""
         try:
             import easyocr
             
-            print("Inicializando EasyOCR (esto puede tardar la primera vez)...")
+            print("Initializing EasyOCR (this can take a while the first time)...")
             self.reader = easyocr.Reader(
                 self.languages,
                 gpu=self.gpu,
                 verbose=False
             )
-            print("EasyOCR inicializado correctamente")
+            print("EasyOCR initialized")
             return True
             
         except ImportError:
-            print("Error: easyocr no está instalado. Ejecuta: pip install easyocr")
+            print("Error: easyocr is not installed. Run: pip install easyocr")
             return False
         except Exception as e:
-            print(f"Error inicializando EasyOCR: {e}")
+            print(f"Error initializing EasyOCR: {e}")
             return False
     
     def is_loaded(self) -> bool:
-        """Verifica si el lector está inicializado."""
+        """Returns whether the reader is initialized."""
         return self.reader is not None
     
     def extract_number(self, image: np.ndarray, preprocess: bool = True) -> Tuple[float, float]:
         """
-        Extrae un número de una imagen.
+        Extracts a number from an image.
         
         Args:
-            image: Imagen como array numpy (RGB o grayscale)
-            preprocess: Si aplicar preprocesamiento
+            image: Image as a numpy array (RGB or grayscale)
+            preprocess: Whether to preprocess the image first
             
         Returns:
-            Tuple de (valor_extraído, confianza)
-            Devuelve (0.0, 0.0) si no se encuentra número
+            Tuple of (extracted_value, confidence)
+            Returns (0.0, 0.0) when no number is found
         """
         if not self.is_loaded():
             return 0.0, 0.0
         
         try:
-            # Preprocesar imagen si se solicita
             if preprocess:
                 image = self._preprocess_for_ocr(image)
             
-            # Ejecutar OCR
             results = self.reader.readtext(
                 image,
                 allowlist='0123456789.$,kKmMbB ',
@@ -81,7 +82,6 @@ class NumberExtractor:
             if not results:
                 return 0.0, 0.0
             
-            # Procesar resultados
             for bbox, text, confidence in results:
                 parsed_value = self._parse_poker_number(text)
                 if parsed_value > 0:
@@ -90,18 +90,18 @@ class NumberExtractor:
             return 0.0, 0.0
             
         except Exception as e:
-            print(f"Error en OCR: {e}")
+            print(f"OCR error: {e}")
             return 0.0, 0.0
     
     def extract_all_numbers(self, image: np.ndarray) -> List[Tuple[float, float, Tuple]]:
         """
-        Extrae todos los números encontrados en una imagen.
+        Extracts every number found in an image.
         
         Args:
-            image: Imagen como array numpy
+            image: Image as a numpy array
             
         Returns:
-            Lista de (valor, confianza, bbox)
+            List of (value, confidence, bbox)
         """
         if not self.is_loaded():
             return []
@@ -124,35 +124,32 @@ class NumberExtractor:
             return numbers
             
         except Exception as e:
-            print(f"Error en OCR: {e}")
+            print(f"OCR error: {e}")
             return []
     
     def _preprocess_for_ocr(self, image: np.ndarray) -> np.ndarray:
         """
-        Preprocesa la imagen para mejorar el OCR.
+        Preprocesses the image to improve OCR accuracy.
         
         Args:
-            image: Imagen original
+            image: Original image
             
         Returns:
-            Imagen preprocesada
+            Preprocessed image
         """
         import cv2
         
-        # Convertir a escala de grises si es RGB
         if len(image.shape) == 3:
             gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         else:
             gray = image.copy()
         
-        # Redimensionar si es muy pequeña
         height, width = gray.shape[:2]
-        if height < 50:
-            scale = 50 / height
+        if height < MIN_OCR_HEIGHT:
+            scale = MIN_OCR_HEIGHT / height
             new_width = int(width * scale)
-            gray = cv2.resize(gray, (new_width, 50), interpolation=cv2.INTER_CUBIC)
+            gray = cv2.resize(gray, (new_width, MIN_OCR_HEIGHT), interpolation=cv2.INTER_CUBIC)
         
-        # Aplicar umbral adaptativo para binarizar
         binary = cv2.adaptiveThreshold(
             gray, 255,
             cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
@@ -160,17 +157,17 @@ class NumberExtractor:
             11, 2
         )
         
-        # Invertir si el fondo es oscuro
-        if np.mean(binary) < 127:
+        background_is_dark = np.mean(binary) < 127
+        if background_is_dark:
             binary = cv2.bitwise_not(binary)
         
         return binary
     
     def _parse_poker_number(self, text: str) -> float:
         """
-        Parsea un string de texto a valor numérico de poker.
+        Parses text into a poker amount.
         
-        Soporta formatos:
+        Supported formats:
         - "1,234" -> 1234.0
         - "$1.5K" -> 1500.0
         - "2.5M" -> 2500000.0
@@ -178,40 +175,29 @@ class NumberExtractor:
         - "1.5B" -> 1500000000.0
         
         Args:
-            text: Texto a parsear
+            text: Text to parse
             
         Returns:
-            Valor numérico o 0.0 si no se puede parsear
+            Numeric value, or 0.0 if the text cannot be parsed
         """
         if not text:
             return 0.0
         
-        # Limpiar texto
         text = text.strip().upper()
         text = text.replace('$', '').replace(' ', '').replace(',', '')
         
-        # Detectar multiplicadores
         multiplier = 1.0
-        
-        if text.endswith('K'):
-            multiplier = 1_000
-            text = text[:-1]
-        elif text.endswith('M'):
-            multiplier = 1_000_000
-            text = text[:-1]
-        elif text.endswith('B'):
-            multiplier = 1_000_000_000
+        suffix = text[-1:]
+        if suffix in AMOUNT_SUFFIX_MULTIPLIERS:
+            multiplier = AMOUNT_SUFFIX_MULTIPLIERS[suffix]
             text = text[:-1]
         
-        # Intentar parsear el número
         try:
-            # Manejar números con punto decimal
             value = float(text)
             return value * multiplier
         except ValueError:
             pass
         
-        # Intentar extraer solo dígitos
         digits = re.sub(r'[^\d.]', '', text)
         if digits:
             try:
@@ -222,16 +208,15 @@ class NumberExtractor:
         return 0.0
 
 
-# Singleton para reutilizar el extractor
 _extractor_instance: Optional[NumberExtractor] = None
 
 
 def get_extractor() -> NumberExtractor:
     """
-    Obtiene una instancia singleton del extractor.
+    Returns the singleton extractor instance.
     
     Returns:
-        Instancia del extractor de números
+        The number extractor instance
     """
     global _extractor_instance
     
@@ -243,13 +228,13 @@ def get_extractor() -> NumberExtractor:
 
 def extract_pot_value(image: np.ndarray) -> Tuple[float, float]:
     """
-    Función de conveniencia para extraer el valor del pot.
+    Convenience function that extracts the pot value.
     
     Args:
-        image: Imagen de la región del pot
+        image: Image of the pot region
         
     Returns:
-        Tuple de (valor, confianza)
+        Tuple of (value, confidence)
     """
     extractor = get_extractor()
     return extractor.extract_number(image)
@@ -260,16 +245,15 @@ if __name__ == "__main__":
     from PIL import Image
     import os
     
-    print("=== Test del Extractor de Números ===")
+    print("=== Number extractor test ===")
     
     extractor = NumberExtractor(gpu=False)
     
     if not extractor.is_loaded():
-        print("No se pudo inicializar EasyOCR")
+        print("Could not initialize EasyOCR")
         sys.exit(1)
     
-    # Tests con strings
-    test_cases = [
+    sample_amounts = [
         "1,234",
         "$1.5K",
         "2.5M",
@@ -279,7 +263,7 @@ if __name__ == "__main__":
         "1B",
     ]
     
-    print("\nTest de parsing de números:")
-    for text in test_cases:
+    print("\nNumber parsing test:")
+    for text in sample_amounts:
         value = extractor._parse_poker_number(text)
         print(f"  '{text}' -> {value}")

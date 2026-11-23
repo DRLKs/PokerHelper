@@ -6,7 +6,6 @@ pub const ALL_RANKS: [u8; 13] = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
 pub const ALL_SUITS: [char; 4] = ['h', 'd', 'c', 's'];
 
 pub const ALL_CARDS: [Card; 52] = [
-    // Hearts
     Card::new('h', 2),
     Card::new('h', 3),
     Card::new('h', 4),
@@ -20,7 +19,6 @@ pub const ALL_CARDS: [Card; 52] = [
     Card::new('h', 12),
     Card::new('h', 13),
     Card::new('h', 14),
-    // Diamonds ♦
     Card::new('d', 2),
     Card::new('d', 3),
     Card::new('d', 4),
@@ -34,7 +32,6 @@ pub const ALL_CARDS: [Card; 52] = [
     Card::new('d', 12),
     Card::new('d', 13),
     Card::new('d', 14),
-    // Clubs
     Card::new('c', 2),
     Card::new('c', 3),
     Card::new('c', 4),
@@ -48,7 +45,6 @@ pub const ALL_CARDS: [Card; 52] = [
     Card::new('c', 12),
     Card::new('c', 13),
     Card::new('c', 14),
-    // Spades
     Card::new('s', 2),
     Card::new('s', 3),
     Card::new('s', 4),

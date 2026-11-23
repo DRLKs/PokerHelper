@@ -97,26 +97,26 @@ impl CommunityCardsTrait for CommunityCards {
 
 
     fn number_of_cards_by_suit(&self, suit: char) -> u8 {
-        let mut ctt: u8 = 0;
+        let mut suited_count: u8 = 0;
         for values in self.cards_map.iter() {
             for s in values.1.iter().copied() {
                 if s == suit {
-                    ctt += 1;
+                    suited_count += 1;
                     break;
                 }
             }
         }
-        ctt
+        suited_count
     }
 
     /// Returns: Number of cards with that suit and the highest rank of that cards
     fn get_by_suit_and_highest(&self, suit: char) -> (u8, u8) {
         let mut highest: u8 = 0;
-        let mut ctt: u8 = 0;
+        let mut suited_count: u8 = 0;
         for values in self.cards_map.iter() {
             for s in values.1.iter().copied() {
                 if s == suit {
-                    ctt += 1;
+                    suited_count += 1;
                     if values.0 > &highest {
                         highest = *values.0;
                     }
@@ -125,7 +125,7 @@ impl CommunityCardsTrait for CommunityCards {
                 }
             }
         }
-        (ctt,highest)
+        (suited_count,highest)
     }
 
     fn contains(&self, rank: u8, suit: char) -> bool {
@@ -143,22 +143,22 @@ mod tests {
         let community_cards = CommunityCards::empty();
         assert_eq!(community_cards.number_of_cards(), 0);
         assert_eq!(community_cards.is_empty(), true);
-        let carta = Card::new_random();
-        assert!(!community_cards.contains(carta.get_rank(), carta.get_suit()));
+        let card = Card::new_random();
+        assert!(!community_cards.contains(card.get_rank(), card.get_suit()));
     }
 
     #[test]
     pub fn test_add_card() {
         let mut community_cards: CommunityCards = CommunityCards::empty();
-        let carta = Card::new_random();
-        (&mut community_cards).add_card(Card::new(carta.get_suit(), carta.get_rank()));
+        let card = Card::new_random();
+        (&mut community_cards).add_card(Card::new(card.get_suit(), card.get_rank()));
 
         assert_eq!(community_cards.number_of_cards(), 1);
         assert_eq!(community_cards.is_empty(), false);
 
-        assert_eq!(community_cards.number_of_cards_by_suit(carta.get_suit()), 1);
-        assert_eq!(community_cards.number_of_cards_by_rank(carta.get_rank()), 1);
-        assert!(community_cards.contains(carta.get_rank(), carta.get_suit()));
+        assert_eq!(community_cards.number_of_cards_by_suit(card.get_suit()), 1);
+        assert_eq!(community_cards.number_of_cards_by_rank(card.get_rank()), 1);
+        assert!(community_cards.contains(card.get_rank(), card.get_suit()));
     }
 
     #[test]

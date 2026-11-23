@@ -4,26 +4,26 @@ use crate::core::hand::Hand;
 use rand::Rng;
 use std::collections::HashSet;
 
-/// Mazo de cartas eficiente con eliminación rápida
+/// Deck of cards with constant-time removal.
 #[derive(Debug, Clone)]
 pub struct Deck {
-    /// Cartas disponibles (usar Vec con swap_remove para O(1) al eliminar)
+    /// Remaining cards. Removal uses `swap_remove`, so it is O(1) and does not keep the order.
     cards: Vec<Card>,
 }
 
 impl Deck {
-    /// Crea un mazo completo de 52 cartas
+    /// Creates a full 52-card deck.
     pub fn new_full() -> Self {
         let cards = ALL_CARDS.to_vec();
         Self { cards }
     }
 
-    /// Crea un mazo vacío
+    /// Creates an empty deck.
     pub fn new_empty() -> Self {
         Self { cards: Vec::new() }
     }
 
-    /// Crea un mazo excluyendo las cartas especificadas
+    /// Creates a full deck without the given cards.
     pub fn new_excluding(excluded: &[Card]) -> Self {
         let excluded_set: HashSet<Card> = excluded.iter().copied().collect();
 
@@ -36,7 +36,7 @@ impl Deck {
         Self { cards }
     }
 
-    /// Mezcla el mazo
+    /// Shuffles the deck.
     pub fn shuffle(&mut self) {
         let mut rng = rand::thread_rng();
         let len = self.cards.len();
@@ -47,8 +47,7 @@ impl Deck {
         }
     }
 
-    /// Saca una carta aleatoria del mazo (O(1))
-    /// Usa swap_remove que es muy eficiente
+    /// Removes and returns a random card, or `None` if the deck is empty. O(1).
     pub fn draw_random(&mut self) -> Option<Card> {
         if self.cards.is_empty() {
             return None;
@@ -57,11 +56,10 @@ impl Deck {
         let mut rng = rand::thread_rng();
         let index = rng.gen_range(0..self.cards.len());
 
-        // swap_remove: intercambia con el último y hace pop (O(1))
         Some(self.cards.swap_remove(index))
     }
 
-    /// Saca la carta en la posición index (O(1))
+    /// Removes and returns the card at `index`, or `None` if it is out of bounds. O(1).
     pub fn draw_at(&mut self, index: usize) -> Option<Card> {
         if index >= self.cards.len() {
             return None;
@@ -70,43 +68,43 @@ impl Deck {
         Some(self.cards.swap_remove(index))
     }
 
-    /// Saca la primera carta (como en un mazo real)
+    /// Removes and returns the top card, as in a real deck.
     pub fn draw_top(&mut self) -> Option<Card> {
         self.cards.pop()
     }
 
-    /// Saca N cartas aleatorias
+    /// Removes and returns up to `n` random cards.
     pub fn draw_n(&mut self, n: usize) -> Vec<Card> {
         let count = n.min(self.cards.len());
         (0..count).filter_map(|_| self.draw_random()).collect()
     }
 
-    /// Devuelve una carta al mazo
+    /// Puts a card back into the deck.
     pub fn return_card(&mut self, card: Card) {
         self.cards.push(card);
     }
 
-    /// Verifica si el mazo contiene una carta específica
+    /// Returns whether the deck contains `card`.
     pub fn contains(&self, card: &Card) -> bool {
         self.cards.contains(card)
     }
 
-    /// Número de cartas restantes
+    /// Number of cards left.
     pub fn len(&self) -> usize {
         self.cards.len()
     }
 
-    /// Verifica si el mazo está vacío
+    /// Returns whether the deck has no cards left.
     pub fn is_empty(&self) -> bool {
         self.cards.is_empty()
     }
 
-    /// Obtiene referencia a todas las cartas restantes
+    /// The cards left in the deck.
     pub fn remaining_cards(&self) -> &[Card] {
         &self.cards
     }
 
-    /// Resetea el mazo a 52 cartas completas
+    /// Restores the deck to the full 52 cards.
     pub fn reset_full(&mut self) {
         *self = Self::new_full();
     }
@@ -157,10 +155,9 @@ mod tests {
 
     #[test]
     fn test_excluding_cards() {
-        let excluded = vec![
-            Card::new('h', 14), // Ah
-            Card::new('d', 14), // Ad
-        ];
+        let ace_of_hearts = Card::new('h', 14);
+        let ace_of_diamonds = Card::new('d', 14);
+        let excluded = vec![ace_of_hearts, ace_of_diamonds];
 
         let deck = Deck::new_excluding(&excluded);
         assert_eq!(deck.len(), 50);
@@ -180,14 +177,12 @@ mod tests {
     }
 
     #[test]
-    fn test_shuffle_changes_order() {
-        let deck1 = Deck::new_full();
-        let mut deck2 = deck1.clone();
+    fn test_shuffle_keeps_every_card() {
+        let ordered = Deck::new_full();
+        let mut shuffled = ordered.clone();
 
-        deck2.shuffle();
+        shuffled.shuffle();
 
-        // Es extremadamente improbable que sean iguales después de mezclar
-        // pero no podemos garantizarlo al 100%, así que solo verificamos que compile
-        assert_eq!(deck1.len(), deck2.len());
+        assert_eq!(ordered.len(), shuffled.len());
     }
 }

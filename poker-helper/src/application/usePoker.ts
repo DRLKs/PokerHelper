@@ -11,14 +11,12 @@ export const usePoker = () => {
   const [equity, setEquity] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Vision state
+
   const [visionEnabled, setVisionEnabled] = useState(false);
   const [availableWindows, setAvailableWindows] = useState<string[]>([]);
   const [selectedWindow, setSelectedWindow] = useState<string>("");
 
   useEffect(() => {
-    // Initialize sidecar on mount
     startSidecar().catch(console.error);
   }, []);
 
