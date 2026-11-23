@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from '../domain/types';
 import { calculateEquity, startSidecar, listWindows } from '../infrastructure/pokerApi';
 
@@ -53,29 +53,30 @@ export const usePoker = () => {
     }
   };
 
-  const addMyCard = (card: Card) => {
-    if (myCards.length < 2) {
-        setMyCards([...myCards, card]);
-    }
-  };
+  const addMyCard = useCallback((card: Card) => {
+    setMyCards((prev) => (prev.length < 2 ? [...prev, card] : prev));
+    setEquity(null);
+  }, []);
 
-  const removeMyCard = (index: number) => {
-    const newCards = [...myCards];
-    newCards.splice(index, 1);
-    setMyCards(newCards);
-  };
+  const removeMyCard = useCallback((index: number) => {
+    setMyCards((prev) => prev.filter((_, i) => i !== index));
+    setEquity(null);
+  }, []);
 
-  const addCommunityCard = (card: Card) => {
-    if (communityCards.length < 5) {
-        setCommunityCards([...communityCards, card]);
-    }
-  };
+  const addCommunityCard = useCallback((card: Card) => {
+    setCommunityCards((prev) => (prev.length < 5 ? [...prev, card] : prev));
+    setEquity(null);
+  }, []);
 
-  const removeCommunityCard = (index: number) => {
-    const newCards = [...communityCards];
-    newCards.splice(index, 1);
-    setCommunityCards(newCards);
-  };
+  const removeCommunityCard = useCallback((index: number) => {
+    setCommunityCards((prev) => prev.filter((_, i) => i !== index));
+    setEquity(null);
+  }, []);
+
+  const updateNumOpponents = useCallback((value: number) => {
+    setNumOpponents(value);
+    setEquity(null);
+  }, []);
 
   return {
     myCards,
@@ -85,7 +86,7 @@ export const usePoker = () => {
     addCommunityCard,
     removeCommunityCard,
     numOpponents,
-    setNumOpponents,
+    setNumOpponents: updateNumOpponents,
     potSize,
     setPotSize,
     callAmount,
