@@ -1,7 +1,7 @@
 """
-Predictor de cartas de poker.
+Poker card predictor.
 
-Uso:
+Usage:
     from predictor import get_predictor
     
     predictor = get_predictor()

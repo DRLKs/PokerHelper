@@ -30,8 +30,8 @@ impl Card {
         Card { suit, rank }
     }
 
-    /// Crea una carta aleatoria (puede repetirse)
-    /// Para cartas sin repetición, usa Deck::draw_random()
+    /// Creates a random card. Repeated calls can return the same card;
+    /// use `Deck::draw_random()` to draw without repetition.
     pub fn new_random() -> Self {
         let mut rng = rand::thread_rng();
         let rdm_idx = rng.gen_range(0..ALL_CARDS.len());

@@ -1,6 +1,6 @@
 """
-Extractor de texto numérico usando EasyOCR.
-Optimizado para leer valores de pot, bets y blinds en pantallas de poker.
+Numeric text extractor using EasyOCR.
+Tuned to read pot, bet and blind amounts on poker screens.
 """
 import numpy as np
 from typing import Optional, Tuple, List
@@ -12,17 +12,17 @@ AMOUNT_SUFFIX_MULTIPLIERS = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000}
 
 class NumberExtractor:
     """
-    Extractor de números de imágenes usando EasyOCR.
-    Optimizado para CPU y para el contexto de poker (números, $, K, M).
+    Extracts numbers from images using EasyOCR.
+    Optimized for CPU and for poker amounts (digits, $, K, M).
     """
     
     def __init__(self, languages: List[str] = ['en'], gpu: bool = False):
         """
-        Inicializa el extractor de números.
+        Initializes the number extractor.
         
         Args:
-            languages: Lista de idiomas para OCR
-            gpu: Si usar GPU (False por defecto para compatibilidad)
+            languages: Languages used by the OCR
+            gpu: Whether to use the GPU (False by default for compatibility)
         """
         self.reader = None
         self.gpu = gpu
@@ -30,7 +30,7 @@ class NumberExtractor:
         self._initialize_reader()
     
     def _initialize_reader(self) -> bool:
-        """Inicializa el lector EasyOCR."""
+        """Initializes the EasyOCR reader."""
         try:
             import easyocr
             
@@ -51,20 +51,20 @@ class NumberExtractor:
             return False
     
     def is_loaded(self) -> bool:
-        """Verifica si el lector está inicializado."""
+        """Returns whether the reader is initialized."""
         return self.reader is not None
     
     def extract_number(self, image: np.ndarray, preprocess: bool = True) -> Tuple[float, float]:
         """
-        Extrae un número de una imagen.
+        Extracts a number from an image.
         
         Args:
-            image: Imagen como array numpy (RGB o grayscale)
-            preprocess: Si aplicar preprocesamiento
+            image: Image as a numpy array (RGB or grayscale)
+            preprocess: Whether to preprocess the image first
             
         Returns:
-            Tuple de (valor_extraído, confianza)
-            Devuelve (0.0, 0.0) si no se encuentra número
+            Tuple of (extracted_value, confidence)
+            Returns (0.0, 0.0) when no number is found
         """
         if not self.is_loaded():
             return 0.0, 0.0
@@ -95,13 +95,13 @@ class NumberExtractor:
     
     def extract_all_numbers(self, image: np.ndarray) -> List[Tuple[float, float, Tuple]]:
         """
-        Extrae todos los números encontrados en una imagen.
+        Extracts every number found in an image.
         
         Args:
-            image: Imagen como array numpy
+            image: Image as a numpy array
             
         Returns:
-            Lista de (valor, confianza, bbox)
+            List of (value, confidence, bbox)
         """
         if not self.is_loaded():
             return []
@@ -129,13 +129,13 @@ class NumberExtractor:
     
     def _preprocess_for_ocr(self, image: np.ndarray) -> np.ndarray:
         """
-        Preprocesa la imagen para mejorar el OCR.
+        Preprocesses the image to improve OCR accuracy.
         
         Args:
-            image: Imagen original
+            image: Original image
             
         Returns:
-            Imagen preprocesada
+            Preprocessed image
         """
         import cv2
         
@@ -165,9 +165,9 @@ class NumberExtractor:
     
     def _parse_poker_number(self, text: str) -> float:
         """
-        Parsea un string de texto a valor numérico de poker.
+        Parses text into a poker amount.
         
-        Soporta formatos:
+        Supported formats:
         - "1,234" -> 1234.0
         - "$1.5K" -> 1500.0
         - "2.5M" -> 2500000.0
@@ -175,10 +175,10 @@ class NumberExtractor:
         - "1.5B" -> 1500000000.0
         
         Args:
-            text: Texto a parsear
+            text: Text to parse
             
         Returns:
-            Valor numérico o 0.0 si no se puede parsear
+            Numeric value, or 0.0 if the text cannot be parsed
         """
         if not text:
             return 0.0
@@ -213,10 +213,10 @@ _extractor_instance: Optional[NumberExtractor] = None
 
 def get_extractor() -> NumberExtractor:
     """
-    Obtiene una instancia singleton del extractor.
+    Returns the singleton extractor instance.
     
     Returns:
-        Instancia del extractor de números
+        The number extractor instance
     """
     global _extractor_instance
     
@@ -228,13 +228,13 @@ def get_extractor() -> NumberExtractor:
 
 def extract_pot_value(image: np.ndarray) -> Tuple[float, float]:
     """
-    Función de conveniencia para extraer el valor del pot.
+    Convenience function that extracts the pot value.
     
     Args:
-        image: Imagen de la región del pot
+        image: Image of the pot region
         
     Returns:
-        Tuple de (valor, confianza)
+        Tuple of (value, confidence)
     """
     extractor = get_extractor()
     return extractor.extract_number(image)

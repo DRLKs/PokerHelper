@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 """
-CV Sidecar - Servicio de Visión por Computador para PokerHelper
+CV Sidecar: computer vision service for PokerHelper
 ================================================================
 
-Este script se ejecuta como un proceso secundario (sidecar) del backend de Rust.
-Se comunica mediante stdin/stdout usando mensajes JSON.
+Runs as a child process (sidecar) of the Rust backend.
+It communicates over stdin/stdout with JSON messages.
 
-Tecnologías utilizadas:
-- YOLO v8 (Ultralytics): Detección de cartas
-- EasyOCR: Extracción de números (pot, bets, stacks)
-- mss: Captura de pantalla cross-platform
+Technologies:
+- YOLO v8 (Ultralytics): card detection
+- EasyOCR: number extraction (pot, bets, stacks)
+- mss: cross-platform screen capture
 
-Responsabilidades:
-- Listar ventanas disponibles
-- Capturar pantallas de ventanas específicas
-- Analizar imágenes para detectar el estado del juego de poker
+Responsibilities:
+- List the available windows
+- Capture screenshots of specific windows
+- Analyze images to detect the poker game state
 
-Datos que extrae:
-- Cartas de la mano del jugador (2 cartas)
-- Cartas comunitarias (0-5 cartas)
-- Número de oponentes activos
-- Tamaño del bote
-- Cantidad a igualar (call amount)
+Extracted data:
+- The player's hole cards (2 cards)
+- Community cards (0-5 cards)
+- Number of active opponents
+- Pot size
+- Amount to call
 """
 
 import sys
@@ -120,13 +120,13 @@ def bgra_to_rgb(pixels: np.ndarray) -> np.ndarray:
 
 def capture_screen_region(bbox: Tuple[int, int, int, int]) -> Optional[np.ndarray]:
     """
-    Captura una región de la pantalla.
+    Captures a region of the screen.
     
     Args:
-        bbox: (left, top, right, bottom) en píxeles absolutos
+        bbox: (left, top, right, bottom) in absolute pixels
         
     Returns:
-        numpy array RGB o None si falla
+        RGB numpy array, or None on failure
     """
     try:
         if MSS_AVAILABLE:
@@ -148,7 +148,7 @@ def capture_screen_region(bbox: Tuple[int, int, int, int]) -> Optional[np.ndarra
 
 
 def capture_full_screen() -> Optional[np.ndarray]:
-    """Captura la pantalla completa."""
+    """Captures the full screen."""
     try:
         if MSS_AVAILABLE:
             with mss.mss() as sct:
@@ -164,7 +164,7 @@ def capture_full_screen() -> Optional[np.ndarray]:
 
 
 def get_poker_windows() -> List[str]:
-    """Obtiene la lista de ventanas disponibles."""
+    """Returns the list of available windows."""
     try:
         if platform.system() == "Linux" and EWMH_AVAILABLE and ewmh:
             windows = ewmh.getClientList()
@@ -193,10 +193,10 @@ def get_poker_windows() -> List[str]:
 
 def get_window_bbox(window_title: str) -> Optional[Tuple[int, int, int, int]]:
     """
-    Obtiene el bounding box de una ventana por título.
+    Returns the bounding box of a window by title.
     
     Returns:
-        (left, top, right, bottom) o None
+        (left, top, right, bottom) or None
     """
     try:
         if platform.system() == "Linux" and EWMH_AVAILABLE and ewmh:
@@ -228,13 +228,13 @@ def get_window_bbox(window_title: str) -> Optional[Tuple[int, int, int, int]]:
 
 def capture_window(window_title: str) -> Dict[str, Any]:
     """
-    Captura una ventana específica y devuelve la imagen.
+    Captures a specific window and returns the image.
     
     Args:
-        window_title: Título de la ventana a capturar
+        window_title: Title of the window to capture
         
     Returns:
-        Dict con imagen base64, dimensiones, o error
+        Dict with the base64 image and its dimensions, or an error
     """
     try:
         bbox = get_window_bbox(window_title)
@@ -264,14 +264,14 @@ def capture_window(window_title: str) -> Dict[str, Any]:
 
 def extract_region(image: np.ndarray, region: Tuple[float, float, float, float]) -> np.ndarray:
     """
-    Extrae una región de la imagen usando coordenadas relativas (0-1).
+    Crops a region of the image using relative coordinates (0-1).
     
     Args:
-        image: numpy array de la imagen
-        region: (x1, y1, x2, y2) como fracciones 0-1
+        image: Image as a numpy array
+        region: (x1, y1, x2, y2) as fractions between 0 and 1
         
     Returns:
-        numpy array de la región recortada
+        Cropped region as a numpy array
     """
     height, width = image.shape[:2]
     x1, y1, x2, y2 = region
@@ -289,14 +289,14 @@ def detect_cards_in_region(
     region_name: str
 ) -> List[Dict[str, Any]]:
     """
-    Detecta cartas en una imagen usando el predictor.
+    Detects cards in an image using the predictor.
     
     Args:
-        image: numpy array de la imagen (ya recortada)
-        region_name: Nombre de la región para logging
+        image: Image as a numpy array (already cropped)
+        region_name: Region name used for logging
         
     Returns:
-        Lista de cartas detectadas con formato compatible con Rust
+        Detected cards, in the format the Rust backend expects
     """
     if not PREDICTOR_AVAILABLE or card_predictor is None:
         return []
@@ -333,15 +333,15 @@ def extract_number_from_region(
     region_name: str = "unknown"
 ) -> float:
     """
-    Extrae un número de una región usando EasyOCR.
+    Extracts a number from a region using EasyOCR.
     
     Args:
-        image: Imagen completa como numpy array
-        region: Coordenadas relativas (0-1)
-        region_name: Nombre de la región
+        image: Full image as a numpy array
+        region: Relative coordinates (0-1)
+        region_name: Region name
         
     Returns:
-        Valor numérico extraído o 0.0
+        Extracted value, or 0.0
     """
     if not OCR_AVAILABLE or number_extractor is None:
         return 0.0
@@ -367,22 +367,22 @@ def extract_number_from_region(
 
 def count_active_opponents(image: np.ndarray) -> int:
     """
-    Cuenta el número de oponentes activos en la mesa.
+    Counts the active opponents at the table.
     
-    TODO: Implementar detección de oponentes con YOLO o heurísticas
+    TODO: Detect opponents with YOLO or heuristics
     """
     return 1
 
 
 def analyze_game_state(image: np.ndarray) -> Dict[str, Any]:
     """
-    Analiza una imagen completa de la mesa de poker y extrae el estado del juego.
+    Analyzes a full image of the poker table and extracts the game state.
     
     Args:
-        image: numpy array RGB de la mesa de poker
+        image: RGB numpy array of the poker table
     
     Returns:
-        Dict compatible con CvState de Rust (poker_agent)
+        Dict compatible with the Rust CvState (poker_agent)
     """
     start_time = time.time()
     
@@ -439,13 +439,13 @@ def analyze_game_state(image: np.ndarray) -> Dict[str, Any]:
 
 def analyze_from_capture(window_title: str) -> Dict[str, Any]:
     """
-    Captura una ventana y analiza su contenido.
+    Captures a window and analyzes its content.
     
     Args:
-        window_title: Título de la ventana a capturar y analizar
+        window_title: Title of the window to capture and analyze
         
     Returns:
-        Estado del juego o error
+        Game state, or an error
     """
     bbox = get_window_bbox(window_title)
     
@@ -482,16 +482,16 @@ def analyze_from_capture(window_title: str) -> Dict[str, Any]:
 
 def main():
     """
-    Loop principal que procesa comandos desde stdin.
+    Main loop that processes commands from stdin.
     
-    Comandos soportados:
-    - ping: Verificar conectividad
-    - status: Estado del sidecar
-    - list_windows: Listar ventanas disponibles
-    - capture: Capturar ventana como imagen
-    - analyze: Analizar ventana y extraer estado
-    - analyze_image: Analizar imagen base64 proporcionada
-    - set_regions: Actualizar regiones de detección
+    Supported commands:
+    - ping: Check connectivity
+    - status: Sidecar status
+    - list_windows: List available windows
+    - capture: Capture a window as an image
+    - analyze: Analyze a window and extract the game state
+    - analyze_image: Analyze a provided base64 image
+    - set_regions: Update the detection regions
     """
     print(f"[CV Sidecar] Started on {platform.system()}", file=sys.stderr)
     print(f"[CV Sidecar] YOLO: {PREDICTOR_AVAILABLE}, OCR: {OCR_AVAILABLE}", file=sys.stderr)

@@ -1,6 +1,6 @@
 """
-Detector de cartas usando YOLO v8 (Ultralytics).
-Optimizado para CPU.
+Card detector using YOLO v8 (Ultralytics).
+Optimized for CPU.
 """
 import os
 import numpy as np
@@ -8,25 +8,25 @@ from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 
 
-DATASET_TREBOLES = 'T'
-DATASET_PICAS = 'P'
-DATASET_CORAZONES = 'C'
-DATASET_DIAMANTES = 'D'
+DATASET_CLUBS = 'T'
+DATASET_SPADES = 'P'
+DATASET_HEARTS = 'C'
+DATASET_DIAMONDS = 'D'
 DATASET_ACE = '1'
 ACE_HIGH = 14
 
 
 class YOLOCardDetector:
     """
-    Detector de cartas de poker usando YOLO v8.
-    Diseñado para funcionar sin GPU.
+    Poker card detector using YOLO v8.
+    Designed to run without a GPU.
     """
     
     SUIT_MAP = {
-        DATASET_TREBOLES: 'c',
-        DATASET_PICAS: 's',
-        DATASET_CORAZONES: 'h',
-        DATASET_DIAMANTES: 'd',
+        DATASET_CLUBS: 'c',
+        DATASET_SPADES: 's',
+        DATASET_HEARTS: 'h',
+        DATASET_DIAMONDS: 'd',
     }
 
     VALUE_MAP = {
@@ -38,11 +38,11 @@ class YOLOCardDetector:
     
     def __init__(self, model_path: Optional[str] = None, confidence_threshold: float = 0.5):
         """
-        Inicializa el detector YOLO.
+        Initializes the YOLO detector.
         
         Args:
-            model_path: Ruta al modelo .pt entrenado. Si es None, busca en rutas por defecto.
-            confidence_threshold: Umbral de confianza para detecciones (0-1)
+            model_path: Path to the trained .pt model. If None, the default paths are searched.
+            confidence_threshold: Minimum confidence for a detection (0-1)
         """
         self.confidence_threshold = confidence_threshold
         self.model = None
@@ -51,7 +51,7 @@ class YOLOCardDetector:
         self._load_model()
     
     def _find_model(self) -> Optional[str]:
-        """Busca el modelo en ubicaciones comunes."""
+        """Looks for the model in the usual locations."""
         possible_paths = [
             self.model_path,
             "models/poker_cards.pt",
@@ -69,7 +69,7 @@ class YOLOCardDetector:
         return None
     
     def _load_model(self) -> bool:
-        """Carga el modelo YOLO."""
+        """Loads the YOLO model."""
         try:
             from ultralytics import YOLO
             
@@ -93,25 +93,25 @@ class YOLOCardDetector:
             return False
     
     def is_loaded(self) -> bool:
-        """Verifica si el modelo está cargado."""
+        """Returns whether the model is loaded."""
         return self.model is not None
     
     def detect(self, image: np.ndarray) -> List[Dict[str, Any]]:
         """
-        Detecta cartas en una imagen.
+        Detects cards in an image.
         
         Args:
-            image: Imagen como array numpy (RGB)
+            image: Image as a numpy array (RGB)
             
         Returns:
-            Lista de detecciones con formato:
+            List of detections with this format:
             [
                 {
                     'suit': 'h',
                     'rank': 14,
                     'confidence': 0.95,
                     'bbox': (x, y, w, h),
-                    'class_name': 'C 1'  # Formato original del dataset
+                    'class_name': 'C 1'
                 },
                 ...
             ]
@@ -167,13 +167,13 @@ class YOLOCardDetector:
     
     def _parse_class_name(self, class_name: str) -> Tuple[Optional[str], Optional[int]]:
         """
-        Parsea el nombre de clase del dataset al formato interno.
+        Parses a dataset class name into the internal format.
         
         Args:
-            class_name: Nombre de clase (ej: "C 1", "P 13", "T 7")
+            class_name: Dataset class name (e.g. "C 1", "P 13", "T 7")
             
         Returns:
-            Tuple de (suit, rank) o (None, None) si no se puede parsear
+            Tuple of (suit, rank), or (None, None) if it cannot be parsed
         """
         try:
             parts = class_name.strip().split(' ')
@@ -195,14 +195,14 @@ class YOLOCardDetector:
     
     def detect_in_region(self, image: np.ndarray, region: Tuple[float, float, float, float]) -> List[Dict[str, Any]]:
         """
-        Detecta cartas en una región específica de la imagen.
+        Detects cards in a specific region of the image.
         
         Args:
-            image: Imagen completa como array numpy
-            region: Región como (x1, y1, x2, y2) en coordenadas relativas (0-1)
+            image: Full image as a numpy array
+            region: Region as (x1, y1, x2, y2) in relative coordinates (0-1)
             
         Returns:
-            Lista de detecciones
+            List of detections
         """
         height, width = image.shape[:2]
         
@@ -230,13 +230,13 @@ _detector_instance: Optional[YOLOCardDetector] = None
 
 def get_detector(model_path: Optional[str] = None) -> YOLOCardDetector:
     """
-    Obtiene una instancia singleton del detector.
+    Returns the singleton detector instance.
     
     Args:
-        model_path: Ruta al modelo (solo se usa en la primera llamada)
+        model_path: Path to the model (only used on the first call)
         
     Returns:
-        Instancia del detector YOLO
+        The YOLO detector instance
     """
     global _detector_instance
     

@@ -1,6 +1,6 @@
 """
-Predictor de cartas usando YOLO v8 y EasyOCR.
-Optimizado para CPU.
+Card predictor using YOLO v8 and EasyOCR.
+Optimized for CPU.
 """
 import time
 import numpy as np
@@ -27,8 +27,8 @@ except ImportError:
 
 @dataclass
 class CardResult:
-    """Carta detectada. `rank` es A, 2-10, J, Q o K; `suit` es hearts, diamonds,
-    clubs o spades; `bbox` es (x, y, width, height)."""
+    """Detected card. `rank` is A, 2-10, J, Q or K; `suit` is hearts, diamonds,
+    clubs or spades; `bbox` is (x, y, width, height)."""
     rank: str
     suit: str
     confidence: float
@@ -49,7 +49,7 @@ class CardResult:
 
 @dataclass
 class NumberResult:
-    """Número extraído (pot, bet, stack)."""
+    """Extracted number (pot, bet, stack)."""
     value: float
     text_raw: str
     confidence: float
@@ -66,7 +66,7 @@ class NumberResult:
 
 @dataclass
 class AnalysisResult:
-    """Resultado del análisis de imagen."""
+    """Result of an image analysis."""
     cards: List[CardResult] = field(default_factory=list)
     numbers: List[NumberResult] = field(default_factory=list)
     pot_size: Optional[float] = None
@@ -93,9 +93,9 @@ class AnalysisResult:
 
 class CardPredictor:
     """
-    Predictor de cartas de poker usando YOLO v8 y EasyOCR.
+    Poker card predictor using YOLO v8 and EasyOCR.
     
-    Ejemplo:
+    Example:
         predictor = CardPredictor()
         result = predictor.analyze_image("screenshot.png")
         for card in result.cards:
@@ -134,11 +134,11 @@ class CardPredictor:
             print(f"[CardPredictor] {msg}")
     
     def is_ready(self) -> bool:
-        """Verifica si el predictor puede analizar imágenes."""
+        """Returns whether the predictor can analyze images."""
         return self.yolo_detector is not None
     
     def load_yolo_model(self, model_path: str) -> bool:
-        """Carga un modelo YOLO entrenado."""
+        """Loads a trained YOLO model."""
         if not YOLO_AVAILABLE:
             return False
         try:
@@ -159,13 +159,13 @@ class CardPredictor:
         number_regions: Optional[List[Dict]] = None
     ) -> AnalysisResult:
         """
-        Analiza una imagen para detectar cartas y números.
+        Analyzes an image to detect cards and numbers.
         
         Args:
-            image: Ruta, numpy array, o PIL Image
-            detect_cards: Detectar cartas
-            extract_numbers: Extraer números (pot, bets)
-            number_regions: Regiones específicas para OCR
+            image: Path, numpy array or PIL Image
+            detect_cards: Whether to detect cards
+            extract_numbers: Whether to extract numbers (pot, bets)
+            number_regions: Specific regions for OCR
         """
         start = time.time()
         img = self._to_numpy(image)
@@ -245,7 +245,7 @@ class CardPredictor:
             return []
     
     def _parse_label(self, label: str) -> Tuple[str, str]:
-        """Parsea etiqueta YOLO: 'Ah' -> ('A', 'hearts')"""
+        """Parses a YOLO label: 'Ah' -> ('A', 'hearts')"""
         suits = {'h': 'hearts', 'd': 'diamonds', 'c': 'clubs', 's': 'spades'}
         if not label:
             return ('?', 'unknown')
@@ -268,7 +268,7 @@ class CardPredictor:
 _instance: Optional[CardPredictor] = None
 
 def get_predictor(**kwargs) -> CardPredictor:
-    """Obtiene la instancia singleton del predictor."""
+    """Returns the singleton predictor instance."""
     global _instance
     if _instance is None:
         _instance = CardPredictor(**kwargs)
@@ -276,7 +276,7 @@ def get_predictor(**kwargs) -> CardPredictor:
 
 
 def analyze_image_file(path: str, model_path: Optional[str] = None) -> AnalysisResult:
-    """Analiza una imagen desde archivo."""
+    """Analyzes an image file."""
     p = get_predictor()
     if model_path:
         p.load_yolo_model(model_path)
@@ -284,5 +284,5 @@ def analyze_image_file(path: str, model_path: Optional[str] = None) -> AnalysisR
 
 
 def analyze_screenshot(img: np.ndarray, regions: Optional[List[Dict]] = None) -> AnalysisResult:
-    """Analiza una captura de pantalla."""
+    """Analyzes a screenshot."""
     return get_predictor().analyze_image(img, number_regions=regions)
