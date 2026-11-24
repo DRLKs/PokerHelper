@@ -22,6 +22,16 @@ impl Street {
             _ => None,
         }
     }
+
+    /// Number of community cards on this street.
+    pub fn board_len(self) -> usize {
+        match self {
+            Street::Preflop => 0,
+            Street::Flop => 3,
+            Street::Turn => 4,
+            Street::River => 5,
+        }
+    }
 }
 
 /// A voluntary action. Amounts are the player's total commitment on the

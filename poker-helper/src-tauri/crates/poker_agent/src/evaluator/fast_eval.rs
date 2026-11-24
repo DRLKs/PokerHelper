@@ -48,7 +48,6 @@ pub fn card_bit(card: &Card) -> Option<u8> {
 }
 
 /// Category (`HIGH_CARD` ..= `STRAIGHT_FLUSH`) of a strength value.
-#[allow(dead_code)]
 #[inline]
 pub fn category(strength: u32) -> u32 {
     strength >> CATEGORY_SHIFT
