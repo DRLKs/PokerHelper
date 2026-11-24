@@ -59,6 +59,7 @@ pub fn advise(
         Recommendation::Fold
         | Recommendation::Check
         | Recommendation::Call { .. }
+        | Recommendation::BetTo { .. }
         | Recommendation::AllIn { .. } => None,
     };
     Ok(Advice {
@@ -399,7 +400,7 @@ fn in_chips(spot: &Spot, amount: BigBlinds) -> Chips {
 
 /// The heads-up button posts the small blind, so charts for the small blind
 /// describe it when it faces or makes a raise.
-fn chart_position(position: Position, heads_up: bool) -> Position {
+pub(crate) fn chart_position(position: Position, heads_up: bool) -> Position {
     match (position, heads_up) {
         (Position::Button, true) => Position::SmallBlind,
         _ => position,
@@ -693,14 +694,6 @@ mod tests {
 
     #[test]
     fn reports_decisions_it_cannot_make() {
-        let mut flop = six_max_preflop(BIG_BLIND, "Ah Kd");
-        flop.board = cards("2c 7d Ts");
-        let table = TableState::new(flop).unwrap();
-        assert_eq!(
-            advise(&table).unwrap_err(),
-            AdviceError::StreetNotSupported(Street::Flop)
-        );
-
         let mut folded = six_max_preflop(BIG_BLIND, "Ah Kd");
         folded.seats[BIG_BLIND as usize].status = SeatStatus::Folded;
         let table = TableState::new(folded).unwrap();

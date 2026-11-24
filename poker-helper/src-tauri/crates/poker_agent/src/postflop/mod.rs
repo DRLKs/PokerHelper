@@ -1,8 +1,12 @@
+pub mod decision;
 pub mod narrowing;
+pub mod opponent_range;
 pub mod reading;
 pub mod texture;
 
+pub use decision::{advise, PostflopStreet};
 pub use narrowing::{narrow, Narrowed, Narrowing};
+pub use opponent_range::estimate_ranges;
 pub use reading::{HandCategory, HandReading};
 pub use texture::{BoardTexture, FlushThreat};
 
