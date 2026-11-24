@@ -6,6 +6,7 @@ use poker_agent::core::card::{Card, CLUBS, DIAMONDS, HEARTS, SPADES};
 use poker_agent::core::community_cards::CommunityCards;
 use poker_agent::core::hand::Hand;
 use poker_agent::probability::calculate_equity;
+use poker_agent::range::{equity_vs_ranges, Range};
 use std::time::Instant;
 
 fn main() {
@@ -32,6 +33,25 @@ fn main() {
                     start.elapsed() / runs
                 );
             }
+        }
+    }
+
+    let opening_range: Range = "22+, A2s+, K9s+, Q9s+, J9s+, T9s, 98s, 87s, ATo+, KJo+".parse().unwrap();
+    let hero = [Card::new(DIAMONDS, 14), Card::new(SPADES, 13)];
+    let flop = [Card::new(HEARTS, 2), Card::new(CLUBS, 9), Card::new(DIAMONDS, 10)];
+    for (street, board) in [("preflop", &flop[..0]), ("flop", &flop[..])] {
+        for opponents in [1usize, 3] {
+            let ranges = vec![opening_range.clone(); opponents];
+            let _warm_up_thread_pool = equity_vs_ranges(hero, board, &ranges, 20_000).unwrap();
+            let start = Instant::now();
+            let mut equity = 0.0;
+            for _ in 0..runs {
+                equity = equity_vs_ranges(hero, board, &ranges, 20_000).unwrap().percent();
+            }
+            println!(
+                "range {street:<8} opponents={opponents} iterations=20000   {:>10.3?}/call  equity={equity:.2}%",
+                start.elapsed() / runs
+            );
         }
     }
 }
