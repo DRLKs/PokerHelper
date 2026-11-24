@@ -8,4 +8,5 @@ pub mod postflop;
 pub mod preflop;
 pub mod probability;
 pub mod range;
+pub mod session;
 pub mod table;

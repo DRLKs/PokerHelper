@@ -1,9 +1,11 @@
+use crate::advisor::report::fold_above_summary;
 use crate::advisor::{
-    recommendation_for, Advice, AdviceError, Intent, PlannedResponse, Recommendation,
+    recommendation_for, ActionValue, Advice, AdviceError, Confidence, Intent, PlannedBet,
+    PlannedResponse, Recommendation, ResponsePlan,
 };
 use crate::evaluator::fast_eval::CardMask;
-use crate::math::price::{implied_odds_needed, required_equity};
-use crate::math::{LegalActions, Probability};
+use crate::math::price::{implied_odds_needed, max_callable_bet, required_equity};
+use crate::math::{CallLimit, LegalActions, Probability};
 use crate::opponent::TableReads;
 use crate::postflop::narrowing::{narrow, Narrowing};
 use crate::postflop::opponent_range::estimate_ranges;
@@ -13,7 +15,7 @@ use crate::postflop::validated_cards_mask;
 use crate::preflop::Charts;
 use crate::range::combo::DECK_SIZE;
 use crate::range::{equity_vs_ranges, Range};
-use crate::table::{Chips, Seat, TableState};
+use crate::table::{Chips, Seat, SeatIndex, TableState};
 
 const EQUITY_ITERATIONS: u32 = 20_000;
 /// Share of its equity a hand wins out of position, from the realization
@@ -33,6 +35,11 @@ const DRY_FLOP_BET_SIZES: [f64; 3] = [0.33, 0.5, 0.75];
 const WET_FLOP_BET_SIZES: [f64; 2] = [0.5, 0.75];
 const TURN_BET_SIZES: [f64; 3] = [0.5, 0.75, 1.0];
 const RIVER_BET_SIZES: [f64; 3] = [0.5, 0.75, 1.25];
+/// Opponent bet sizes, as shares of the pot, that the plan after a check covers.
+const PLANNED_BET_SIZES: [f64; 4] = [0.33, 0.5, 0.75, 1.0];
+/// Opponent raise sizes, as multiples of the hero's bet, that the plan after
+/// a bet or raise covers.
+const PLANNED_RAISE_MULTIPLES: [f64; 3] = [2.5, 3.0, 4.0];
 
 /// A street after the flop is dealt.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -92,8 +99,17 @@ pub fn advise(
         .collect();
     let equity = spot.equity_against(&ranges)?;
 
-    let passive = spot.best_passive_line(equity);
-    let chosen = match spot.best_aggressive_line()? {
+    let passive_lines = spot.passive_lines(equity);
+    let aggressive_lines = spot.aggressive_lines()?;
+    let passive = best_passive_line(&passive_lines);
+    let best_aggressive = aggressive_lines.iter().copied().reduce(|best, candidate| {
+        if candidate.ev > best.ev {
+            candidate
+        } else {
+            best
+        }
+    });
+    let chosen = match best_aggressive {
         Some(aggressive)
             if aggressive.ev > passive.ev + SIMPLER_LINE_MARGIN * spot.pot.as_f64() =>
         {
@@ -101,16 +117,73 @@ pub fn advise(
         }
         _ => spot.implied_odds_call(&passive, equity).unwrap_or(passive),
     };
-    let if_reraised = spot.response_to_a_raise(chosen.recommendation)?;
+    let response_plan = spot.response_plan(chosen.recommendation)?;
+    let if_reraised = match chosen.recommendation {
+        Recommendation::BetTo { total } | Recommendation::RaiseTo { total } => response_plan
+            .as_ref()
+            .and_then(|plan| planned_response_to(plan, Chips(total.0 * RAISE_MULTIPLIER))),
+        Recommendation::Fold
+        | Recommendation::Check
+        | Recommendation::Call { .. }
+        | Recommendation::AllIn { .. } => None,
+    };
+    let big_blind = table.big_blind();
     Ok(Advice {
-        instruction: chosen.recommendation.instruction(table.big_blind()),
+        instruction: chosen.recommendation.instruction(big_blind),
         recommendation: chosen.recommendation,
         reason: spot.reason(&chosen, equity),
         if_reraised,
+        response_plan,
+        ev_by_action: values_best_first(passive_lines.iter().chain(&aggressive_lines), big_blind),
+        confidence: Confidence::default(),
     })
 }
 
+/// Checks when it is free; otherwise calls when calling wins chips, and
+/// folds when it does not.
+fn best_passive_line(passive_lines: &[Candidate]) -> Candidate {
+    let call = passive_lines
+        .iter()
+        .find(|candidate| matches!(candidate.line, Line::Check | Line::Call));
+    match call {
+        Some(&candidate) if matches!(candidate.line, Line::Check) || candidate.ev > 0.0 => {
+            candidate
+        }
+        _ => passive_lines
+            .iter()
+            .copied()
+            .find(|candidate| matches!(candidate.line, Line::Fold))
+            .expect("passive_lines holds a fold whenever checking is not free"),
+    }
+}
+
+fn values_best_first<'a>(
+    candidates: impl Iterator<Item = &'a Candidate>,
+    big_blind: Chips,
+) -> Vec<ActionValue> {
+    let mut values: Vec<ActionValue> = candidates
+        .map(|candidate| ActionValue {
+            recommendation: candidate.recommendation,
+            instruction: candidate.recommendation.instruction(big_blind),
+            ev: candidate.ev,
+        })
+        .collect();
+    values.sort_by(|left, right| right.ev.total_cmp(&left.ev));
+    values
+}
+
+/// The planned response to the smallest planned size of at least `total`,
+/// or to the largest one when `total` is above them all.
+fn planned_response_to(plan: &ResponsePlan, total: Chips) -> Option<PlannedResponse> {
+    plan.responses
+        .iter()
+        .find(|planned| planned.total >= total)
+        .or(plan.responses.last())
+        .map(|planned| planned.response)
+}
+
 struct Opponent {
+    index: SeatIndex,
     seat: Seat,
     range: Range,
     continuing_scale: f64,
@@ -179,6 +252,7 @@ impl<'a> Spot<'a> {
             .map(|(&seat, range)| {
                 let profile = reads.profile(seat);
                 Opponent {
+                    index: seat,
                     seat: *table
                         .seat(seat)
                         .expect("opponents_in_hand returns seats of the table"),
@@ -222,34 +296,35 @@ impl<'a> Spot<'a> {
         }
     }
 
-    fn best_passive_line(&self, equity: Probability) -> Candidate {
+    /// Check when it is free; otherwise fold and call, whatever the call is
+    /// worth.
+    fn passive_lines(&self, equity: Probability) -> Vec<Candidate> {
         if self.legal.can_check() {
-            return Candidate {
+            return vec![Candidate {
                 recommendation: Recommendation::Check,
                 line: Line::Check,
                 ev: self.realization * equity.fraction() * self.pot.as_f64(),
-            };
+            }];
         }
         let call = self.legal.to_call;
         let realized = self.realization_for(call == self.hero.stack) * equity.fraction();
-        let call_ev = realized * (self.pot + call).as_f64() - call.as_f64();
-        if call_ev > 0.0 {
-            Candidate {
-                recommendation: recommendation_for(Intent::Call, self.legal, &self.hero),
-                line: Line::Call,
-                ev: call_ev,
-            }
-        } else {
+        vec![
             Candidate {
                 recommendation: Recommendation::Fold,
                 line: Line::Fold,
                 ev: 0.0,
-            }
-        }
+            },
+            Candidate {
+                recommendation: recommendation_for(Intent::Call, self.legal, &self.hero),
+                line: Line::Call,
+                ev: realized * (self.pot + call).as_f64() - call.as_f64(),
+            },
+        ]
     }
 
-    fn best_aggressive_line(&self) -> Result<Option<Candidate>, AdviceError> {
-        let mut best: Option<Candidate> = None;
+    /// One candidate per distinct legal bet or raise size.
+    fn aggressive_lines(&self) -> Result<Vec<Candidate>, AdviceError> {
+        let mut lines: Vec<Candidate> = Vec::new();
         let mut evaluated_totals: Vec<Chips> = Vec::new();
         for target in self.raise_targets() {
             let recommendation = self.named_for_the_street(recommendation_for(
@@ -264,12 +339,9 @@ impl<'a> Spot<'a> {
                 continue;
             }
             evaluated_totals.push(total);
-            let candidate = self.aggressive_line(recommendation, total)?;
-            if best.is_none_or(|current| candidate.ev > current.ev) {
-                best = Some(candidate);
-            }
+            lines.push(self.aggressive_line(recommendation, total)?);
         }
-        Ok(best)
+        Ok(lines)
     }
 
     /// Bet sizes as shares of the pot when nobody has bet, or a raise to 3
@@ -400,57 +472,173 @@ impl<'a> Spot<'a> {
         })
     }
 
-    /// What to do if an opponent raises the recommended bet or raise to 3
-    /// times its size. `None` when the recommendation is not a bet or raise
-    /// that leaves chips behind.
-    fn response_to_a_raise(
+    /// What to do when an opponent bets after a check, or raises after a
+    /// bet or raise. `None` for other recommendations, for a check that ends
+    /// the street, and for a bet that leaves no chips behind.
+    fn response_plan(
         &self,
         recommendation: Recommendation,
-    ) -> Result<Option<PlannedResponse>, AdviceError> {
-        let total = match recommendation {
-            Recommendation::BetTo { total } | Recommendation::RaiseTo { total } => total,
-            Recommendation::Fold
-            | Recommendation::Check
-            | Recommendation::Call { .. }
-            | Recommendation::AllIn { .. } => return Ok(None),
+    ) -> Result<Option<ResponsePlan>, AdviceError> {
+        let plan = match recommendation {
+            Recommendation::Check => self.plan_after_check()?,
+            Recommendation::BetTo { total } | Recommendation::RaiseTo { total } => {
+                self.plan_after_raise(total)?
+            }
+            Recommendation::Fold | Recommendation::Call { .. } | Recommendation::AllIn { .. } => {
+                None
+            }
         };
-        let raising_ranges: Vec<Range> = self
+        Ok(plan.map(|(fold_above, responses)| ResponsePlan {
+            summary: fold_above_summary(fold_above, recommendation, self.table.big_blind()),
+            fold_above,
+            responses,
+        }))
+    }
+
+    /// Opponents who still act on this street after the hero checks are
+    /// assumed to bet with their betting range; the others keep theirs.
+    fn plan_after_check(&self) -> Result<Option<(CallLimit, Vec<PlannedBet>)>, AdviceError> {
+        let hero_position = self.table.hero_position();
+        let acts_after_hero = |opponent: &Opponent| {
+            opponent.seat.status.can_act()
+                && self
+                    .table
+                    .position_of(opponent.index)
+                    .is_some_and(|position| !hero_position.is_in_position_against(position))
+        };
+        let mut anyone_can_bet = false;
+        let mut ranges = Vec::with_capacity(self.opponents.len());
+        for opponent in &self.opponents {
+            if acts_after_hero(opponent) {
+                anyone_can_bet = true;
+                ranges.push(self.narrowed(
+                    &opponent.range,
+                    Narrowing::BET.scaled(opponent.betting_scale),
+                ));
+            } else {
+                ranges.push(opponent.range.clone());
+            }
+        }
+        if !anyone_can_bet {
+            return Ok(None);
+        }
+        let equity = self.equity_against(&ranges)?;
+        let all_in = self.hero.stack;
+        let mut sizes: Vec<Chips> = PLANNED_BET_SIZES
+            .iter()
+            .map(|share| Chips((share * self.pot.as_f64()).round() as u64).min(all_in))
+            .chain([all_in])
+            .filter(|&size| size > Chips::ZERO)
+            .collect();
+        sizes.dedup();
+        let responses = sizes
+            .into_iter()
+            .map(|bet| PlannedBet {
+                total: bet,
+                response: self.respond(bet.min(all_in), self.pot + bet, bet >= all_in, equity),
+            })
+            .collect();
+        let realized = Probability::saturating(self.realization * equity.fraction());
+        let fold_above = match max_callable_bet(self.pot, realized) {
+            CallLimit::UpTo(limit) if limit < all_in => CallLimit::UpTo(limit),
+            CallLimit::UpTo(_) | CallLimit::AnyBet => CallLimit::AnyBet,
+        };
+        Ok(Some((fold_above, responses)))
+    }
+
+    /// Raises to 2.5, 3 and 4 times `total` and all-in, against each
+    /// opponent's raising range.
+    fn plan_after_raise(
+        &self,
+        total: Chips,
+    ) -> Result<Option<(CallLimit, Vec<PlannedBet>)>, AdviceError> {
+        let hero_adds = total.saturating_sub(self.hero.committed_this_street);
+        let behind_after_bet = self.hero.stack.saturating_sub(hero_adds);
+        let raisers: Vec<&Opponent> = self
             .opponents
             .iter()
             .filter(|opponent| opponent.seat.status.can_act())
-            .map(|opponent| {
-                narrow(
-                    &opponent.range,
-                    self.board,
-                    self.dead_cards,
-                    Narrowing::RAISE.scaled(opponent.betting_scale),
-                )
-                .range
-            })
             .collect();
-        if raising_ranges.is_empty() {
+        if raisers.is_empty() || behind_after_bet == Chips::ZERO {
             return Ok(None);
         }
+        let raising_ranges: Vec<Range> = raisers
+            .iter()
+            .map(|opponent| {
+                self.narrowed(
+                    &opponent.range,
+                    Narrowing::RAISE.scaled(opponent.betting_scale),
+                )
+            })
+            .collect();
         let equity = self.equity_against(&raising_ranges)?;
 
-        let hero_adds = total.saturating_sub(self.hero.committed_this_street);
-        let behind_after_bet = self.hero.stack.saturating_sub(hero_adds);
-        let reraise_to = Chips(total.0 * RAISE_MULTIPLIER);
-        let call = reraise_to.saturating_sub(total).min(behind_after_bet);
-        let raiser_adds = reraise_to.saturating_sub(self.table.current_bet());
-        let pot_before_call = self.pot + hero_adds + raiser_adds;
-        let calling_is_all_in = call == behind_after_bet;
+        let hero_all_in = total + behind_after_bet;
+        let largest_raise = raisers
+            .iter()
+            .map(|opponent| opponent.stack_at_street_start())
+            .max()
+            .unwrap_or(Chips::ZERO)
+            .min(hero_all_in);
+        let pot_after_bet = self.pot + hero_adds;
+        let raiser_committed = self.table.current_bet();
+        let mut sizes: Vec<Chips> = PLANNED_RAISE_MULTIPLES
+            .iter()
+            .map(|multiple| Chips((multiple * total.as_f64()).round() as u64))
+            .chain([Chips(total.0 * RAISE_MULTIPLIER)])
+            .map(|raise_to| raise_to.min(largest_raise))
+            .chain([largest_raise])
+            .filter(|&raise_to| raise_to > total)
+            .collect();
+        sizes.sort();
+        sizes.dedup();
+        let responses = sizes
+            .into_iter()
+            .map(|raise_to| {
+                let call = raise_to.saturating_sub(total).min(behind_after_bet);
+                let raiser_adds = raise_to.saturating_sub(raiser_committed);
+                PlannedBet {
+                    total: raise_to,
+                    response: self.respond(
+                        call,
+                        pot_after_bet + raiser_adds,
+                        call == behind_after_bet,
+                        equity,
+                    ),
+                }
+            })
+            .collect();
+        let realized = self.realization * equity.fraction();
+        let fold_above = match max_callable_raise(total, pot_after_bet, raiser_committed, realized)
+        {
+            Some(limit) if limit < hero_all_in => CallLimit::UpTo(limit),
+            Some(_) | None => CallLimit::AnyBet,
+        };
+        Ok(Some((fold_above, responses)))
+    }
+
+    fn narrowed(&self, range: &Range, narrowing: Narrowing) -> Range {
+        narrow(range, self.board, self.dead_cards, narrowing).range
+    }
+
+    /// Re-raise with 60% realized equity when chips stay behind, call when
+    /// the equity beats the price, fold otherwise.
+    fn respond(
+        &self,
+        call: Chips,
+        pot_before_call: Chips,
+        calling_is_all_in: bool,
+        equity: Probability,
+    ) -> PlannedResponse {
         let realized =
             Probability::saturating(self.realization_for(calling_is_all_in) * equity.fraction());
-
-        let response = if !calling_is_all_in && realized.fraction() >= RERAISE_EQUITY {
+        if !calling_is_all_in && realized.fraction() >= RERAISE_EQUITY {
             PlannedResponse::ReRaise
         } else if realized >= required_equity(call, pot_before_call) {
             PlannedResponse::Call
         } else {
             PlannedResponse::Fold
-        };
-        Ok(Some(response))
+        }
     }
 
     fn reason(&self, chosen: &Candidate, equity: Probability) -> String {
@@ -498,6 +686,27 @@ impl<'a> Spot<'a> {
     }
 }
 
+/// The largest raise-to an opponent can make over the hero's `total` that
+/// the hero can still call with `equity`, or `None` when any raise is a call.
+///
+/// Calling a raise to `R` costs `R - total` into a pot of
+/// `pot_after_bet + (R - raiser_committed)`, so the call breaks even while
+/// `R * (1 - 2e) <= total + e * (pot_after_bet - raiser_committed - total)`.
+fn max_callable_raise(
+    total: Chips,
+    pot_after_bet: Chips,
+    raiser_committed: Chips,
+    equity: f64,
+) -> Option<Chips> {
+    if equity >= 0.5 {
+        return None;
+    }
+    let numerator = total.as_f64()
+        + equity * (pot_after_bet.as_f64() - raiser_committed.as_f64() - total.as_f64());
+    let limit = numerator / (1.0 - 2.0 * equity);
+    Some(Chips(limit.max(total.as_f64()).floor() as u64))
+}
+
 fn raise_total(recommendation: Recommendation) -> Option<Chips> {
     match recommendation {
         Recommendation::BetTo { total }
@@ -531,7 +740,7 @@ fn realization(table: &TableState, street: PostflopStreet) -> f64 {
 #[cfg(test)]
 mod tests {
     use crate::advisor::{advise, advise_with_reads, Advice, PlannedResponse, Recommendation};
-    use crate::math::legal_actions;
+    use crate::math::{legal_actions, CallLimit};
     use crate::opponent::{Frequency, PlayerProfile, PlayerStats, Population, TableReads};
     use crate::table::state::tests::{cards, seat, six_max_preflop};
     use crate::table::{
@@ -699,6 +908,92 @@ mod tests {
             calling_station(),
         ));
         assert!(station_bet > usual_bet);
+    }
+
+    #[test]
+    fn plans_the_fold_limit_after_checking_a_medium_hand_out_of_position() {
+        let advice = advice(button_against_big_blind(
+            BIG_BLIND,
+            "9c 8c",
+            "Kh 7h 2d 9s Qd",
+        ));
+        assert_eq!(
+            advice.recommendation,
+            Recommendation::Check,
+            "{}",
+            advice.reason
+        );
+        let plan = advice.response_plan.expect("the button can still bet");
+        let CallLimit::UpTo(limit) = plan.fold_above else {
+            panic!("second pair cannot call every bet: {plan:?}");
+        };
+        assert!(
+            plan.summary.starts_with("Fold if they bet more than"),
+            "{}",
+            plan.summary
+        );
+        assert!(plan
+            .responses
+            .windows(2)
+            .all(|pair| pair[0].total < pair[1].total));
+        for planned in &plan.responses {
+            let folds = planned.response == PlannedResponse::Fold;
+            assert_eq!(folds, planned.total > limit, "{planned:?} against {limit}");
+        }
+    }
+
+    #[test]
+    fn has_no_plan_when_checking_ends_the_street() {
+        let advice = advice(check(
+            button_against_big_blind(BUTTON, "3c 4d", "Kh Qh Jc 8s 2d"),
+            BIG_BLIND,
+        ));
+        assert_eq!(
+            advice.recommendation,
+            Recommendation::Check,
+            "{}",
+            advice.reason
+        );
+        assert_eq!(advice.response_plan, None);
+    }
+
+    #[test]
+    fn lists_every_compared_action_best_first() {
+        let setup = bet(
+            button_against_big_blind(BUTTON, "Ah 5h", "Kh 7h 2c"),
+            BIG_BLIND,
+            4,
+        );
+        let advice = advice(setup);
+        let values = &advice.ev_by_action;
+        assert!(values.windows(2).all(|pair| pair[0].ev >= pair[1].ev));
+        assert!(values
+            .iter()
+            .any(|value| value.recommendation == Recommendation::Fold && value.ev == 0.0));
+        assert!(values
+            .iter()
+            .any(|value| matches!(value.recommendation, Recommendation::Call { .. })));
+        assert!(values
+            .iter()
+            .any(|value| matches!(value.recommendation, Recommendation::RaiseTo { .. })));
+        if is_aggressive(advice.recommendation) {
+            assert_eq!(values[0].recommendation, advice.recommendation);
+        }
+    }
+
+    #[test]
+    fn calls_any_raise_with_the_nut_flush() {
+        let advice = advice(check(
+            button_against_big_blind(BUTTON, "Ah 5h", "Kh 7h 2c 9h 4s"),
+            BIG_BLIND,
+        ));
+        let plan = advice.response_plan.expect("a bet keeps chips behind");
+        assert_eq!(plan.fold_above, CallLimit::AnyBet);
+        assert_eq!(plan.summary, "Call any raise.");
+        assert!(plan
+            .responses
+            .iter()
+            .all(|planned| planned.response != PlannedResponse::Fold));
     }
 
     #[test]

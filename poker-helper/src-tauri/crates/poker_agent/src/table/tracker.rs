@@ -17,6 +17,7 @@ use crate::table::state::{TableError, TableSetup, TableState};
 pub struct HandTracker {
     current: Option<TableState>,
     finished: Option<TableState>,
+    chips_mismatch: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -34,6 +35,13 @@ impl HandTracker {
         self.current.as_ref()
     }
 
+    /// Whether the stacks, bets and pot have added up to the same total in
+    /// every frame of the current hand. A frame that breaks this was likely
+    /// misread.
+    pub fn chips_add_up(&self) -> bool {
+        !self.chips_mismatch
+    }
+
     /// The last frame of the most recent hand that ended, once. Feed it to
     /// [`OpponentBook::record_hand`](crate::opponent::OpponentBook::record_hand).
     pub fn take_finished_hand(&mut self) -> Option<TableState> {
@@ -46,16 +54,29 @@ impl HandTracker {
         let observed = TableState::new(setup)?;
         let history = match self.current.take() {
             Some(previous) if previous.is_same_hand_as(&observed) => {
+                if chips_on_table(&previous) != chips_on_table(&observed) {
+                    self.chips_mismatch = true;
+                }
                 continue_history(&previous, &observed)
             }
             Some(previous) => {
                 self.finished = Some(previous);
+                self.chips_mismatch = false;
                 history_from_hand_start(&observed)
             }
             None => history_from_hand_start(&observed),
         };
         Ok(self.current.insert(observed.with_history(history)))
     }
+}
+
+fn chips_on_table(table: &TableState) -> Chips {
+    table
+        .seats()
+        .iter()
+        .map(|seat| seat.stack_at_street_start())
+        .sum::<Chips>()
+        + table.pot_from_previous_streets()
 }
 
 fn views_of(table: &TableState) -> Vec<SeatView> {
@@ -450,6 +471,23 @@ mod tests {
         let finished = tracker.take_finished_hand().unwrap();
         assert_eq!(finished.history().len(), 1);
         assert!(tracker.take_finished_hand().is_none());
+    }
+
+    #[test]
+    fn notices_chips_that_do_not_add_up_until_the_next_hand() {
+        let mut first = six_max_preflop(0, "Ah Kd");
+        first.seats[3] = seat(194, 6, SeatStatus::Active);
+        let mut tracker = HandTracker::new();
+        tracker.observe(first.clone()).unwrap();
+        assert!(tracker.chips_add_up());
+
+        let mut misread = first;
+        misread.seats[4] = seat(150, 0, SeatStatus::Active);
+        tracker.observe(misread).unwrap();
+        assert!(!tracker.chips_add_up());
+
+        tracker.observe(six_max_preflop(1, "2c 3d")).unwrap();
+        assert!(tracker.chips_add_up());
     }
 
     #[test]

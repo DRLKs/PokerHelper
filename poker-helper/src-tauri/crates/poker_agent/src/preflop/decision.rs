@@ -1,5 +1,5 @@
 use crate::advisor::{
-    recommendation_for, Advice, AdviceError, Intent, PlannedResponse, Recommendation,
+    recommendation_for, Advice, AdviceError, Confidence, Intent, PlannedResponse, Recommendation,
 };
 use crate::math::price::required_equity;
 use crate::math::LegalActions;
@@ -71,6 +71,9 @@ pub fn advise(
         recommendation,
         reason: plan.reason,
         if_reraised,
+        response_plan: None,
+        ev_by_action: Vec::new(),
+        confidence: Confidence::default(),
     })
 }
 

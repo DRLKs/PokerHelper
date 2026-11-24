@@ -1,5 +1,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod advisor_commands;
+
+use advisor_commands::AdvisorState;
+use tauri::Manager;
+
 use poker_agent::core::card::Card;
 use poker_agent::core::community_cards::CommunityCards;
 use poker_agent::core::hand::Hand;
@@ -131,10 +136,19 @@ async fn list_windows(state: State<'_, SidecarState>) -> Result<Vec<String>, Str
 fn main() {
     tauri::Builder::default()
         .manage(SidecarState { child: Mutex::new(None) })
+        .setup(|app| {
+            let data_dir = app.path_resolver().app_data_dir();
+            app.manage(AdvisorState::load(data_dir));
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             calculate_equity_command,
             start_sidecar,
-            list_windows
+            list_windows,
+            advisor_commands::observe_table,
+            advisor_commands::opponent_population,
+            advisor_commands::set_opponent_population,
+            advisor_commands::reset_opponents
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
