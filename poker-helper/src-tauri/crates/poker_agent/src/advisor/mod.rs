@@ -7,6 +7,12 @@ use crate::table::{Chips, Seat, Street, TableState};
 use serde::Serialize;
 use std::fmt;
 
+pub mod report;
+
+pub use report::{
+    ActionValue, Confidence, ConfidenceIssue, ConfidenceLevel, PlannedBet, ResponsePlan,
+};
+
 /// The exact action to take now. Amounts are chips; `total` is the hero's
 /// whole commitment on the street after acting.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -68,6 +74,13 @@ pub struct Advice {
     /// Set only when the recommendation is a bet or raise that leaves chips
     /// behind.
     pub if_reraised: Option<PlannedResponse>,
+    /// Set after the flop when the hero checks with an opponent still to
+    /// act, or bets or raises and keeps chips behind.
+    pub response_plan: Option<ResponsePlan>,
+    /// Every action the engine compared, best first. Empty before the flop,
+    /// where the charts decide.
+    pub ev_by_action: Vec<ActionValue>,
+    pub confidence: Confidence,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -117,13 +130,14 @@ pub fn advise(table: &TableState) -> Result<Advice, AdviceError> {
 pub fn advise_with_reads(table: &TableState, reads: &TableReads) -> Result<Advice, AdviceError> {
     let legal = legal_actions(table, table.hero()).ok_or(AdviceError::HeroCannotAct)?;
     let charts = Charts::embedded()?;
-    let postflop_street = match table.street() {
-        Street::Preflop => return preflop::advise(table, &legal, charts, reads),
-        Street::Flop => PostflopStreet::Flop,
-        Street::Turn => PostflopStreet::Turn,
-        Street::River => PostflopStreet::River,
+    let mut advice = match table.street() {
+        Street::Preflop => preflop::advise(table, &legal, charts, reads)?,
+        Street::Flop => postflop::advise(table, &legal, charts, PostflopStreet::Flop, reads)?,
+        Street::Turn => postflop::advise(table, &legal, charts, PostflopStreet::Turn, reads)?,
+        Street::River => postflop::advise(table, &legal, charts, PostflopStreet::River, reads)?,
     };
-    postflop::advise(table, &legal, charts, postflop_street, reads)
+    advice.confidence = Confidence::of(table);
+    Ok(advice)
 }
 
 /// What a strategy wants to do, before the table's rules turn it into an

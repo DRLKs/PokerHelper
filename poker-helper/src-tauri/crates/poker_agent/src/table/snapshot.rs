@@ -87,10 +87,17 @@ impl TableSnapshot {
     pub fn from_json(text: &str) -> Result<TableSnapshot, SnapshotError> {
         let snapshot: TableSnapshot =
             serde_json::from_str(text).map_err(|error| SnapshotError::Json(error.to_string()))?;
-        if snapshot.version != SNAPSHOT_VERSION {
-            return Err(SnapshotError::UnsupportedVersion(snapshot.version));
-        }
+        snapshot.ensure_supported_version()?;
         Ok(snapshot)
+    }
+
+    /// Fails unless the snapshot uses contract version [`SNAPSHOT_VERSION`].
+    /// [`from_json`](TableSnapshot::from_json) already checks it.
+    pub fn ensure_supported_version(&self) -> Result<(), SnapshotError> {
+        if self.version != SNAPSHOT_VERSION {
+            return Err(SnapshotError::UnsupportedVersion(self.version));
+        }
+        Ok(())
     }
 
     /// Who sits in each seat, by screen name when the frame has one.
