@@ -3,6 +3,7 @@ mod r#const;
 pub mod core;
 pub mod evaluator;
 pub mod math;
+pub mod opponent;
 pub mod postflop;
 pub mod preflop;
 pub mod probability;

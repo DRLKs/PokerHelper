@@ -319,7 +319,7 @@ Phases 0, 1 and 2 come first and can be built and tested without any UI change. 
 
 ## 9. Status
 
-Phases 0 to 4 are implemented in the `poker_agent` crate. The entry point is `advisor::advise(&TableState)`, which returns a `Recommendation` with exact chip amounts, a one-line reason and, after a bet or raise, what to do if someone raises.
+Phases 0 to 5 are implemented in the `poker_agent` crate. The entry point is `advisor::advise(&TableState)`, which returns a `Recommendation` with exact chip amounts, a one-line reason and, after a bet or raise, what to do if someone raises. `advisor::advise_with_reads(&TableState, &TableReads)` does the same with opponent reads from phase 5.
 
 Differences from the plan in phases 0 to 3:
 
@@ -340,3 +340,14 @@ Phase 4 (module `postflop`) works as planned, with these choices and gaps:
 - The "fold if they bet more than X" number and the full response plan are left for phase 6. After a bet or raise, `if_reraised` says whether to fold, call or re-raise against a raise to 3 times the size.
 - A postflop decision takes about 2 to 11 ms on a 12-thread desktop.
 - Nothing is wired into the Tauri commands, the frontend or the vision sidecar yet. The sidecar still has to produce the version 2 snapshot described in `table::snapshot`.
+
+Phase 5 (module `opponent`) works as planned, with these choices and gaps:
+
+- Players are identified by the optional `name` of each seat in the snapshot, still version 2. Without a name the seat stands in for the player, and those stats are dropped when the seat is seen empty.
+- `OpponentBook` keeps the stats in memory and serializes to JSON; saving it to disk is left for phase 6. `HandTracker::take_finished_hand` gives the last frame of each finished hand, which `OpponentBook::record_hand` takes together with the player of each seat.
+- Each stat starts from the population rate with a weight of 30 chances. The default population is play money (VPIP 40%, PFR 12%, 3-bet 4%, postflop aggression 45%, fold to c-bet 30%, went to showdown 35%); the regular population (23%, 18%, 7%, 65%, 45%, 27%) can be chosen instead. Aggression is tracked as bets and raises over bets, raises and calls rather than the aggression factor.
+- Went to showdown is inferred: a player still in the hand when the last frame shows the river counts as a showdown.
+- Exploits are continuous, not per player type; the type is a label for the UI. Preflop ranges from the charts are resized by the player's PFR (first raises and shoves), 3-bet rate (re-raises) or VPIP (calls and limps) over the regular rate, between 0.5 and 3 times, adding or removing hands by their equity against a random hand. After the flop, the share of the range kept on a call and when the hero bets is scaled by the player's rate of not folding to a c-bet, and the share kept on a bet or raise by the player's aggression, both over the play-money rate and between 0.5 and 2 times. A player who matches the play-money population after the flop is played exactly as in phase 4.
+- Preflop, reads change only the call of a short-stack all-in. The charts for opening, 3-betting and defending ignore reads.
+- With reads, the engine bluffs players who fold often, which phase 4 never did, and value bets thinner and bigger against calling stations.
+- Nothing is wired into the Tauri commands or the UI yet.

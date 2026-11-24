@@ -16,6 +16,7 @@ use crate::table::state::{TableError, TableSetup, TableState};
 #[derive(Debug, Default)]
 pub struct HandTracker {
     current: Option<TableState>,
+    finished: Option<TableState>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -33,6 +34,12 @@ impl HandTracker {
         self.current.as_ref()
     }
 
+    /// The last frame of the most recent hand that ended, once. Feed it to
+    /// [`OpponentBook::record_hand`](crate::opponent::OpponentBook::record_hand).
+    pub fn take_finished_hand(&mut self) -> Option<TableState> {
+        self.finished.take()
+    }
+
     /// Validates the frame and returns it with the history of the hand so far.
     /// On error the tracker keeps its previous state.
     pub fn observe(&mut self, setup: TableSetup) -> Result<&TableState, TableError> {
@@ -41,7 +48,11 @@ impl HandTracker {
             Some(previous) if previous.is_same_hand_as(&observed) => {
                 continue_history(&previous, &observed)
             }
-            _ => history_from_hand_start(&observed),
+            Some(previous) => {
+                self.finished = Some(previous);
+                history_from_hand_start(&observed)
+            }
+            None => history_from_hand_start(&observed),
         };
         Ok(self.current.insert(observed.with_history(history)))
     }
@@ -436,6 +447,9 @@ mod tests {
         let next_hand = six_max_preflop(0, "2c 3d");
         let table = tracker.observe(next_hand).unwrap();
         assert!(table.history().is_empty());
+        let finished = tracker.take_finished_hand().unwrap();
+        assert_eq!(finished.history().len(), 1);
+        assert!(tracker.take_finished_hand().is_none());
     }
 
     #[test]

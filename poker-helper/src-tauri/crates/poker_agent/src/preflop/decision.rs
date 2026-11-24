@@ -3,6 +3,7 @@ use crate::advisor::{
 };
 use crate::math::price::required_equity;
 use crate::math::LegalActions;
+use crate::opponent::{PreflopRangeKind, TableReads};
 use crate::preflop::charts::{
     ChartAction, Charts, OpenerGroup, Seating, ShortStackDepth, SpotChart,
 };
@@ -18,6 +19,7 @@ struct Spot<'a> {
     table: &'a TableState,
     charts: &'a Charts,
     legal: &'a LegalActions,
+    reads: &'a TableReads,
     hand: HandClass,
     position: Position,
     heads_up: bool,
@@ -34,11 +36,13 @@ pub fn advise(
     table: &TableState,
     legal: &LegalActions,
     charts: &Charts,
+    reads: &TableReads,
 ) -> Result<Advice, AdviceError> {
     let spot = Spot {
         table,
         charts,
         legal,
+        reads,
         hand: HandClass::of(table.hero_cards())
             .expect("TableState::new rejects invalid or repeated hero cards"),
         position: table.hero_position(),
@@ -359,7 +363,9 @@ fn committed_opponents(table: &TableState) -> Vec<SeatIndex> {
 
 /// A short-stack opener's all-in range comes from the push chart of its
 /// position; anyone re-raising or calling an all-in is given the tighter
-/// re-steal range. Both use the depth of that player's own stack.
+/// re-steal range. Both use the depth of that player's own stack, and are
+/// resized by how often that player raises or re-raises when it has a
+/// profile in the reads.
 fn estimated_all_in_range(
     spot: &Spot,
     raiser: Raiser,
@@ -375,11 +381,18 @@ fn estimated_all_in_range(
         matches!(spot.situation.spot, PreflopSpot::FacingOpen { .. }) && seat == raiser.seat;
     let push_position =
         push_chart_position(raiser.position, spot.heads_up).filter(|_| opened_an_unraised_pot);
-    let range = match push_position {
-        Some(position) => spot.charts.push(position, depth)?,
-        None => spot.charts.resteal(depth)?,
+    let (range, kind) = match push_position {
+        Some(position) => (
+            spot.charts.push(position, depth)?,
+            PreflopRangeKind::FirstRaise,
+        ),
+        None => (spot.charts.resteal(depth)?, PreflopRangeKind::ReRaise),
     };
-    Ok(range.clone())
+    let scale = spot
+        .reads
+        .profile(seat)
+        .map_or(1.0, |profile| profile.preflop_range_scale(kind));
+    Ok(range.rescaled(scale))
 }
 
 fn response(spot: &Spot, chart: SpotChart) -> Option<PlannedResponse> {
@@ -435,8 +448,11 @@ fn plural(count: usize, noun: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::advisor::{advise, Advice, AdviceError, PlannedResponse, Recommendation};
+    use crate::advisor::{
+        advise, advise_with_reads, Advice, AdviceError, PlannedResponse, Recommendation,
+    };
     use crate::core::card::rank_symbol;
+    use crate::opponent::{Frequency, PlayerProfile, PlayerStats, Population, TableReads};
     use crate::range::HandClass;
     use crate::table::state::tests::{cards, seat, six_max_preflop};
     use crate::table::{
@@ -650,6 +666,40 @@ mod tests {
             ace_jack.reason
         );
         assert_eq!(shove("7h 2d").recommendation, Recommendation::Fold);
+    }
+
+    #[test]
+    fn calls_a_maniac_all_in_wider() {
+        let under_the_gun_shoves_into = |hand: &str| {
+            let mut setup = six_max_preflop(BIG_BLIND, hand);
+            fold_seats(&mut setup, &[HIJACK, CUTOFF, BUTTON, SMALL_BLIND]);
+            setup.seats[UNDER_THE_GUN as usize] = seat(0, 20, SeatStatus::AllIn);
+            setup.seats[BIG_BLIND as usize] = seat(18, 2, SeatStatus::Active);
+            setup.history = vec![raise(UNDER_THE_GUN, 20)];
+            TableState::new(setup).unwrap()
+        };
+        let maniac = PlayerStats {
+            voluntarily_played: Frequency {
+                hits: 300,
+                chances: 500,
+            },
+            raised_preflop: Frequency {
+                hits: 250,
+                chances: 500,
+            },
+            ..PlayerStats::default()
+        };
+        let mut profiles = vec![None; 6];
+        profiles[UNDER_THE_GUN as usize] =
+            Some(PlayerProfile::estimate(&maniac, Population::PlayMoney));
+        let reads = TableReads::from_profiles(profiles);
+
+        let table = under_the_gun_shoves_into("Ah 8d");
+        assert_eq!(advise(&table).unwrap().recommendation, Recommendation::Fold);
+        assert_eq!(
+            advise_with_reads(&table, &reads).unwrap().recommendation,
+            Recommendation::AllIn { total: Chips(20) }
+        );
     }
 
     #[test]

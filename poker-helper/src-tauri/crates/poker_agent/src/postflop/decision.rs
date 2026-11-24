@@ -4,6 +4,7 @@ use crate::advisor::{
 use crate::evaluator::fast_eval::CardMask;
 use crate::math::price::{implied_odds_needed, required_equity};
 use crate::math::{LegalActions, Probability};
+use crate::opponent::TableReads;
 use crate::postflop::narrowing::{narrow, Narrowing};
 use crate::postflop::opponent_range::estimate_ranges;
 use crate::postflop::reading::HandReading;
@@ -73,13 +74,17 @@ impl PostflopStreet {
 /// A bet must beat the best passive line by 1% of the pot. A draw that
 /// cannot call on price alone still calls when the chips it can win later
 /// cover the difference.
+///
+/// Opponents with a profile in `reads` get ranges and fold rates that follow
+/// their own habits; see [`estimate_ranges`].
 pub fn advise(
     table: &TableState,
     legal: &LegalActions,
     charts: &Charts,
     street: PostflopStreet,
+    reads: &TableReads,
 ) -> Result<Advice, AdviceError> {
-    let spot = Spot::read(table, legal, charts, street)?;
+    let spot = Spot::read(table, legal, charts, street, reads)?;
     let ranges: Vec<Range> = spot
         .opponents
         .iter()
@@ -108,6 +113,8 @@ pub fn advise(
 struct Opponent {
     seat: Seat,
     range: Range,
+    continuing_scale: f64,
+    betting_scale: f64,
 }
 
 impl Opponent {
@@ -159,20 +166,26 @@ impl<'a> Spot<'a> {
         legal: &'a LegalActions,
         charts: &Charts,
         street: PostflopStreet,
+        reads: &TableReads,
     ) -> Result<Spot<'a>, AdviceError> {
         let hole = validated_cards_mask(&table.hero_cards());
         let board = validated_cards_mask(table.board());
         let dead_cards = hole | board;
         let opponent_seats = table.opponents_in_hand(table.hero());
-        let ranges = estimate_ranges(table, charts, &opponent_seats, dead_cards)?;
+        let ranges = estimate_ranges(table, charts, &opponent_seats, dead_cards, reads)?;
         let opponents = opponent_seats
             .iter()
             .zip(ranges)
-            .map(|(&seat, range)| Opponent {
-                seat: *table
-                    .seat(seat)
-                    .expect("opponents_in_hand returns seats of the table"),
-                range,
+            .map(|(&seat, range)| {
+                let profile = reads.profile(seat);
+                Opponent {
+                    seat: *table
+                        .seat(seat)
+                        .expect("opponents_in_hand returns seats of the table"),
+                    range,
+                    continuing_scale: profile.map_or(1.0, |profile| profile.continuing_scale()),
+                    betting_scale: profile.map_or(1.0, |profile| profile.betting_scale()),
+                }
             })
             .collect();
         Ok(Spot {
@@ -302,7 +315,9 @@ impl<'a> Spot<'a> {
     /// spread evenly across the range. It is always above the minimum
     /// defence frequency, so pure bluffs never show a profit: the right
     /// baseline against the loose players of home and play-money games.
-    /// When anyone continues, the hero plays against all of them.
+    /// A player who folds to bets more or less often than that keeps a
+    /// smaller or larger share. When anyone continues, the hero plays
+    /// against all of them.
     fn aggressive_line(
         &self,
         recommendation: Recommendation,
@@ -336,7 +351,7 @@ impl<'a> Spot<'a> {
                 &opponent.range,
                 self.board,
                 self.dead_cards,
-                Narrowing::continuing(continuing_share),
+                Narrowing::continuing(continuing_share).scaled(opponent.continuing_scale),
             );
             everyone_folds *= narrowed.kept_share.complement().fraction();
             chips_matched += to_match;
@@ -408,7 +423,7 @@ impl<'a> Spot<'a> {
                     &opponent.range,
                     self.board,
                     self.dead_cards,
-                    Narrowing::RAISE,
+                    Narrowing::RAISE.scaled(opponent.betting_scale),
                 )
                 .range
             })
@@ -515,8 +530,9 @@ fn realization(table: &TableState, street: PostflopStreet) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use crate::advisor::{advise, Advice, PlannedResponse, Recommendation};
+    use crate::advisor::{advise, advise_with_reads, Advice, PlannedResponse, Recommendation};
     use crate::math::legal_actions;
+    use crate::opponent::{Frequency, PlayerProfile, PlayerStats, Population, TableReads};
     use crate::table::state::tests::{cards, seat, six_max_preflop};
     use crate::table::{
         Chips, PlayerAction, RecordedAction, SeatIndex, SeatStatus, Street, TableSetup, TableState,
@@ -587,6 +603,40 @@ mod tests {
         advise(&TableState::new(setup).unwrap()).unwrap()
     }
 
+    fn advice_against_big_blind(setup: TableSetup, big_blind: PlayerStats) -> Advice {
+        let mut profiles = vec![None; setup.seats.len()];
+        profiles[BIG_BLIND as usize] =
+            Some(PlayerProfile::estimate(&big_blind, Population::PlayMoney));
+        let reads = TableReads::from_profiles(profiles);
+        advise_with_reads(&TableState::new(setup).unwrap(), &reads).unwrap()
+    }
+
+    fn rate(hits: u32, chances: u32) -> Frequency {
+        Frequency { hits, chances }
+    }
+
+    fn nit() -> PlayerStats {
+        PlayerStats {
+            voluntarily_played: rate(60, 500),
+            raised_preflop: rate(50, 500),
+            three_bet: rate(5, 200),
+            postflop_aggression: rate(30, 60),
+            folded_to_continuation_bet: rate(80, 100),
+            went_to_showdown: rate(10, 60),
+        }
+    }
+
+    fn calling_station() -> PlayerStats {
+        PlayerStats {
+            voluntarily_played: rate(300, 500),
+            raised_preflop: rate(25, 500),
+            three_bet: rate(5, 200),
+            postflop_aggression: rate(40, 200),
+            folded_to_continuation_bet: rate(10, 100),
+            went_to_showdown: rate(120, 250),
+        }
+    }
+
     fn is_aggressive(recommendation: Recommendation) -> bool {
         match recommendation {
             Recommendation::BetTo { .. }
@@ -594,6 +644,61 @@ mod tests {
             | Recommendation::AllIn { .. } => true,
             Recommendation::Fold | Recommendation::Check | Recommendation::Call { .. } => false,
         }
+    }
+
+    #[test]
+    fn bluffs_a_nit_but_not_a_calling_station() {
+        let river_checked_to_hero = || {
+            check(
+                button_against_big_blind(BUTTON, "6c 5c", "Kh 7h 2d 9s Jd"),
+                BIG_BLIND,
+            )
+        };
+        let against_nit = advice_against_big_blind(river_checked_to_hero(), nit());
+        assert!(
+            is_aggressive(against_nit.recommendation),
+            "{}",
+            against_nit.reason
+        );
+        let against_station = advice_against_big_blind(river_checked_to_hero(), calling_station());
+        assert_eq!(
+            against_station.recommendation,
+            Recommendation::Check,
+            "{}",
+            against_station.reason
+        );
+    }
+
+    #[test]
+    fn value_bets_thinner_and_bigger_against_a_calling_station() {
+        let river_checked_to_hero = |hero_cards| {
+            check(
+                button_against_big_blind(BUTTON, hero_cards, "Kh 7h 2d 9s Qd"),
+                BIG_BLIND,
+            )
+        };
+        let third_pair = "9c 8c";
+        let without_reads = advice(river_checked_to_hero(third_pair));
+        assert_eq!(without_reads.recommendation, Recommendation::Check);
+        let against_station =
+            advice_against_big_blind(river_checked_to_hero(third_pair), calling_station());
+        assert!(
+            is_aggressive(against_station.recommendation),
+            "{}",
+            against_station.reason
+        );
+
+        let second_pair = "Qc Td";
+        let bet_total = |advice: Advice| match advice.recommendation {
+            Recommendation::BetTo { total } => total,
+            other => panic!("expected a bet, got {other:?}"),
+        };
+        let usual_bet = bet_total(advice(river_checked_to_hero(second_pair)));
+        let station_bet = bet_total(advice_against_big_blind(
+            river_checked_to_hero(second_pair),
+            calling_station(),
+        ));
+        assert!(station_bet > usual_bet);
     }
 
     #[test]

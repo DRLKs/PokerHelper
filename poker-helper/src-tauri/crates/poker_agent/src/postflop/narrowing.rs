@@ -30,6 +30,15 @@ impl Narrowing {
         draw_weight: 0.5,
     };
 
+    /// The same narrowing keeping `factor` times as much of the range, at
+    /// most all of it.
+    pub fn scaled(self, factor: f64) -> Narrowing {
+        Narrowing {
+            keep_share: (self.keep_share * factor).clamp(0.0, 1.0),
+            draw_weight: self.draw_weight,
+        }
+    }
+
     /// The hands that keep playing against a bet: `share` of the range by
     /// made hand, plus strong draws.
     pub fn continuing(share: Probability) -> Narrowing {

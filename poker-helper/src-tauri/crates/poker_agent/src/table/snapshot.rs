@@ -1,4 +1,5 @@
 use crate::core::card::{Card, ParseCardError};
+use crate::opponent::PlayerId;
 use crate::table::chips::Chips;
 use crate::table::seat::{Seat, SeatIndex};
 use crate::table::state::{Blinds, TableSetup};
@@ -17,7 +18,7 @@ pub const SNAPSHOT_VERSION: u32 = 2;
 ///   "hero_seat": 3,
 ///   "blinds": { "small": 1, "big": 2, "ante": 0 },
 ///   "seats": [
-///     { "stack": 200, "committed_this_street": 0, "status": "active" },
+///     { "stack": 200, "committed_this_street": 0, "status": "active", "name": "Ana" },
 ///     { "stack": 199, "committed_this_street": 1, "status": "active" },
 ///     { "stack": 198, "committed_this_street": 2, "status": "active" },
 ///     { "stack": 200, "committed_this_street": 0, "status": "active" },
@@ -31,18 +32,27 @@ pub const SNAPSHOT_VERSION: u32 = 2;
 /// ```
 ///
 /// `pot` holds the chips from earlier streets and antes only; chips in front
-/// of the players this street go in `committed_this_street`.
+/// of the players this street go in `committed_this_street`. `name` is the
+/// optional screen name of the player in the seat.
 #[derive(Clone, Debug, Deserialize)]
 pub struct TableSnapshot {
     pub version: u32,
     pub button_seat: SeatIndex,
     pub hero_seat: SeatIndex,
     pub blinds: Blinds,
-    pub seats: Vec<Seat>,
+    pub seats: Vec<SnapshotSeat>,
     pub hero_cards: [String; 2],
     #[serde(default)]
     pub board: Vec<String>,
     pub pot: Chips,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct SnapshotSeat {
+    #[serde(flatten)]
+    pub seat: Seat,
+    #[serde(default)]
+    pub name: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -83,6 +93,15 @@ impl TableSnapshot {
         Ok(snapshot)
     }
 
+    /// Who sits in each seat, by screen name when the frame has one.
+    pub fn player_ids(&self) -> Vec<PlayerId> {
+        self.seats
+            .iter()
+            .enumerate()
+            .map(|(index, seat)| PlayerId::for_seat(SeatIndex(index as u8), seat.name.as_deref()))
+            .collect()
+    }
+
     /// Converts the frame into a table without action history. Feed it to a
     /// [`HandTracker`](crate::table::HandTracker) to rebuild the history.
     pub fn into_setup(self) -> Result<TableSetup, SnapshotError> {
@@ -93,7 +112,7 @@ impl TableSnapshot {
             .map(|card| card.parse())
             .collect::<Result<Vec<Card>, _>>()?;
         Ok(TableSetup {
-            seats: self.seats,
+            seats: self.seats.into_iter().map(|seat| seat.seat).collect(),
             button: self.button_seat,
             hero: self.hero_seat,
             hero_cards,
@@ -117,7 +136,7 @@ mod tests {
         "hero_seat": 3,
         "blinds": { "small": 1, "big": 2 },
         "seats": [
-            { "stack": 200, "committed_this_street": 0, "status": "active" },
+            { "stack": 200, "committed_this_street": 0, "status": "active", "name": "Ana" },
             { "stack": 199, "committed_this_street": 1, "status": "active" },
             { "stack": 198, "committed_this_street": 2, "status": "active" },
             { "stack": 200, "committed_this_street": 0, "status": "active" },
@@ -140,6 +159,14 @@ mod tests {
         let table = TableState::new(setup).unwrap();
         assert_eq!(table.dealt_in_player_count(), 5);
         assert_eq!(table.amount_to_call(SeatIndex(3)), Chips(6));
+    }
+
+    #[test]
+    fn names_players_by_screen_name_or_seat() {
+        let snapshot = TableSnapshot::from_json(EXAMPLE).unwrap();
+        let players = snapshot.player_ids();
+        assert_eq!(players[0], PlayerId::Named("Ana".to_string()));
+        assert_eq!(players[1], PlayerId::Seat(SeatIndex(1)));
     }
 
     #[test]
