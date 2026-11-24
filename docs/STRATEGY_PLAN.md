@@ -350,4 +350,14 @@ Phase 5 (module `opponent`) works as planned, with these choices and gaps:
 - Exploits are continuous, not per player type; the type is a label for the UI. Preflop ranges from the charts are resized by the player's PFR (first raises and shoves), 3-bet rate (re-raises) or VPIP (calls and limps) over the regular rate, between 0.5 and 3 times, adding or removing hands by their equity against a random hand. After the flop, the share of the range kept on a call and when the hero bets is scaled by the player's rate of not folding to a c-bet, and the share kept on a bet or raise by the player's aggression, both over the play-money rate and between 0.5 and 2 times. A player who matches the play-money population after the flop is played exactly as in phase 4.
 - Preflop, reads change only the call of a short-stack all-in. The charts for opening, 3-betting and defending ignore reads.
 - With reads, the engine bluffs players who fold often, which phase 4 never did, and value bets thinner and bigger against calling stations.
-- Nothing is wired into the Tauri commands or the UI yet.
+- Nothing is wired into the Tauri commands or the UI yet; phase 6 does that.
+
+Phase 6 is split in two pull requests. The first, for the backend, is done:
+
+- `Advice` now carries `response_plan`, `ev_by_action` and `confidence`. The response plan exists after the flop when the hero checks with an opponent still to act (bets of 33%, 50%, 75% and 100% of the pot and all-in) or bets or raises with chips behind (raises to 2.5, 3 and 4 times and all-in). It gives `fold_above`, the largest bet or raise-to the hero can still call, and a one-line summary such as `Fold if they bet more than 40 (20.0 BB).` After a check, opponents who act later are assumed to bet with their betting range.
+- `ev_by_action` lists fold, check or call and every bet or raise size the engine compared, best first, in chips. Preflop it is empty because the charts decide.
+- `confidence` is high, medium or low. It drops to medium with three or more players in the pot, and to low when an opponent reached the flop with no recorded preflop action or when the chips on the table stopped adding up between two frames of the same hand.
+- `session::AdvisorSession` holds the hand tracker, the opponent book and who sits in each seat. Each frame returns the advice, the history and each opponent's profile, and records the previous hand when a new one starts.
+- The Tauri commands are `observe_table`, `opponent_population`, `set_opponent_population` and `reset_opponents`. The opponent stats are saved to `opponents.json` in the app data directory after each hand; a file that cannot be parsed is renamed to `opponents.json.unreadable`.
+
+The second pull request adds the manual table editor and the advice screen. The equity calculator stays as a second tab, and the replay of past hands is left for later.
