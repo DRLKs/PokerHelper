@@ -78,7 +78,7 @@ impl Position {
 
     pub fn full_name(self) -> &'static str {
         match self {
-            Position::UnderTheGun => "under the gun",
+            Position::UnderTheGun => "first position (UTG)",
             Position::Hijack => "hijack",
             Position::Cutoff => "cutoff",
             Position::Button => "button",

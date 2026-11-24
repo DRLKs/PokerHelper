@@ -316,3 +316,16 @@ src-tauri/crates/poker_sim/                                              (phase 
 ## 8. Order of work
 
 Phases 0, 1 and 2 come first and can be built and tested without any UI change. Phase 3 alone already fixes most beginner losses. Phase 7 can start in parallel with phase 4, since the simulator only needs phases 0 and 1.
+
+## 9. Status
+
+Phases 0 to 3 are implemented in the `poker_agent` crate. The entry point is `advisor::advise(&TableState)`, which returns a `Recommendation` with exact chip amounts, a one-line reason and, after a raise, what to do if someone re-raises. It works preflop only; later streets return `AdviceError::StreetNotSupported`.
+
+Differences from the plan:
+
+- Preflop charts cover 100 big blind play and stacks of 15 big blinds or less (push/fold). Stacks from 16 to 40 big blinds use the 100 big blind charts, and any raise that would commit more than a third of the stack becomes all-in. Dedicated 40 and 20 big blind charts are still to do.
+- Calling a short-stack all-in is decided by equity against the pusher's estimated range, not by a chart.
+- The precomputed 169 x 169 preflop equity table was not built: Monte Carlo against ranges takes under 1 ms preflop, well inside the budget.
+- Straddles are not modelled.
+- The tracker records only the last action of a player who acts twice between two frames, and records checks only when the street ends.
+- Nothing is wired into the Tauri commands, the frontend or the vision sidecar yet. The sidecar still has to produce the version 2 snapshot described in `table::snapshot`.
