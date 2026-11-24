@@ -220,10 +220,6 @@ fn won_in_opponent_deals(
     won
 }
 
-pub fn calculate_pot_odds(pot_size: f64, call_amount: f64, win_percentage: f64) -> f64 {
-    (win_percentage * (pot_size + call_amount)) / 100.0
-}
-
 
 #[cfg(test)]
 mod tests {
@@ -327,22 +323,6 @@ mod tests {
 
         let max_opponents = ((FULL_DECK - HAND_SIZE - 5) / HAND_SIZE) as u8;
         assert!(calculate_equity(hand, CommunityCards::empty(), max_opponents, 100).is_ok());
-    }
-
-    #[test]
-    fn pot_odd_zero_probability(){
-        let pot_size= 100.0;
-        let call_amount= 10.0;
-        let win_percentage = 0.0;
-        assert_eq!( calculate_pot_odds(pot_size,call_amount,win_percentage), 0.0 );
-    }
-
-    #[test]
-    fn pot_odd_100_probability(){
-        let pot_size= 100.0;
-        let call_amount= 30.0;
-        let win_percentage = 100.0;
-        assert!( calculate_pot_odds(pot_size,call_amount,win_percentage) > call_amount );
     }
 
     #[test]
