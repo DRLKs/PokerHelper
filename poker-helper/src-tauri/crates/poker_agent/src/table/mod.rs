@@ -10,6 +10,6 @@ pub use action::{PlayerAction, RecordedAction, Street};
 pub use chips::{BigBlinds, Chips};
 pub use position::Position;
 pub use seat::{Seat, SeatIndex, SeatStatus};
-pub use snapshot::{SnapshotError, TableSnapshot};
+pub use snapshot::{SnapshotError, SnapshotSeat, TableSnapshot};
 pub use state::{Blinds, TableError, TableSetup, TableState};
 pub use tracker::HandTracker;

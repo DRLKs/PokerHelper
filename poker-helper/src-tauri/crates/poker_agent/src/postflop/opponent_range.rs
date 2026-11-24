@@ -1,4 +1,5 @@
 use crate::evaluator::fast_eval::CardMask;
+use crate::opponent::{PreflopRangeKind, TableReads};
 use crate::postflop::narrowing::{narrow, Narrowing};
 use crate::postflop::validated_cards_mask;
 use crate::preflop::charts::{ChartError, Charts, OpenerGroup, Seating, SpotChart};
@@ -17,13 +18,19 @@ const POSTFLOP_STREETS: [Street; 3] = [Street::Flop, Street::Turn, Street::River
 /// A seat with no recorded preflop action (missed frames) is given its
 /// opening range, or every hand in the big blind. If a cut would leave no
 /// live combo, the range from before that cut is kept.
+///
+/// A seat with a profile in `reads` has its chart range resized by how often
+/// it raises, re-raises or plays compared with regulars, and keeps more or
+/// less of its range on each call, bet and raise depending on how often it
+/// folds to bets and how aggressive it is.
 pub fn estimate_ranges(
     table: &TableState,
     charts: &Charts,
     seats: &[SeatIndex],
     dead_cards: CardMask,
+    reads: &TableReads,
 ) -> Result<Vec<Range>, ChartError> {
-    let mut preflop = preflop_ranges(table, charts)?;
+    let mut preflop = preflop_ranges(table, charts, reads)?;
     seats
         .iter()
         .map(|&seat| {
@@ -33,7 +40,7 @@ pub fn estimate_ranges(
                 None => default_range(table, charts, seat)?,
             };
             let range = keep_if_live(range, Range::full(), dead_cards);
-            Ok(narrow_after_the_flop(range, table, seat, dead_cards))
+            Ok(narrow_after_the_flop(range, table, seat, dead_cards, reads))
         })
         .collect()
 }
@@ -56,7 +63,11 @@ fn narrow_after_the_flop(
     table: &TableState,
     seat: SeatIndex,
     dead_cards: CardMask,
+    reads: &TableReads,
 ) -> Range {
+    let profile = reads.profile(seat);
+    let continuing_scale = profile.map_or(1.0, |profile| profile.continuing_scale());
+    let betting_scale = profile.map_or(1.0, |profile| profile.betting_scale());
     let streets = POSTFLOP_STREETS
         .into_iter()
         .filter(|&street| street <= table.street());
@@ -68,9 +79,9 @@ fn narrow_after_the_flop(
         for recorded in actions {
             let narrowing = match recorded.action {
                 PlayerAction::Fold | PlayerAction::Check => continue,
-                PlayerAction::Call { .. } => Narrowing::CALL,
-                PlayerAction::Bet { .. } => Narrowing::BET,
-                PlayerAction::Raise { .. } => Narrowing::RAISE,
+                PlayerAction::Call { .. } => Narrowing::CALL.scaled(continuing_scale),
+                PlayerAction::Bet { .. } => Narrowing::BET.scaled(betting_scale),
+                PlayerAction::Raise { .. } => Narrowing::RAISE.scaled(betting_scale),
             };
             let narrowed = narrow(&range, board, dead_cards, narrowing).range;
             range = keep_if_live(narrowed, range, dead_cards);
@@ -88,7 +99,11 @@ fn keep_if_live(candidate: Range, fallback: Range, dead_cards: CardMask) -> Rang
 }
 
 /// The range each seat shows with its last preflop action, indexed by seat.
-fn preflop_ranges(table: &TableState, charts: &Charts) -> Result<Vec<Option<Range>>, ChartError> {
+fn preflop_ranges(
+    table: &TableState,
+    charts: &Charts,
+    reads: &TableReads,
+) -> Result<Vec<Option<Range>>, ChartError> {
     let heads_up = table.is_heads_up();
     let mut ranges = vec![None; table.seats().len()];
     let mut betting = PreflopBetting::default();
@@ -101,7 +116,14 @@ fn preflop_ranges(table: &TableState, charts: &Charts) -> Result<Vec<Option<Rang
             position,
         };
         if let Some(range) = betting.range_shown_by(actor, recorded.action, charts, heads_up)? {
-            ranges[actor.seat.index()] = Some(range);
+            let scale = match (
+                reads.profile(actor.seat),
+                betting.range_kind(recorded.action),
+            ) {
+                (Some(profile), Some(kind)) => profile.preflop_range_scale(kind),
+                (None, _) | (_, None) => 1.0,
+            };
+            ranges[actor.seat.index()] = Some(range.rescaled(scale));
         }
         betting.record(actor, recorded.action);
     }
@@ -142,6 +164,21 @@ impl PreflopBetting {
             }
         };
         Ok(Some(range))
+    }
+
+    /// Which of the player's rates sizes the range shown by `action`, or
+    /// `None` for an action that is not voluntary.
+    fn range_kind(&self, action: PlayerAction) -> Option<PreflopRangeKind> {
+        match action {
+            PlayerAction::Fold | PlayerAction::Check => None,
+            PlayerAction::Call { .. } => Some(PreflopRangeKind::Call),
+            PlayerAction::Bet { .. } | PlayerAction::Raise { .. } if self.raisers.is_empty() => {
+                Some(PreflopRangeKind::FirstRaise)
+            }
+            PlayerAction::Bet { .. } | PlayerAction::Raise { .. } => {
+                Some(PreflopRangeKind::ReRaise)
+            }
+        }
     }
 
     fn chart_facing<'a>(
@@ -240,9 +277,15 @@ mod tests {
         let table = TableState::new(setup).unwrap();
         let dead = validated_cards_mask(&table.hero_cards()) | validated_cards_mask(table.board());
         let charts = Charts::embedded().unwrap();
-        estimate_ranges(&table, charts, &[SeatIndex(seat)], dead)
-            .unwrap()
-            .remove(0)
+        estimate_ranges(
+            &table,
+            charts,
+            &[SeatIndex(seat)],
+            dead,
+            &TableReads::none(),
+        )
+        .unwrap()
+        .remove(0)
     }
 
     fn open_and_call() -> Vec<RecordedAction> {

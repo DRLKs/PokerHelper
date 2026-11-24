@@ -1,4 +1,5 @@
 use crate::math::{legal_actions, LegalActions};
+use crate::opponent::TableReads;
 use crate::postflop::{self, PostflopStreet};
 use crate::preflop::{self, ChartError, Charts};
 use crate::range::EquityError;
@@ -101,20 +102,28 @@ impl From<EquityError> for AdviceError {
     }
 }
 
-/// Advice for the hero, assuming it is the hero's turn to act.
+/// Advice for the hero, assuming it is the hero's turn to act, with no
+/// reads on the opponents.
 ///
 /// Preflop advice follows the charts; later streets pick the action with the
 /// highest expected value against the opponents' likely hands.
 pub fn advise(table: &TableState) -> Result<Advice, AdviceError> {
+    advise_with_reads(table, &TableReads::none())
+}
+
+/// Like [`advise`], with the opponents' likely hands and fold rates adjusted
+/// to the habits in `reads`. Preflop, the reads change only the decision to
+/// call an all-in; the charts stay as they are.
+pub fn advise_with_reads(table: &TableState, reads: &TableReads) -> Result<Advice, AdviceError> {
     let legal = legal_actions(table, table.hero()).ok_or(AdviceError::HeroCannotAct)?;
     let charts = Charts::embedded()?;
     let postflop_street = match table.street() {
-        Street::Preflop => return preflop::advise(table, &legal, charts),
+        Street::Preflop => return preflop::advise(table, &legal, charts, reads),
         Street::Flop => PostflopStreet::Flop,
         Street::Turn => PostflopStreet::Turn,
         Street::River => PostflopStreet::River,
     };
-    postflop::advise(table, &legal, charts, postflop_street)
+    postflop::advise(table, &legal, charts, postflop_street, reads)
 }
 
 /// What a strategy wants to do, before the table's rules turn it into an
