@@ -1,4 +1,5 @@
 use crate::math::{legal_actions, LegalActions};
+use crate::postflop::{self, PostflopStreet};
 use crate::preflop::{self, ChartError, Charts};
 use crate::range::EquityError;
 use crate::table::{Chips, Seat, Street, TableState};
@@ -12,9 +13,19 @@ use std::fmt;
 pub enum Recommendation {
     Fold,
     Check,
-    Call { amount: Chips },
-    RaiseTo { total: Chips },
-    AllIn { total: Chips },
+    Call {
+        amount: Chips,
+    },
+    /// The first bet on a street after the flop.
+    BetTo {
+        total: Chips,
+    },
+    RaiseTo {
+        total: Chips,
+    },
+    AllIn {
+        total: Chips,
+    },
 }
 
 impl Recommendation {
@@ -26,6 +37,9 @@ impl Recommendation {
             Recommendation::Call { amount } => {
                 format!("Call {amount} ({})", amount.in_big_blinds(big_blind))
             }
+            Recommendation::BetTo { total } => {
+                format!("Bet {total} ({})", total.in_big_blinds(big_blind))
+            }
             Recommendation::RaiseTo { total } => {
                 format!("Raise to {total} ({})", total.in_big_blinds(big_blind))
             }
@@ -36,7 +50,7 @@ impl Recommendation {
     }
 }
 
-/// What to do if an opponent raises again after the recommended raise.
+/// What to do if an opponent raises after the recommended bet or raise.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PlannedResponse {
@@ -50,7 +64,8 @@ pub struct Advice {
     pub recommendation: Recommendation,
     pub instruction: String,
     pub reason: String,
-    /// Set only when the recommendation is a raise that leaves chips behind.
+    /// Set only when the recommendation is a bet or raise that leaves chips
+    /// behind.
     pub if_reraised: Option<PlannedResponse>,
 }
 
@@ -58,7 +73,6 @@ pub struct Advice {
 pub enum AdviceError {
     /// The hero has folded, is all-in, or is not dealt in.
     HeroCannotAct,
-    StreetNotSupported(Street),
     Charts(ChartError),
     Equity(EquityError),
 }
@@ -67,9 +81,6 @@ impl fmt::Display for AdviceError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             AdviceError::HeroCannotAct => write!(formatter, "the hero has no decision to make"),
-            AdviceError::StreetNotSupported(street) => {
-                write!(formatter, "advice for the {street:?} is not available yet")
-            }
             AdviceError::Charts(error) => write!(formatter, "{error}"),
             AdviceError::Equity(error) => write!(formatter, "{error}"),
         }
@@ -92,16 +103,18 @@ impl From<EquityError> for AdviceError {
 
 /// Advice for the hero, assuming it is the hero's turn to act.
 ///
-/// Only preflop decisions are supported for now; later streets return
-/// [`AdviceError::StreetNotSupported`].
+/// Preflop advice follows the charts; later streets pick the action with the
+/// highest expected value against the opponents' likely hands.
 pub fn advise(table: &TableState) -> Result<Advice, AdviceError> {
     let legal = legal_actions(table, table.hero()).ok_or(AdviceError::HeroCannotAct)?;
-    match table.street() {
-        Street::Preflop => preflop::advise(table, &legal, Charts::embedded()?),
-        street @ (Street::Flop | Street::Turn | Street::River) => {
-            Err(AdviceError::StreetNotSupported(street))
-        }
-    }
+    let charts = Charts::embedded()?;
+    let postflop_street = match table.street() {
+        Street::Preflop => return preflop::advise(table, &legal, charts),
+        Street::Flop => PostflopStreet::Flop,
+        Street::Turn => PostflopStreet::Turn,
+        Street::River => PostflopStreet::River,
+    };
+    postflop::advise(table, &legal, charts, postflop_street)
 }
 
 /// What a strategy wants to do, before the table's rules turn it into an
@@ -245,6 +258,10 @@ mod tests {
         assert_eq!(
             Recommendation::AllIn { total: Chips(20) }.instruction(big_blind),
             "All-in: 20 (10.0 BB)"
+        );
+        assert_eq!(
+            Recommendation::BetTo { total: Chips(7) }.instruction(big_blind),
+            "Bet 7 (3.5 BB)"
         );
         assert_eq!(Recommendation::Fold.instruction(big_blind), "Fold");
     }

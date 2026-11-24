@@ -319,13 +319,24 @@ Phases 0, 1 and 2 come first and can be built and tested without any UI change. 
 
 ## 9. Status
 
-Phases 0 to 3 are implemented in the `poker_agent` crate. The entry point is `advisor::advise(&TableState)`, which returns a `Recommendation` with exact chip amounts, a one-line reason and, after a raise, what to do if someone re-raises. It works preflop only; later streets return `AdviceError::StreetNotSupported`.
+Phases 0 to 4 are implemented in the `poker_agent` crate. The entry point is `advisor::advise(&TableState)`, which returns a `Recommendation` with exact chip amounts, a one-line reason and, after a bet or raise, what to do if someone raises.
 
-Differences from the plan:
+Differences from the plan in phases 0 to 3:
 
 - Preflop charts cover 100 big blind play and stacks of 15 big blinds or less (push/fold). Stacks from 16 to 40 big blinds use the 100 big blind charts, and any raise that would commit more than a third of the stack becomes all-in. Dedicated 40 and 20 big blind charts are still to do.
 - Calling a short-stack all-in is decided by equity against the pusher's estimated range, not by a chart.
 - The precomputed 169 x 169 preflop equity table was not built: Monte Carlo against ranges takes under 1 ms preflop, well inside the budget.
 - Straddles are not modelled.
 - The tracker records only the last action of a player who acts twice between two frames, and records checks only when the street ends.
+
+Phase 4 (module `postflop`) works as planned, with these choices and gaps:
+
+- Opponent ranges start from the preflop chart that matches each player's last preflop action (opening, calling, 3-betting, limping and so on). After the flop, a call keeps the strongest 55% of the range by made hand, a bet 45% and a raise 25%, plus every combo with 8 or more outs. Checks do not narrow the range. These shares are starting values for phase 7.
+- When the hero bets or raises, each opponent continues with `1 - r` of its range, where `r` is the equity it needs to call. That is always more than the minimum defence frequency, so pure bluffs never show a profit and only hands with equity or draws bet. This suits the loose players of home and play-money games; balanced bluffing waits for phase 7 tuning.
+- In a multiway pot the hero's equity when called is measured against everyone who could continue, which makes betting less attractive with several players, as the plan intends.
+- Equity realization is 1.0 on the river and when the hero acts last, and 0.85 out of position. The suited and offsuit distinction from section 4 is not applied after the flop.
+- Bet sizes depend on the street and texture: 33%, 50% and 75% of the pot on a dry flop, 50% and 75% on a wet one, up to pot on the turn and 125% on the river. All-in is a candidate only when it is at most 1.5 times the pot (2 times on the river). Facing a bet, the only raise size besides all-in is 3 times the bet.
+- Range advantage and nut advantage are not computed: the hero's own range is not modelled, so board texture only selects bet sizes.
+- The "fold if they bet more than X" number and the full response plan are left for phase 6. After a bet or raise, `if_reraised` says whether to fold, call or re-raise against a raise to 3 times the size.
+- A postflop decision takes about 2 to 11 ms on a 12-thread desktop.
 - Nothing is wired into the Tauri commands, the frontend or the vision sidecar yet. The sidecar still has to produce the version 2 snapshot described in `table::snapshot`.
