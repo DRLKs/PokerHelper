@@ -1,10 +1,10 @@
 # Frontend Design Context
 
-Last updated: 2026-07-31
+Last updated: 2026-11-27
 
 ## Product state
 
-The frontend is an in-development operator interface for entering a Texas Hold'em state and requesting an equity estimate. It is not a finished consumer product. The UI must communicate this without adding persistent warning banners or visual noise.
+The frontend is an in-development operator interface with two tabs. The Advisor tab takes the full table (seats, stacks, bets, button, blinds, cards) and shows what to do. The Equity calculator tab takes a hand and a board and estimates equity. It is not a finished consumer product. The UI must communicate this without adding persistent warning banners or visual noise.
 
 All user-facing application copy is written in English.
 
@@ -23,6 +23,8 @@ The interface should remain minimal, dark, and functional. Its character comes f
 
 ### Layout hierarchy
 
+The header and the tab bar sit above both tabs. The Equity calculator tab follows this order:
+
 1. **Header:** identity and the optional computer-vision control.
 2. **Table:** current hole cards and community cards; this is the visual focus.
 3. **Card picker:** a compact rank-and-suit input tied to the active card zone.
@@ -30,6 +32,14 @@ The interface should remain minimal, dark, and functional. Its character comes f
 5. **Analysis:** the equity action and result.
 
 On smaller screens the layout collapses to one column. Card sizes use responsive constraints so a five-card board remains visible without horizontal scrolling.
+
+## Advisor tab
+
+The left column holds the table (board, hero cards, blinds, ante, pot and the New hand and Next street helpers), the six seat editors and the card picker. The right column holds the Get advice button, the advice, the actions recorded this hand and the opponent settings.
+
+The instruction is the largest text on the screen and has one colour per action: muted red for fold, neutral for check, green for call, blue for a bet or raise, and violet for all-in. Medium and low confidence show a notice under the reason; low uses the error tone because the table reading may be wrong. The EV of each action sits in a closed `details` element so it does not compete with the instruction.
+
+The hero seat uses the green focus border, and empty seats are dimmed. Resetting the opponent stats asks for a second click in place instead of a browser dialog, which the Tauri webview does not always show.
 
 ## Card system
 
@@ -91,6 +101,12 @@ The interactive table keeps its lightweight CSS felt treatment to preserve card 
 ## Relevant files
 
 - `poker-helper/src/presentation/App.tsx`
+- `poker-helper/src/presentation/pages/AdvisorPage.tsx`
+- `poker-helper/src/presentation/pages/EquityPage.tsx`
+- `poker-helper/src/presentation/components/AdvicePanel.tsx`
+- `poker-helper/src/presentation/components/SeatEditor.tsx`
+- `poker-helper/src/presentation/format.ts`
+- `poker-helper/src/domain/tableDraft.ts`
 - `poker-helper/src/presentation/components/CardView.tsx`
 - `poker-helper/src/presentation/components/CardSelector.tsx`
 - `poker-helper/src/presentation/components/AmountInput.tsx`
