@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Card } from '../domain/types';
-import { calculateEquity, startSidecar, listWindows } from '../infrastructure/pokerApi';
+import { calculateEquity } from '../infrastructure/pokerApi';
 
 export const usePoker = () => {
   const [myCards, setMyCards] = useState<Card[]>([]);
@@ -11,28 +11,6 @@ export const usePoker = () => {
   const [equity, setEquity] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [visionEnabled, setVisionEnabled] = useState(false);
-  const [availableWindows, setAvailableWindows] = useState<string[]>([]);
-  const [selectedWindow, setSelectedWindow] = useState<string>("");
-
-  useEffect(() => {
-    startSidecar().catch(console.error);
-  }, []);
-
-  const toggleVision = async () => {
-    if (!visionEnabled) {
-        try {
-            const windows = await listWindows();
-            setAvailableWindows(windows);
-            setVisionEnabled(true);
-        } catch (e: any) {
-            setError("Failed to list windows: " + e.toString());
-        }
-    } else {
-        setVisionEnabled(false);
-    }
-  };
 
   const calculate = async () => {
     if (myCards.length !== 2) {
@@ -92,11 +70,6 @@ export const usePoker = () => {
     equity,
     loading,
     error,
-    calculate,
-    visionEnabled,
-    toggleVision,
-    availableWindows,
-    selectedWindow,
-    setSelectedWindow
+    calculate
   };
 };

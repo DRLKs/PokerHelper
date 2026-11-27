@@ -360,4 +360,12 @@ Phase 6 is split in two pull requests. The first, for the backend, is done:
 - `session::AdvisorSession` holds the hand tracker, the opponent book and who sits in each seat. Each frame returns the advice, the history and each opponent's profile, and records the previous hand when a new one starts.
 - The Tauri commands are `observe_table`, `opponent_population`, `set_opponent_population` and `reset_opponents`. The opponent stats are saved to `opponents.json` in the app data directory after each hand; a file that cannot be parsed is renamed to `opponents.json.unreadable`.
 
-The second pull request adds the manual table editor and the advice screen. The equity calculator stays as a second tab, and the replay of past hands is left for later.
+The second pull request, for the UI, is done:
+
+- The app opens on an Advisor tab; the equity calculator is the second tab. Both stay mounted, so switching tabs keeps the table being entered.
+- The manual table editor has six seats, each with a name, a status (playing, folded, all-in, sitting out, empty), a stack and the bet in front of the player, plus toggles for the dealer and the hero. Blinds, ante, the pot from earlier streets, the hero's cards and the board are entered above the seats.
+- Each press of Get advice sends one frame to `observe_table`, so half-typed values never reach the hand tracker. When the table changes after a frame, the advice is marked as out of date.
+- New hand clears the cards, bets and pot, moves the button to the next player, posts antes and blinds (the button posts the small blind heads-up) and sits out players with no chips. Next street moves the bets into the pot.
+- The advice screen shows the instruction in a colour per action, the reason, a notice when confidence is medium or low with each issue in words, the response plan (or the answer to a raise preflop), a collapsible list of the EV of each compared action, and the actions recorded this hand.
+- Each opponent seat shows the player type, hands seen, VPIP and PFR. A small panel picks the population for unknown players and resets the opponent stats after a confirmation.
+- The replay of past hands is still to do.
